@@ -1,9 +1,19 @@
 import { createAudioContext } from './audioContextOptions';
+import { VOICE_COUNT_BASE64 } from './metronomeVoiceData';
 
 export type MetronomeTimeSignature = '4/4' | '3/4' | '6/8' | '2/4' | '5/4' | '7/8' | '9/8' | '12/8';
 export type MetronomeSubdivision = '1/4' | '1/8' | '1/16' | '1/32' | '3let' | '6let';
 export type MetronomeSoundId =
-  'woodblock' | 'click' | 'sidestick' | 'digital' | 'soft' | 'cowbell' | 'rimshot';
+  | 'woodblock'
+  | 'click'
+  | 'sidestick'
+  | 'digital'
+  | 'soft'
+  | 'tick'
+  | 'shaker'
+  | 'claves'
+  | 'cowbell'
+  | 'rimshot';
 
 export interface MetronomeTempoRampConfig {
   enabled: boolean;
@@ -26,7 +36,9 @@ export interface MetronomeBeatEvent {
   subdivisionIndex: number;
   isAccent: boolean;
   isCountIn: boolean;
-  countInNumber?: number; // Countdown number during count-in: 4, 3, 2, 1
+  countInNumber?: number; // Beat number during count-in: 1, 2, 3, 4
+  countInBar?: number; // 1-indexed bar number during multi-bar count-in: 1, 2, 3
+  countInTotalBars?: number; // Total count-in bars configured
   time: number;
   effectiveBpm: number;
   rampProgress?: number; // 0 to 1 if ramp is active, undefined otherwise
@@ -42,6 +54,7 @@ export interface MetronomeAudioConfig {
   isMuted: boolean;
   countInEnabled: boolean;
   countInBars: number;
+  countInVoiceEnabled?: boolean;
   tempoRamp?: MetronomeTempoRampConfig;
 }
 
@@ -92,6 +105,7 @@ export function getSubdivisionsPerBeat(subdivision: MetronomeSubdivision): numbe
 export class MetronomeAudioEngine {
   private _ctx: AudioContext | null = null;
   private _masterGain: GainNode | null = null;
+  private _voiceGain: GainNode | null = null;
   private _timerId: any = null;
   private _rafId: number | null = null;
 
@@ -105,13 +119,15 @@ export class MetronomeAudioEngine {
   private _isMuted: boolean = false;
   private _countInEnabled: boolean = true;
   private _countInBars: number = 1;
+  private _countInVoiceEnabled: boolean = true;
   private _tempoRamp: MetronomeTempoRampConfig | null = null;
   private _mainStartTime: number = 0;
 
   // Playback state
   private _isPlaying: boolean = false;
   private _inCountIn: boolean = false;
-  private _countInBeatsRemaining: number = 0;
+  private _countInTotalBeats: number = 0;
+  private _countInCurrentBeat: number = 0; // 0-indexed count-in beat sequence
   private _t0: number = 0;
   private _beatIndexTotal: number = 0;
   private _currentMeasureBeat: number = 0;
@@ -124,6 +140,8 @@ export class MetronomeAudioEngine {
 
   // Sound kit cache (AudioBuffers)
   private _soundBuffers: Map<string, AudioBuffer> = new Map();
+  // Voice sample cache (AudioBuffers for numbers 1 to 12)
+  private _voiceBuffers: Map<number, AudioBuffer> = new Map();
 
   // Callbacks
   public onBeat?: (event: MetronomeBeatEvent) => void;
@@ -139,10 +157,46 @@ export class MetronomeAudioEngine {
       this._masterGain = this._ctx.createGain();
       this._masterGain.gain.setValueAtTime(this._isMuted ? 0 : this._volume, this._ctx.currentTime);
       this._masterGain.connect(this._ctx.destination);
+
+      // Independent voice channel connected to masterGain
+      this._voiceGain = this._ctx.createGain();
+      this._voiceGain.gain.setValueAtTime(
+        this._countInVoiceEnabled ? 1.0 : 0.0,
+        this._ctx.currentTime
+      );
+      this._voiceGain.connect(this._masterGain);
+
       this.synthesizeAllSounds();
+      this.preloadVoiceBuffers();
     }
     if (this._ctx.state === 'suspended') {
       this._ctx.resume().catch(() => {});
+    }
+  }
+
+  /**
+   * Preloads and decodes high-quality natural female voice count-in AudioBuffers (1-12).
+   * Ensures sub-millisecond hardware-accurate scheduling with 0 network latency.
+   */
+  private async preloadVoiceBuffers() {
+    if (!this._ctx || typeof this._ctx.decodeAudioData !== 'function') return;
+    const ctx = this._ctx;
+    for (let i = 1; i <= 12; i++) {
+      if (this._voiceBuffers.has(i)) continue;
+      const b64 = VOICE_COUNT_BASE64[i];
+      if (!b64) continue;
+      try {
+        const binStr =
+          typeof atob === 'function' ? atob(b64) : Buffer.from(b64, 'base64').toString('binary');
+        const bytes = new Uint8Array(binStr.length);
+        for (let j = 0; j < binStr.length; j++) {
+          bytes[j] = binStr.charCodeAt(j);
+        }
+        const buf = await ctx.decodeAudioData(bytes.buffer.slice(0));
+        this._voiceBuffers.set(i, buf);
+      } catch {
+        // Silently continue if decoding is unsupported in test mock
+      }
     }
   }
 
@@ -158,6 +212,9 @@ export class MetronomeAudioEngine {
       'sidestick',
       'digital',
       'soft',
+      'tick',
+      'shaker',
+      'claves',
       'cowbell',
       'rimshot',
     ];
@@ -179,9 +236,15 @@ export class MetronomeAudioEngine {
         ? 0.055
         : sound === 'sidestick' || sound === 'rimshot'
           ? 0.048
-          : sound === 'click'
-            ? 0.042
-            : 0.04;
+          : sound === 'claves'
+            ? 0.045
+            : sound === 'click'
+              ? 0.042
+              : sound === 'shaker'
+                ? 0.035
+                : sound === 'tick'
+                  ? 0.024
+                  : 0.04;
     const length = Math.floor(sampleRate * duration);
     const buffer = ctx.createBuffer(1, length, sampleRate);
     const data = buffer.getChannelData(0);
@@ -256,6 +319,45 @@ export class MetronomeAudioEngine {
           const attack = Math.min(1, t / 0.003);
           const decay = Math.exp(-t * 110);
           data[i] = Math.sin(2 * Math.PI * f * t) * attack * decay * gainMult * 0.85;
+        }
+        break;
+      }
+      case 'tick': {
+        // Natural studio mechanical tick: sharp double-escapement transient with rapid decay
+        const f1 = isAccent ? 4200 : 3400;
+        const f2 = isAccent ? 6400 : 5100;
+        for (let i = 0; i < length; i++) {
+          const t = i / sampleRate;
+          const env = Math.exp(-t * 220);
+          const snap = (Math.random() * 2 - 1) * Math.exp(-t * 1400) * 0.45;
+          const tone = Math.sin(2 * Math.PI * f1 * t) * 0.5 + Math.sin(2 * Math.PI * f2 * t) * 0.3;
+          data[i] = (tone + snap) * env * gainMult * 0.95;
+        }
+        break;
+      }
+      case 'shaker': {
+        // Clean acoustic shaker: shaped high-frequency grain burst with tight envelope
+        const fCenter = isAccent ? 7200 : 5800;
+        for (let i = 0; i < length; i++) {
+          const t = i / sampleRate;
+          const env = Math.exp(-t * 130);
+          const noise = (Math.random() * 2 - 1) * 0.7;
+          const tone = Math.sin(2 * Math.PI * fCenter * t) * 0.3;
+          data[i] = (noise + tone) * env * gainMult * 0.88;
+        }
+        break;
+      }
+      case 'claves': {
+        // High-density Latin hardwood claves strike: resonant ping with wooden click
+        const f1 = isAccent ? 2950 : 2450;
+        const f2 = isAccent ? 5400 : 4600;
+        for (let i = 0; i < length; i++) {
+          const t = i / sampleRate;
+          const env = Math.exp(-t * 95);
+          const click = (Math.random() * 2 - 1) * Math.exp(-t * 1200) * 0.35;
+          const ring =
+            Math.sin(2 * Math.PI * f1 * t) * 0.65 + Math.sin(2 * Math.PI * f2 * t) * 0.25;
+          data[i] = (ring + click) * env * gainMult * 0.92;
         }
         break;
       }
@@ -411,13 +513,15 @@ export class MetronomeAudioEngine {
     this._measureIndex = 0;
 
     const beatsPerBar = this.getBeatsPerMeasure();
-    if (this._countInEnabled) {
+    if (this._countInEnabled && this._countInBars > 0) {
       this._inCountIn = true;
-      this._countInBeatsRemaining = beatsPerBar * Math.max(1, this._countInBars);
+      this._countInTotalBeats = beatsPerBar * Math.max(1, this._countInBars);
+      this._countInCurrentBeat = 0;
       this._mainStartTime = 0;
     } else {
       this._inCountIn = false;
-      this._countInBeatsRemaining = 0;
+      this._countInTotalBeats = 0;
+      this._countInCurrentBeat = 0;
       this._mainStartTime = this._ctx.currentTime + 0.05;
     }
 
@@ -437,7 +541,8 @@ export class MetronomeAudioEngine {
   public stop() {
     this._isPlaying = false;
     this._inCountIn = false;
-    this._countInBeatsRemaining = 0;
+    this._countInTotalBeats = 0;
+    this._countInCurrentBeat = 0;
 
     if (this._timerId) {
       clearInterval(this._timerId);
@@ -473,25 +578,46 @@ export class MetronomeAudioEngine {
     while (this._nextBeatTime < windowEnd) {
       const beatTime = this._nextBeatTime;
       const isCountIn = this._inCountIn;
-      const isAccent =
-        !isCountIn && this._accentBeat >= 0 && this._currentMeasureBeat === this._accentBeat;
-      const countInNumber = isCountIn ? this._countInBeatsRemaining : undefined;
+
+      let isAccent = false;
+      let countInNumber: number | undefined = undefined;
+      let countInBar: number | undefined = undefined;
+      let countInTotalBars: number | undefined = undefined;
+
+      if (isCountIn) {
+        const beatInBar = (this._countInCurrentBeat % beatsPerMeasure) + 1;
+        const currentBar = Math.floor(this._countInCurrentBeat / beatsPerMeasure) + 1;
+        countInNumber = beatInBar;
+        countInBar = currentBar;
+        countInTotalBars = this._countInBars;
+        const isHigh = beatInBar === 1;
+
+        // 1. Schedule count-in click (high pitch on Beat 1 of each bar)
+        this.scheduleAudioPulse(beatTime, false, false, true, isHigh);
+
+        // 2. Schedule spoken voice count-in if enabled
+        if (this._countInVoiceEnabled) {
+          this.scheduleVoicePulse(beatTime, beatInBar);
+        }
+      } else {
+        isAccent = this._accentBeat >= 0 && this._currentMeasureBeat === this._accentBeat;
+        this.scheduleAudioPulse(beatTime, isAccent, false, false, false);
+      }
 
       const currentBpm = this.computeEffectiveBpm(beatTime, this._measureIndex);
       const beatInterval = 60 / currentBpm;
       const subInterval = beatInterval / subsPerBeat;
       const rampProgress = this.computeRampProgress(beatTime, this._measureIndex);
 
-      // 1. Schedule the main beat
-      this.scheduleAudioPulse(beatTime, isAccent, false, isCountIn, this._currentMeasureBeat === 0);
-
       // Record in queue for visual UI
       this._scheduledEvents.push({
-        beatIndex: this._currentMeasureBeat,
+        beatIndex: isCountIn ? countInNumber! - 1 : this._currentMeasureBeat,
         subdivisionIndex: 0,
         isAccent,
         isCountIn,
         countInNumber,
+        countInBar,
+        countInTotalBars,
         time: beatTime,
         effectiveBpm: Math.round(currentBpm),
         rampProgress,
@@ -516,10 +642,12 @@ export class MetronomeAudioEngine {
 
       // 3. Advance to next beat
       this._beatIndexTotal++;
-      const prevMeasureBeat = this._currentMeasureBeat;
-      this._currentMeasureBeat = (this._currentMeasureBeat + 1) % beatsPerMeasure;
-      if (!isCountIn && prevMeasureBeat === beatsPerMeasure - 1) {
-        this._measureIndex++;
+      if (!isCountIn) {
+        const prevMeasureBeat = this._currentMeasureBeat;
+        this._currentMeasureBeat = (this._currentMeasureBeat + 1) % beatsPerMeasure;
+        if (prevMeasureBeat === beatsPerMeasure - 1) {
+          this._measureIndex++;
+        }
       }
 
       // When tempo is variable, each beat advances by its instantaneous beat interval
@@ -527,8 +655,8 @@ export class MetronomeAudioEngine {
 
       // Handle count-in countdown
       if (this._inCountIn) {
-        this._countInBeatsRemaining--;
-        if (this._countInBeatsRemaining <= 0) {
+        this._countInCurrentBeat++;
+        if (this._countInCurrentBeat >= this._countInTotalBeats) {
           this._inCountIn = false;
           // Synchronize main metronome to start right on the next measure boundary
           this._currentMeasureBeat = 0;
@@ -545,6 +673,31 @@ export class MetronomeAudioEngine {
     if (this._scheduledEvents.length > 50) {
       this._scheduledEvents = this._scheduledEvents.filter((e) => e.time >= pruneThreshold);
     }
+  }
+
+  private scheduleVoicePulse(time: number, countNumber: number) {
+    if (!this._ctx || !this._voiceGain) return;
+    const buf = this._voiceBuffers.get(countNumber);
+    if (!buf) return;
+
+    const source = this._ctx.createBufferSource();
+    source.buffer = buf;
+    source.connect(this._voiceGain);
+
+    const safeTime = Math.max(time, this._ctx.currentTime + 0.002);
+    source.start(safeTime);
+  }
+
+  public playVoicePreview(count: number = 1) {
+    this.initAudio();
+    if (!this._ctx) return;
+    const buf = this._voiceBuffers.get(count);
+    if (!buf) return;
+
+    const source = this._ctx.createBufferSource();
+    source.buffer = buf;
+    source.connect(this._voiceGain || this._masterGain || this._ctx.destination);
+    source.start(this._ctx.currentTime);
   }
 
   private scheduleAudioPulse(
@@ -684,9 +837,23 @@ export class MetronomeAudioEngine {
     }
   }
 
-  public setCountIn(enabled: boolean, bars: number = 1) {
-    this._countInEnabled = enabled;
-    this._countInBars = Math.max(1, bars);
+  public setCountIn(enabled: boolean, bars: number = 1, voiceEnabled: boolean = true) {
+    this._countInEnabled = enabled && bars > 0;
+    this._countInBars = Math.max(0, Math.min(3, bars));
+    this._countInVoiceEnabled = voiceEnabled;
+    if (this._voiceGain && this._ctx) {
+      this._voiceGain.gain.setValueAtTime(
+        this._countInVoiceEnabled ? 1.0 : 0.0,
+        this._ctx.currentTime
+      );
+    }
+  }
+
+  public setVoiceCountIn(enabled: boolean) {
+    this._countInVoiceEnabled = enabled;
+    if (this._voiceGain && this._ctx) {
+      this._voiceGain.gain.setValueAtTime(enabled ? 1.0 : 0.0, this._ctx.currentTime);
+    }
   }
 
   public setTempoRamp(config: MetronomeTempoRampConfig | null) {
@@ -761,6 +928,12 @@ export class MetronomeAudioEngine {
 
   public dispose() {
     this.stop();
+    if (this._voiceGain) {
+      try {
+        this._voiceGain.disconnect();
+      } catch {}
+      this._voiceGain = null;
+    }
     if (this._masterGain) {
       try {
         this._masterGain.disconnect();
@@ -774,6 +947,7 @@ export class MetronomeAudioEngine {
       this._ctx = null;
     }
     this._soundBuffers.clear();
+    this._voiceBuffers.clear();
     this._scheduledEvents = [];
   }
 
@@ -801,6 +975,12 @@ export class MetronomeAudioEngine {
   }
   public get countInEnabled(): boolean {
     return this._countInEnabled;
+  }
+  public get countInBars(): number {
+    return this._countInBars;
+  }
+  public get countInVoiceEnabled(): boolean {
+    return this._countInVoiceEnabled;
   }
 }
 

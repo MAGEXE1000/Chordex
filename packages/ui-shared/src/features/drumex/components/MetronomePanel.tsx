@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import {
   useMetronomeStore,
+  metronomeAudioEngine,
   SOUND_LABELS,
   useBackHandler,
   getBeatsPerMeasure,
@@ -10,7 +11,12 @@ import {
   type MetronomePreset,
 } from '@workspace/studio-core';
 import { SharedFloatingHeader } from '../../../shared/layout/StudioLayoutSystem';
-import { TimeSignatureModal, SubdivisionModal, TempoRampModal } from './MetronomeModals';
+import {
+  TimeSignatureModal,
+  SubdivisionModal,
+  TempoRampModal,
+  CountInModal,
+} from './MetronomeModals';
 
 interface MetronomePanelProps {
   onBack?: () => void;
@@ -27,6 +33,9 @@ export function MetronomePanel({ onBack, onScroll }: MetronomePanelProps) {
     volume,
     isMuted,
     countInEnabled,
+    countInBars,
+    countInVoiceEnabled,
+    isTempoLocked,
     tempoRamp,
     effectiveBpm,
     rampProgress,
@@ -35,12 +44,18 @@ export function MetronomePanel({ onBack, onScroll }: MetronomePanelProps) {
     activeSubdivision,
     isCountIn,
     countInNumber,
+    countInBar,
+    countInTotalBars,
     userPresets,
     presets,
     activePresetId,
     practiceTimerActive,
     practiceTimerMinutes,
     practiceSecondsRemaining,
+    stopwatchDurationSec,
+    stopwatchRemainingSec,
+    stopwatchIsRunning,
+    stopwatchIsCompleted,
     setBpm,
     adjustBpm,
     setTimeSignature,
@@ -50,6 +65,15 @@ export function MetronomePanel({ onBack, onScroll }: MetronomePanelProps) {
     setVolume,
     toggleMute,
     toggleCountIn,
+    setCountInBars,
+    setCountInVoice,
+    toggleTempoLock,
+    startStopwatch,
+    pauseStopwatch,
+    toggleStopwatch,
+    resetStopwatch,
+    adjustStopwatchDuration,
+    setStopwatchDuration,
     togglePlay,
     tapTempo,
     loadPreset,
@@ -68,7 +92,8 @@ export function MetronomePanel({ onBack, onScroll }: MetronomePanelProps) {
   const [showTimeSigModal, setShowTimeSigModal] = useState(false);
   const [showSubdivisionModal, setShowSubdivisionModal] = useState(false);
   const [showTempoRampModal, setShowTempoRampModal] = useState(false);
-  const [showVolumePopover, setShowVolumePopover] = useState(false);
+  const [showCountInModal, setShowCountInModal] = useState(false);
+  const [bottomBarMode, setBottomBarMode] = useState<'normal' | 'volume' | 'stopwatch'>('normal');
   const [presetSearch, setPresetSearch] = useState('');
   const [showSoundMenu, setShowSoundMenu] = useState(false);
   const [activePresetMenuId, setActivePresetMenuId] = useState<string | null>(null);
@@ -111,6 +136,10 @@ export function MetronomePanel({ onBack, onScroll }: MetronomePanelProps) {
         setShowTempoRampModal(false);
         return true;
       }
+      if (showCountInModal) {
+        setShowCountInModal(false);
+        return true;
+      }
       if (showTimeSigModal) {
         setShowTimeSigModal(false);
         return true;
@@ -119,8 +148,8 @@ export function MetronomePanel({ onBack, onScroll }: MetronomePanelProps) {
         setShowSubdivisionModal(false);
         return true;
       }
-      if (showVolumePopover) {
-        setShowVolumePopover(false);
+      if (bottomBarMode !== 'normal') {
+        setBottomBarMode('normal');
         return true;
       }
       if (presetFormMode !== null) {
@@ -140,9 +169,10 @@ export function MetronomePanel({ onBack, onScroll }: MetronomePanelProps) {
     },
     [
       showTempoRampModal,
+      showCountInModal,
       showTimeSigModal,
       showSubdivisionModal,
-      showVolumePopover,
+      bottomBarMode,
       presetFormMode,
       isPresetsOpen,
       showSoundMenu,
@@ -472,7 +502,7 @@ export function MetronomePanel({ onBack, onScroll }: MetronomePanelProps) {
 
         {/* 2. GIANT BPM DISPLAY & CONTROLS */}
         <section className="bg-white dark:bg-zinc-900 rounded-3xl p-5 border border-slate-200/80 dark:border-zinc-800 shadow-[0_8px_28px_rgba(0,0,0,0.04)] flex flex-col items-center text-center relative overflow-hidden">
-          {/* Tempo Description */}
+          {/* Tempo Description & Status */}
           <div className="flex items-center gap-2 mb-1">
             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 border border-slate-200/70 dark:border-zinc-700">
               {tempoDescriptor}
@@ -480,6 +510,12 @@ export function MetronomePanel({ onBack, onScroll }: MetronomePanelProps) {
             <span className="text-xs font-semibold text-slate-400 dark:text-zinc-500">
               {tempoTag}
             </span>
+            {isTempoLocked && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 border border-amber-200/80 dark:border-amber-900/60">
+                <span className="material-symbols-outlined text-[12px]">lock</span>
+                LOCKED
+              </span>
+            )}
           </div>
 
           {/* Steppers & Giant BPM */}
@@ -487,16 +523,26 @@ export function MetronomePanel({ onBack, onScroll }: MetronomePanelProps) {
             <div className="flex items-center gap-1 sm:gap-1.5">
               <button
                 aria-label="Decrease BPM by 5"
+                disabled={isTempoLocked}
                 onClick={() => adjustBpm(-5)}
-                className="w-9 h-9 rounded-full bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-300 font-manrope font-bold text-xs flex items-center justify-center border border-slate-200/70 dark:border-zinc-700 tap-press cursor-pointer"
+                className={`w-9 h-9 rounded-full bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 font-manrope font-bold text-xs flex items-center justify-center border border-slate-200/70 dark:border-zinc-700 transition ${
+                  isTempoLocked
+                    ? 'opacity-40 cursor-not-allowed'
+                    : 'hover:bg-slate-200 dark:hover:bg-zinc-700 tap-press cursor-pointer'
+                }`}
                 type="button"
               >
                 -5
               </button>
               <button
                 aria-label="Decrease BPM by 1"
+                disabled={isTempoLocked}
                 onClick={() => adjustBpm(-1)}
-                className="w-11 h-11 rounded-full bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-800 dark:text-zinc-100 flex items-center justify-center shadow-xs border border-slate-200 dark:border-zinc-700 tap-press cursor-pointer"
+                className={`w-11 h-11 rounded-full bg-slate-100 dark:bg-zinc-800 text-slate-800 dark:text-zinc-100 flex items-center justify-center shadow-xs border border-slate-200 dark:border-zinc-700 transition ${
+                  isTempoLocked
+                    ? 'opacity-40 cursor-not-allowed'
+                    : 'hover:bg-slate-200 dark:hover:bg-zinc-700 tap-press cursor-pointer'
+                }`}
                 type="button"
               >
                 <span className="material-symbols-outlined text-[20px]">remove</span>
@@ -515,16 +561,26 @@ export function MetronomePanel({ onBack, onScroll }: MetronomePanelProps) {
             <div className="flex items-center gap-1 sm:gap-1.5">
               <button
                 aria-label="Increase BPM by 1"
+                disabled={isTempoLocked}
                 onClick={() => adjustBpm(1)}
-                className="w-11 h-11 rounded-full bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-800 dark:text-zinc-100 flex items-center justify-center shadow-xs border border-slate-200 dark:border-zinc-700 tap-press cursor-pointer"
+                className={`w-11 h-11 rounded-full bg-slate-100 dark:bg-zinc-800 text-slate-800 dark:text-zinc-100 flex items-center justify-center shadow-xs border border-slate-200 dark:border-zinc-700 transition ${
+                  isTempoLocked
+                    ? 'opacity-40 cursor-not-allowed'
+                    : 'hover:bg-slate-200 dark:hover:bg-zinc-700 tap-press cursor-pointer'
+                }`}
                 type="button"
               >
                 <span className="material-symbols-outlined text-[20px]">add</span>
               </button>
               <button
                 aria-label="Increase BPM by 5"
+                disabled={isTempoLocked}
                 onClick={() => adjustBpm(5)}
-                className="w-9 h-9 rounded-full bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-300 font-manrope font-bold text-xs flex items-center justify-center border border-slate-200/70 dark:border-zinc-700 tap-press cursor-pointer"
+                className={`w-9 h-9 rounded-full bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 font-manrope font-bold text-xs flex items-center justify-center border border-slate-200/70 dark:border-zinc-700 transition ${
+                  isTempoLocked
+                    ? 'opacity-40 cursor-not-allowed'
+                    : 'hover:bg-slate-200 dark:hover:bg-zinc-700 tap-press cursor-pointer'
+                }`}
                 type="button"
               >
                 +5
@@ -539,8 +595,11 @@ export function MetronomePanel({ onBack, onScroll }: MetronomePanelProps) {
               min={40}
               max={280}
               value={bpm}
+              disabled={isTempoLocked}
               onChange={(e) => setBpm(Number(e.target.value))}
-              className="metronome-range w-full h-2 rounded-lg appearance-none cursor-pointer"
+              className={`metronome-range w-full h-2 rounded-lg appearance-none ${
+                isTempoLocked ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'
+              }`}
             />
             <div className="flex justify-between text-[10px] font-semibold text-slate-400 dark:text-zinc-500 mt-1.5 px-0.5 font-mono">
               <span>40 LARGO</span>
@@ -572,16 +631,23 @@ export function MetronomePanel({ onBack, onScroll }: MetronomePanelProps) {
           <div className="w-full mt-4 pt-3 border-t border-slate-100 dark:border-zinc-800/80 flex items-center justify-center gap-3">
             <button
               aria-label="Tap Tempo"
+              disabled={isTempoLocked}
               onClick={tapTempo}
-              className="w-full py-2.5 px-4 rounded-xl bg-slate-50 dark:bg-zinc-800 hover:bg-slate-100 dark:hover:bg-zinc-700 border border-slate-200/90 dark:border-zinc-700 flex items-center justify-center gap-2 text-slate-800 dark:text-zinc-200 font-manrope font-bold text-xs tracking-tight shadow-xs tap-press cursor-pointer"
+              className={`w-full py-2.5 px-4 rounded-xl bg-slate-50 dark:bg-zinc-800 border border-slate-200/90 dark:border-zinc-700 flex items-center justify-center gap-2 text-slate-800 dark:text-zinc-200 font-manrope font-bold text-xs tracking-tight shadow-xs transition ${
+                isTempoLocked
+                  ? 'opacity-40 cursor-not-allowed'
+                  : 'hover:bg-slate-100 dark:hover:bg-zinc-700 tap-press cursor-pointer'
+              }`}
               type="button"
             >
-              <span className="material-symbols-outlined text-[18px] text-[#007aff]">
-                touch_app
+              <span
+                className={`material-symbols-outlined text-[18px] ${isTempoLocked ? 'text-slate-400' : 'text-[#007aff]'}`}
+              >
+                {isTempoLocked ? 'lock' : 'touch_app'}
               </span>
-              TAP TEMPO{' '}
+              {isTempoLocked ? 'TEMPO LOCKED' : 'TAP TEMPO'}{' '}
               <span className="text-[10px] text-slate-400 dark:text-zinc-500 font-normal">
-                (Tap 4 times)
+                {isTempoLocked ? '(Unlock below to adjust)' : '(Tap 4 times)'}
               </span>
             </button>
           </div>
@@ -702,32 +768,41 @@ export function MetronomePanel({ onBack, onScroll }: MetronomePanelProps) {
             {/* Sound Dropdown Popover */}
             {showSoundMenu && (
               <div className="absolute top-10 left-0 z-50 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl shadow-lg p-1 min-w-[170px] flex flex-col gap-0.5">
-                {(['woodblock', 'click', 'sidestick', 'digital', 'soft'] as MetronomeSoundId[]).map(
-                  (sId) => (
-                    <button
-                      key={sId}
-                      onClick={() => {
-                        setSound(sId);
-                        setShowSoundMenu(false);
-                      }}
-                      className={`w-full text-left px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-between ${
-                        sound === sId
-                          ? 'bg-[#007aff] text-white'
-                          : 'text-slate-700 dark:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-700'
-                      }`}
-                    >
-                      <span>{SOUND_LABELS[sId]}</span>
-                      {sound === sId && <span className="text-[10px]">✓</span>}
-                    </button>
-                  )
-                )}
+                {(
+                  [
+                    'woodblock',
+                    'click',
+                    'sidestick',
+                    'digital',
+                    'soft',
+                    'tick',
+                    'shaker',
+                    'claves',
+                  ] as MetronomeSoundId[]
+                ).map((sId) => (
+                  <button
+                    key={sId}
+                    onClick={() => {
+                      setSound(sId);
+                      setShowSoundMenu(false);
+                    }}
+                    className={`w-full text-left px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-between ${
+                      sound === sId
+                        ? 'bg-[#007aff] text-white'
+                        : 'text-slate-700 dark:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-700'
+                    }`}
+                  >
+                    <span>{SOUND_LABELS[sId]}</span>
+                    {sound === sId && <span className="text-[10px]">✓</span>}
+                  </button>
+                ))}
               </div>
             )}
           </div>
 
-          {/* Count-in Toggle & Bars */}
+          {/* Count-in Trigger & Bars */}
           <div
-            onClick={toggleCountIn}
+            onClick={() => setShowCountInModal(true)}
             className="flex items-center gap-2 bg-slate-50 dark:bg-zinc-800/80 border border-slate-200/80 dark:border-zinc-700 rounded-xl px-2.5 py-1.5 cursor-pointer tap-press"
           >
             <span className="material-symbols-outlined text-[16px] text-slate-500 dark:text-zinc-400">
@@ -738,166 +813,316 @@ export function MetronomePanel({ onBack, onScroll }: MetronomePanelProps) {
                 Count-In
               </span>
               <span className="text-[11px] font-extrabold text-[#007aff] leading-none mt-0.5">
-                1 Bar (4 beats)
+                {countInEnabled && countInBars > 0
+                  ? `${countInBars} Bar${countInBars > 1 ? 's' : ''}${countInVoiceEnabled ? ' • Voice' : ''}`
+                  : 'Off'}
               </span>
             </div>
             <button
-              className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ml-0.5 transition-colors ${
-                countInEnabled
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleCountIn();
+              }}
+              className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ml-0.5 transition-colors cursor-pointer ${
+                countInEnabled && countInBars > 0
                   ? 'bg-[#007aff] text-white'
                   : 'bg-slate-200 dark:bg-zinc-700 text-transparent'
               }`}
               type="button"
+              title={countInEnabled && countInBars > 0 ? 'Disable Count-In' : 'Enable Count-In'}
             >
               ✓
             </button>
           </div>
         </section>
+
+        {/* 5. TEMPO LOCK / BPM HOLD (Protection during practice) */}
+        <section className="bg-white dark:bg-zinc-900 rounded-2xl p-3.5 border border-slate-200/80 dark:border-zinc-800 shadow-xs flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div
+              className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
+                isTempoLocked
+                  ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
+                  : 'bg-slate-100 dark:bg-zinc-800 text-slate-500 dark:text-zinc-400'
+              }`}
+            >
+              <span className="material-symbols-outlined text-[18px]">
+                {isTempoLocked ? 'lock' : 'lock_open'}
+              </span>
+            </div>
+            <div className="flex flex-col">
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-bold text-slate-800 dark:text-zinc-100 font-manrope">
+                  Tempo Lock
+                </span>
+                {isTempoLocked && (
+                  <span className="px-1.5 py-0.2 rounded text-[9px] font-extrabold bg-amber-500/15 text-amber-600 dark:text-amber-400 uppercase tracking-wider">
+                    Locked
+                  </span>
+                )}
+              </div>
+              <span className="text-[10px] text-slate-400 dark:text-zinc-500 leading-tight">
+                Hold BPM to avoid accidental changes while practicing
+              </span>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={toggleTempoLock}
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold font-manrope transition-all tap-press cursor-pointer flex items-center gap-1.5 ${
+              isTempoLocked
+                ? 'bg-amber-500 text-white shadow-xs hover:bg-amber-600'
+                : 'bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 hover:bg-slate-200 dark:hover:bg-zinc-700'
+            }`}
+          >
+            <span className="material-symbols-outlined text-[14px]">
+              {isTempoLocked ? 'lock' : 'lock_open'}
+            </span>
+            {isTempoLocked ? 'Unlock' : 'Lock BPM'}
+          </button>
+        </section>
       </main>
 
-      {/* Floating Volume Backdrop (click away) */}
-      {showVolumePopover && (
+      {/* Backdrop for morphed bottom bar mode (volume or stopwatch click away) */}
+      {bottomBarMode !== 'normal' && (
         <div
-          className="fixed inset-0 z-30 pointer-events-auto"
-          onClick={() => setShowVolumePopover(false)}
+          className="fixed inset-0 z-30 pointer-events-auto bg-black/10 dark:bg-black/25 backdrop-blur-[1px] transition-opacity duration-150"
+          onClick={() => setBottomBarMode('normal')}
         />
       )}
 
-      {/* ── COMPACT FLOATING QUICK CONTROLS DOCK ──────────────────────────── */}
+      {/* ── MORPHING FLOATING QUICK CONTROLS DOCK ─────────────────────────── */}
       <div
         className="fixed inset-x-0 flex flex-col justify-center items-center pointer-events-none z-40"
         style={{
           bottom: 'max(16px, env(safe-area-inset-bottom, 16px))',
         }}
       >
-        {/* Floating Volume Slider Popover */}
-        {showVolumePopover && (
-          <div className="pointer-events-auto mb-2.5 w-[280px] sm:w-[320px] bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md rounded-2xl px-4 py-2.5 shadow-xl border border-slate-200/90 dark:border-zinc-800 flex items-center gap-3 animate-in fade-in zoom-in-95 duration-150 z-40">
-            <button
-              type="button"
-              aria-label="Toggle mute"
-              onClick={toggleMute}
-              className={`w-8 h-8 rounded-full flex items-center justify-center transition cursor-pointer shrink-0 ${
-                isMuted
-                  ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-500'
-                  : 'bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-200 hover:bg-slate-200 dark:hover:bg-zinc-700'
-              }`}
-            >
-              <span className="material-symbols-outlined text-[18px]">
-                {isMuted ? 'volume_off' : volume === 0 ? 'volume_mute' : 'volume_up'}
-              </span>
-            </button>
-            <input
-              type="range"
-              min={0}
-              max={100}
-              value={isMuted ? 0 : volume}
-              onChange={(e) => setVolume(Number(e.target.value))}
-              className="metronome-range flex-1 h-2 rounded-lg appearance-none cursor-pointer"
-            />
-            <span className="text-xs font-mono font-bold text-slate-700 dark:text-zinc-300 w-9 text-right shrink-0">
-              {isMuted ? 0 : volume}%
-            </span>
-          </div>
-        )}
-
         <aside
           aria-label="Metronome quick controls"
-          className="pointer-events-auto bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md rounded-full px-2.5 py-1.5 shadow-[0_4px_20px_rgba(0,0,0,0.08)] border border-slate-200/80 dark:border-zinc-800 flex items-center gap-2"
+          className="pointer-events-auto bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md rounded-full px-2.5 py-1.5 shadow-[0_4px_24px_rgba(0,0,0,0.12)] border border-slate-200/80 dark:border-zinc-800 flex items-center transition-all duration-200 ease-out"
         >
-          {/* Volume Trigger Button */}
-          <button
-            aria-label="Volume & Sound"
-            onClick={() => setShowVolumePopover(!showVolumePopover)}
-            className={`w-[38px] h-[38px] rounded-full flex items-center justify-center transition tap-press focus:outline-none cursor-pointer relative ${
-              isMuted
-                ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-500'
-                : showVolumePopover
-                  ? 'bg-blue-50 dark:bg-blue-950/40 text-[#007aff]'
-                  : 'bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-200'
-            }`}
-            title={`Volume: ${isMuted ? 'Muted' : `${volume}%`}`}
-            type="button"
-          >
-            <span className="material-symbols-outlined text-[19px]">
-              {isMuted ? 'volume_off' : 'volume_up'}
-            </span>
-          </button>
+          {bottomBarMode === 'volume' ? (
+            /* Volume Configuration Morphed Mode */
+            <div className="flex items-center gap-1.5 px-1 animate-in fade-in zoom-in-95 duration-150">
+              <button
+                type="button"
+                aria-label="Toggle mute"
+                onClick={toggleMute}
+                className={`w-[36px] h-[36px] rounded-full flex items-center justify-center transition tap-press cursor-pointer shrink-0 ${
+                  isMuted
+                    ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-500'
+                    : 'bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-200 hover:bg-slate-200 dark:hover:bg-zinc-700'
+                }`}
+                title={isMuted ? 'Unmute' : 'Mute'}
+              >
+                <span className="material-symbols-outlined text-[19px]">
+                  {isMuted ? 'volume_off' : volume === 0 ? 'volume_mute' : 'volume_up'}
+                </span>
+              </button>
+              <div className="flex items-center gap-2 w-[160px] sm:w-[200px] px-1">
+                <input
+                  type="range"
+                  min={0}
+                  max={100}
+                  value={isMuted ? 0 : volume}
+                  onChange={(e) => setVolume(Number(e.target.value))}
+                  className="metronome-range w-full h-2 rounded-lg appearance-none cursor-pointer"
+                />
+                <span className="text-xs font-mono font-bold text-slate-700 dark:text-zinc-300 w-8 text-right shrink-0">
+                  {isMuted ? 0 : volume}%
+                </span>
+              </div>
+              <button
+                type="button"
+                aria-label="Done with volume"
+                onClick={() => setBottomBarMode('normal')}
+                className="w-[34px] h-[34px] rounded-full bg-[#007aff] hover:bg-blue-600 text-white flex items-center justify-center transition tap-press cursor-pointer shrink-0 shadow-xs ml-0.5"
+                title="Done"
+              >
+                <span className="material-symbols-outlined text-[18px]">check</span>
+              </button>
+            </div>
+          ) : bottomBarMode === 'stopwatch' ? (
+            /* Stopwatch / Timer Morphed Mode: [Stopwatch] 05:00 [−] [+] [Start/Stop] */
+            <div className="flex items-center gap-1.5 px-1 animate-in fade-in zoom-in-95 duration-150">
+              <button
+                type="button"
+                aria-label="Reset stopwatch"
+                onClick={resetStopwatch}
+                className="w-[34px] h-[34px] rounded-full bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-200 flex items-center justify-center transition tap-press cursor-pointer shrink-0"
+                title="Reset timer"
+              >
+                <span className="material-symbols-outlined text-[18px]">
+                  {stopwatchRemainingSec === 0 ? 'restart_alt' : 'timer'}
+                </span>
+              </button>
 
-          {/* Practice Timer */}
-          <button
-            aria-label="Practice Timer"
-            onClick={togglePracticeTimer}
-            className={`w-[38px] h-[38px] rounded-full flex items-center justify-center transition tap-press focus:outline-none cursor-pointer relative ${
-              practiceTimerActive
-                ? 'bg-blue-50 dark:bg-blue-950/40 text-[#007aff]'
-                : 'bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-200'
-            }`}
-            title={
-              practiceTimerActive
-                ? `Timer: ${formatTimerTime(practiceSecondsRemaining)}`
-                : 'Practice Timer'
-            }
-            type="button"
-          >
-            <span className="material-symbols-outlined text-[19px]">timer</span>
-            {practiceTimerActive && (
-              <span className="absolute -top-1 -right-1 px-1 py-0.2 bg-[#007aff] text-white text-[8px] font-bold rounded-full">
-                {Math.ceil(practiceSecondsRemaining / 60)}m
-              </span>
-            )}
-          </button>
+              <div className="flex flex-col items-center justify-center px-1.5 min-w-[56px]">
+                <span
+                  className={`text-sm font-black font-mono tracking-tight tabular-nums leading-none ${
+                    stopwatchRemainingSec === 0
+                      ? 'text-rose-500 animate-pulse'
+                      : stopwatchIsRunning
+                        ? 'text-[#007aff]'
+                        : 'text-slate-800 dark:text-zinc-100'
+                  }`}
+                >
+                  {formatTimerTime(stopwatchRemainingSec)}
+                </span>
+                <span className="text-[8px] font-bold uppercase tracking-wider text-slate-400 dark:text-zinc-500 mt-0.5 leading-none">
+                  {stopwatchRemainingSec === 0
+                    ? 'Finished'
+                    : stopwatchIsRunning
+                      ? 'Running'
+                      : 'Paused'}
+                </span>
+              </div>
 
-          {/* Incremental Tempo Trigger */}
-          <button
-            aria-label="Incremental Tempo"
-            onClick={() => setShowTempoRampModal(true)}
-            className={`w-[38px] h-[38px] rounded-full flex items-center justify-center transition tap-press focus:outline-none cursor-pointer relative ${
-              tempoRamp.enabled
-                ? 'bg-blue-50 dark:bg-blue-950/40 text-[#007aff]'
-                : 'bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-200'
-            }`}
-            title={
-              tempoRamp.enabled
-                ? `Progression: ${tempoRamp.startBpm} → ${tempoRamp.targetBpm} BPM`
-                : 'Incremental Tempo'
-            }
-            type="button"
-          >
-            <span className="material-symbols-outlined text-[19px]">trending_up</span>
-            {tempoRamp.enabled && (
-              <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-[#007aff] ring-2 ring-white dark:ring-zinc-900" />
-            )}
-          </button>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  aria-label="Decrease time by 1 minute"
+                  onClick={() => adjustStopwatchDuration(-60)}
+                  className="w-[30px] h-[30px] rounded-full bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-800 dark:text-zinc-200 flex items-center justify-center font-bold text-xs tap-press cursor-pointer shrink-0 border border-slate-200/60 dark:border-zinc-700"
+                >
+                  <span className="material-symbols-outlined text-[15px]">remove</span>
+                </button>
+                <button
+                  type="button"
+                  aria-label="Increase time by 1 minute"
+                  onClick={() => adjustStopwatchDuration(60)}
+                  className="w-[30px] h-[30px] rounded-full bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-800 dark:text-zinc-200 flex items-center justify-center font-bold text-xs tap-press cursor-pointer shrink-0 border border-slate-200/60 dark:border-zinc-700"
+                >
+                  <span className="material-symbols-outlined text-[15px]">add</span>
+                </button>
+              </div>
 
-          {/* Presets Bottom Sheet Trigger */}
-          <button
-            aria-label="Presets"
-            onClick={() => setIsPresetsOpen(true)}
-            className="w-[38px] h-[38px] rounded-full bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-200 flex items-center justify-center transition tap-press focus:outline-none relative cursor-pointer"
-            title="Presets"
-            type="button"
-          >
-            <span className="material-symbols-outlined text-[19px]">bookmark</span>
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#007aff] ring-2 ring-white dark:ring-zinc-900" />
-          </button>
+              <button
+                type="button"
+                aria-label={stopwatchIsRunning ? 'Pause Stopwatch' : 'Start Stopwatch'}
+                onClick={toggleStopwatch}
+                className={`h-[34px] px-3 rounded-full flex items-center justify-center gap-1 text-xs font-extrabold font-manrope transition tap-press cursor-pointer shrink-0 ml-0.5 shadow-xs ${
+                  stopwatchIsRunning
+                    ? 'bg-amber-500 hover:bg-amber-600 text-white'
+                    : 'bg-[#007aff] hover:bg-blue-600 text-white'
+                }`}
+              >
+                <span className="material-symbols-outlined text-[15px]">
+                  {stopwatchIsRunning ? 'pause' : 'play_arrow'}
+                </span>
+                <span>{stopwatchIsRunning ? 'Pause' : 'Start'}</span>
+              </button>
 
-          {/* Start/Stop FAB */}
-          <button
-            aria-label="Start or Stop Metronome"
-            onClick={togglePlay}
-            className={`w-[44px] h-[44px] rounded-full text-white shadow-md flex items-center justify-center transition tap-press focus:outline-none ml-0.5 cursor-pointer ${
-              isPlaying
-                ? 'bg-rose-500 hover:bg-rose-600 shadow-rose-500/25 active:scale-95'
-                : 'bg-[#007aff] hover:bg-blue-600 shadow-blue-500/25 active:scale-95'
-            }`}
-            title={isPlaying ? 'Stop' : 'Start'}
-            type="button"
-          >
-            <span className={`material-symbols-outlined text-[24px] ${isPlaying ? '' : 'ml-0.5'}`}>
-              {isPlaying ? 'stop' : 'play_arrow'}
-            </span>
-          </button>
+              <button
+                type="button"
+                aria-label="Close stopwatch"
+                onClick={() => setBottomBarMode('normal')}
+                className="w-[30px] h-[30px] rounded-full bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-400 hover:text-slate-600 dark:text-zinc-400 dark:hover:text-zinc-200 flex items-center justify-center transition tap-press cursor-pointer shrink-0"
+                title="Done"
+              >
+                <span className="material-symbols-outlined text-[16px]">close</span>
+              </button>
+            </div>
+          ) : (
+            /* Normal Mode Dock */
+            <div className="flex items-center gap-2">
+              {/* Volume Trigger Button */}
+              <button
+                aria-label="Volume & Sound"
+                onClick={() => setBottomBarMode('volume')}
+                className={`w-[38px] h-[38px] rounded-full flex items-center justify-center transition tap-press focus:outline-none cursor-pointer relative ${
+                  isMuted
+                    ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-500'
+                    : 'bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-200'
+                }`}
+                title={`Volume: ${isMuted ? 'Muted' : `${volume}%`}`}
+                type="button"
+              >
+                <span className="material-symbols-outlined text-[19px]">
+                  {isMuted ? 'volume_off' : 'volume_up'}
+                </span>
+              </button>
+
+              {/* Stopwatch / Practice Timer */}
+              <button
+                aria-label="Stopwatch Timer"
+                onClick={() => setBottomBarMode('stopwatch')}
+                className={`w-[38px] h-[38px] rounded-full flex items-center justify-center transition tap-press focus:outline-none cursor-pointer relative ${
+                  stopwatchIsRunning
+                    ? 'bg-blue-50 dark:bg-blue-950/40 text-[#007aff]'
+                    : 'bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-200'
+                }`}
+                title={
+                  stopwatchIsRunning
+                    ? `Stopwatch: ${formatTimerTime(stopwatchRemainingSec)}`
+                    : 'Stopwatch / Timer'
+                }
+                type="button"
+              >
+                <span className="material-symbols-outlined text-[19px]">timer</span>
+                {stopwatchIsRunning && (
+                  <span className="absolute -top-1 -right-1 px-1 py-0.2 bg-[#007aff] text-white text-[8px] font-bold rounded-full">
+                    {Math.ceil(stopwatchRemainingSec / 60)}m
+                  </span>
+                )}
+              </button>
+
+              {/* Incremental Tempo Trigger */}
+              <button
+                aria-label="Incremental Tempo"
+                onClick={() => setShowTempoRampModal(true)}
+                className={`w-[38px] h-[38px] rounded-full flex items-center justify-center transition tap-press focus:outline-none cursor-pointer relative ${
+                  tempoRamp.enabled
+                    ? 'bg-blue-50 dark:bg-blue-950/40 text-[#007aff]'
+                    : 'bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-200'
+                }`}
+                title={
+                  tempoRamp.enabled
+                    ? `Progression: ${tempoRamp.startBpm} → ${tempoRamp.targetBpm} BPM`
+                    : 'Incremental Tempo'
+                }
+                type="button"
+              >
+                <span className="material-symbols-outlined text-[19px]">trending_up</span>
+                {tempoRamp.enabled && (
+                  <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-[#007aff] ring-2 ring-white dark:ring-zinc-900" />
+                )}
+              </button>
+
+              {/* Presets Bottom Sheet Trigger */}
+              <button
+                aria-label="Presets"
+                onClick={() => setIsPresetsOpen(true)}
+                className="w-[38px] h-[38px] rounded-full bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-200 flex items-center justify-center transition tap-press focus:outline-none relative cursor-pointer"
+                title="Presets"
+                type="button"
+              >
+                <span className="material-symbols-outlined text-[19px]">bookmark</span>
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#007aff] ring-2 ring-white dark:ring-zinc-900" />
+              </button>
+
+              {/* Start/Stop FAB */}
+              <button
+                aria-label="Start or Stop Metronome"
+                onClick={togglePlay}
+                className={`w-[44px] h-[44px] rounded-full text-white shadow-md flex items-center justify-center transition tap-press focus:outline-none ml-0.5 cursor-pointer ${
+                  isPlaying
+                    ? 'bg-rose-500 hover:bg-rose-600 shadow-rose-500/25 active:scale-95'
+                    : 'bg-[#007aff] hover:bg-blue-600 shadow-blue-500/25 active:scale-95'
+                }`}
+                title={isPlaying ? 'Stop' : 'Start'}
+                type="button"
+              >
+                <span
+                  className={`material-symbols-outlined text-[24px] ${isPlaying ? '' : 'ml-0.5'}`}
+                >
+                  {isPlaying ? 'stop' : 'play_arrow'}
+                </span>
+              </button>
+            </div>
+          )}
         </aside>
       </div>
 
@@ -1467,21 +1692,34 @@ export function MetronomePanel({ onBack, onScroll }: MetronomePanelProps) {
         onClose={() => setShowTempoRampModal(false)}
       />
 
+      {/* Centered Modern Modal for Customizable Count-In & Voice */}
+      <CountInModal
+        isOpen={showCountInModal}
+        countInBars={countInBars}
+        countInVoiceEnabled={countInVoiceEnabled}
+        onSelectBars={(bars) => setCountInBars(bars)}
+        onToggleVoice={(enabled) => setCountInVoice(enabled)}
+        onPreviewVoice={() => metronomeAudioEngine.playVoicePreview(1)}
+        onClose={() => setShowCountInModal(false)}
+      />
+
       {/* Synchronized Visual Count-In Countdown Overlay */}
       {isPlaying && isCountIn && (
-        <div className="fixed inset-0 z-[100] pointer-events-none flex flex-col items-center justify-center bg-black/30 backdrop-blur-[2px] animate-in fade-in duration-100">
-          <div className="flex flex-col items-center justify-center p-8 rounded-3xl bg-white/95 dark:bg-zinc-900/95 shadow-2xl border border-slate-200/80 dark:border-zinc-800">
+        <div className="fixed inset-0 z-[100] pointer-events-none flex flex-col items-center justify-center bg-black/40 backdrop-blur-[2px] animate-in fade-in duration-100">
+          <div className="flex flex-col items-center justify-center px-10 py-8 rounded-3xl bg-white/95 dark:bg-zinc-900/95 shadow-2xl border border-slate-200/80 dark:border-zinc-800 animate-in zoom-in-95 duration-100 min-w-[200px]">
             <span className="text-[11px] font-extrabold tracking-widest text-[#007aff] uppercase font-manrope mb-1">
-              COUNT-IN
+              {(countInTotalBars ?? 1) > 1
+                ? `BAR ${countInBar ?? 1} OF ${countInTotalBars}`
+                : 'COUNT-IN'}
             </span>
             <span
-              key={countInNumber}
+              key={`${countInBar}-${countInNumber}`}
               className="text-8xl sm:text-9xl font-black font-manrope text-slate-900 dark:text-white tabular-nums animate-in zoom-in-75 duration-75 leading-none"
             >
-              {countInNumber ?? beatsCount - activeBeat}
+              {countInNumber ?? (activeBeat >= 0 ? activeBeat + 1 : 1)}
             </span>
             <span className="text-xs font-semibold text-slate-400 dark:text-zinc-500 mt-2 font-manrope">
-              Get ready...
+              {countInVoiceEnabled ? 'Voice Count-In' : 'Get ready...'}
             </span>
           </div>
         </div>

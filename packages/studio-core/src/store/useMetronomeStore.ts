@@ -44,6 +44,9 @@ export const SOUND_LABELS: Record<MetronomeSoundId, string> = {
   sidestick: 'Studio Sidestick',
   digital: 'Digital Beep',
   soft: 'Soft Click',
+  tick: 'Studio Tick',
+  shaker: 'Studio Shaker',
+  claves: 'Latin Claves',
   cowbell: 'Acoustic Woodblock',
   rimshot: 'Studio Sidestick',
 };
@@ -165,7 +168,9 @@ export interface MetronomeState {
   volume: number; // 0 - 100
   isMuted: boolean;
   countInEnabled: boolean;
-  countInBars: number;
+  countInBars: number; // 0 (Off), 1, 2, 3
+  countInVoiceEnabled: boolean; // Spoken female voice count-in
+  isTempoLocked: boolean; // Protects BPM against accidental touches
 
   // Incremental Tempo Ramp
   tempoRamp: MetronomeTempoRampConfig;
@@ -178,7 +183,9 @@ export interface MetronomeState {
   activeSubdivision: number; // 0 to sub-1
   isAccent: boolean;
   isCountIn: boolean;
-  countInNumber?: number; // Countdown 4, 3, 2, 1
+  countInNumber?: number; // Beat in bar: 1, 2, 3, 4
+  countInBar?: number; // Active bar: 1, 2, 3
+  countInTotalBars?: number; // Total count-in bars: 1, 2, 3
 
   // Presets
   activePresetId: string | null;
@@ -186,7 +193,13 @@ export interface MetronomeState {
   factoryPresets: MetronomePreset[];
   presets: MetronomePreset[]; // Canonical saved presets (userPresets)
 
-  // Practice Timer
+  // Stopwatch / Practice Timer
+  stopwatchDurationSec: number; // Configured practice duration (e.g. 300 = 5:00)
+  stopwatchRemainingSec: number; // Monotonically tracked remaining seconds
+  stopwatchIsRunning: boolean;
+  stopwatchIsCompleted: boolean;
+
+  // Legacy practice timer compatibility
   practiceTimerActive: boolean;
   practiceTimerMinutes: number; // 0 = off, 5, 10, 15, 20, 30
   practiceSecondsRemaining: number;
@@ -204,6 +217,10 @@ export interface MetronomeState {
   setVolume: (volume: number) => void;
   toggleMute: () => void;
   toggleCountIn: () => void;
+  setCountInBars: (bars: number) => void;
+  setCountInVoice: (enabled: boolean) => void;
+  toggleTempoLock: () => void;
+  setIsTempoLocked: (locked: boolean) => void;
   tapTempo: () => void;
 
   // Presets CRUD
@@ -219,13 +236,22 @@ export interface MetronomeState {
   setTempoRamp: (config: Partial<MetronomeTempoRampConfig>) => void;
   toggleTempoRamp: () => void;
 
-  // Practice Timer Actions
+  // Stopwatch / Practice Timer Actions
+  startStopwatch: () => void;
+  pauseStopwatch: () => void;
+  toggleStopwatch: () => void;
+  resetStopwatch: () => void;
+  adjustStopwatchDuration: (deltaSec: number) => void;
+  setStopwatchDuration: (seconds: number) => void;
+
+  // Legacy Practice Timer Actions
   setPracticeTimerMinutes: (minutes: number) => void;
   togglePracticeTimer: () => void;
 }
 
 const tapTimes: number[] = [];
-let practiceTimerInterval: any = null;
+let stopwatchInterval: any = null;
+let stopwatchTargetEndTime: number = 0;
 
 export const useMetronomeStore = create<MetronomeState>((set, get) => {
   const stored = loadStoredSettings();
@@ -237,7 +263,9 @@ export const useMetronomeStore = create<MetronomeState>((set, get) => {
   const initialSound = stored?.sound ?? 'woodblock';
   const initialAccent = stored?.accentBeat ?? 0;
   const initialVol = stored?.volume ?? 85;
-  const initialCountIn = stored?.countInEnabled ?? true;
+  const initialCountInBars = stored?.countInBars ?? (stored?.countInEnabled !== false ? 1 : 0);
+  const initialCountInVoice = stored?.countInVoiceEnabled ?? true;
+  const initialTempoLocked = stored?.isTempoLocked ?? false;
 
   // Configure audio engine with initial settings
   metronomeAudioEngine.setBpm(initialBpm);
@@ -246,7 +274,7 @@ export const useMetronomeStore = create<MetronomeState>((set, get) => {
   metronomeAudioEngine.setSound(initialSound);
   metronomeAudioEngine.setAccentBeat(initialAccent);
   metronomeAudioEngine.setVolume(initialVol / 100);
-  metronomeAudioEngine.setCountIn(initialCountIn, 1);
+  metronomeAudioEngine.setCountIn(initialCountInBars > 0, initialCountInBars, initialCountInVoice);
 
   // Wire up audio engine callbacks to sync React store
   metronomeAudioEngine.onBeat = (event) => {
@@ -256,6 +284,8 @@ export const useMetronomeStore = create<MetronomeState>((set, get) => {
       isAccent: event.isAccent,
       isCountIn: event.isCountIn,
       countInNumber: event.countInNumber,
+      countInBar: event.countInBar,
+      countInTotalBars: event.countInTotalBars,
       effectiveBpm: event.effectiveBpm,
       rampProgress: event.rampProgress,
     });
@@ -269,6 +299,8 @@ export const useMetronomeStore = create<MetronomeState>((set, get) => {
       isAccent: false,
       isCountIn: false,
       countInNumber: undefined,
+      countInBar: undefined,
+      countInTotalBars: undefined,
       effectiveBpm: playing
         ? get().tempoRamp.enabled
           ? get().tempoRamp.startBpm
@@ -276,28 +308,6 @@ export const useMetronomeStore = create<MetronomeState>((set, get) => {
         : get().bpm,
       rampProgress: playing && get().tempoRamp.enabled ? 0 : undefined,
     });
-
-    if (playing) {
-      // Start practice timer countdown if active
-      if (get().practiceTimerActive && !practiceTimerInterval) {
-        practiceTimerInterval = setInterval(() => {
-          const rem = get().practiceSecondsRemaining;
-          if (rem <= 1) {
-            get().stop();
-            clearInterval(practiceTimerInterval);
-            practiceTimerInterval = null;
-            set({ practiceSecondsRemaining: 0, practiceTimerActive: false });
-          } else {
-            set({ practiceSecondsRemaining: rem - 1 });
-          }
-        }, 1000);
-      }
-    } else {
-      if (practiceTimerInterval) {
-        clearInterval(practiceTimerInterval);
-        practiceTimerInterval = null;
-      }
-    }
 
     syncMediaSession(playing);
   };
@@ -402,6 +412,9 @@ export const useMetronomeStore = create<MetronomeState>((set, get) => {
       volume: s.volume,
       accentBeat: s.accentBeat,
       countInEnabled: s.countInEnabled,
+      countInBars: s.countInBars,
+      countInVoiceEnabled: s.countInVoiceEnabled,
+      isTempoLocked: s.isTempoLocked,
     });
   };
 
@@ -413,8 +426,10 @@ export const useMetronomeStore = create<MetronomeState>((set, get) => {
     accentBeat: initialAccent,
     volume: initialVol,
     isMuted: false,
-    countInEnabled: initialCountIn,
-    countInBars: 1,
+    countInEnabled: initialCountInBars > 0,
+    countInBars: initialCountInBars,
+    countInVoiceEnabled: initialCountInVoice,
+    isTempoLocked: initialTempoLocked,
 
     // Incremental Tempo Ramp
     tempoRamp: DEFAULT_TEMPO_RAMP,
@@ -426,15 +441,24 @@ export const useMetronomeStore = create<MetronomeState>((set, get) => {
     activeSubdivision: 0,
     isAccent: false,
     isCountIn: false,
+    countInNumber: undefined,
+    countInBar: undefined,
+    countInTotalBars: undefined,
 
     activePresetId: initialUserPresets[0]?.id ?? null,
     userPresets: initialUserPresets,
     factoryPresets: FACTORY_PRESETS,
     presets: initialUserPresets,
 
+    // Stopwatch / Practice Timer
+    stopwatchDurationSec: 300,
+    stopwatchRemainingSec: 300,
+    stopwatchIsRunning: false,
+    stopwatchIsCompleted: false,
+
     practiceTimerActive: false,
-    practiceTimerMinutes: 0,
-    practiceSecondsRemaining: 0,
+    practiceTimerMinutes: 5,
+    practiceSecondsRemaining: 300,
 
     start: () => {
       metronomeAudioEngine.start();
@@ -449,6 +473,7 @@ export const useMetronomeStore = create<MetronomeState>((set, get) => {
     },
 
     setBpm: (val: number) => {
+      if (get().isTempoLocked) return;
       const clamped = Math.max(40, Math.min(280, Math.round(val)));
       metronomeAudioEngine.setBpm(clamped);
       set({
@@ -460,6 +485,7 @@ export const useMetronomeStore = create<MetronomeState>((set, get) => {
     },
 
     adjustBpm: (delta: number) => {
+      if (get().isTempoLocked) return;
       const current = get().bpm;
       const next = Math.max(40, Math.min(280, current + delta));
       metronomeAudioEngine.setBpm(next);
@@ -527,14 +553,40 @@ export const useMetronomeStore = create<MetronomeState>((set, get) => {
       set({ isMuted: next });
     },
 
+    setCountInBars: (bars: number) => {
+      const clamped = Math.max(0, Math.min(3, Math.round(bars)));
+      const enabled = clamped > 0;
+      metronomeAudioEngine.setCountIn(enabled, clamped, get().countInVoiceEnabled);
+      set({ countInBars: clamped, countInEnabled: enabled });
+      persistSettings();
+    },
+
+    setCountInVoice: (enabled: boolean) => {
+      metronomeAudioEngine.setVoiceCountIn(enabled);
+      set({ countInVoiceEnabled: enabled });
+      persistSettings();
+    },
+
     toggleCountIn: () => {
-      const next = !get().countInEnabled;
-      metronomeAudioEngine.setCountIn(next, get().countInBars);
-      set({ countInEnabled: next });
+      const current = get().countInBars;
+      // Cycle: 0 (Off) -> 1 Bar -> 2 Bars -> 3 Bars -> 0 (Off)
+      const nextBars = current === 0 ? 1 : current === 1 ? 2 : current === 2 ? 3 : 0;
+      get().setCountInBars(nextBars);
+    },
+
+    toggleTempoLock: () => {
+      const next = !get().isTempoLocked;
+      set({ isTempoLocked: next });
+      persistSettings();
+    },
+
+    setIsTempoLocked: (locked: boolean) => {
+      set({ isTempoLocked: locked });
       persistSettings();
     },
 
     tapTempo: () => {
+      if (get().isTempoLocked) return;
       const now = performance.now();
       tapTimes.push(now);
       if (tapTimes.length > 4) tapTimes.shift();
@@ -739,13 +791,137 @@ export const useMetronomeStore = create<MetronomeState>((set, get) => {
       });
     },
 
-    setPracticeTimerMinutes: (minutes: number) => {
-      const totalSec = minutes * 60;
+    // ── Stopwatch / Practice Timer Actions ─────────────────────────────────
+
+    startStopwatch: () => {
+      if (stopwatchInterval) {
+        clearInterval(stopwatchInterval);
+        stopwatchInterval = null;
+      }
+      let remaining = get().stopwatchRemainingSec;
+      if (remaining <= 0) {
+        remaining = get().stopwatchDurationSec;
+      }
+      stopwatchTargetEndTime = performance.now() + remaining * 1000;
       set({
-        practiceTimerMinutes: minutes,
-        practiceSecondsRemaining: totalSec,
-        practiceTimerActive: minutes > 0,
+        stopwatchRemainingSec: remaining,
+        stopwatchIsRunning: true,
+        stopwatchIsCompleted: false,
+        practiceTimerActive: true,
+        practiceSecondsRemaining: remaining,
       });
+
+      stopwatchInterval = setInterval(() => {
+        const now = performance.now();
+        const msLeft = stopwatchTargetEndTime - now;
+        if (msLeft <= 0) {
+          clearInterval(stopwatchInterval);
+          stopwatchInterval = null;
+          if (get().isPlaying) {
+            metronomeAudioEngine.stop();
+          }
+          set({
+            stopwatchRemainingSec: 0,
+            stopwatchIsRunning: false,
+            stopwatchIsCompleted: true,
+            practiceTimerActive: false,
+            practiceSecondsRemaining: 0,
+          });
+        } else {
+          const sec = Math.ceil(msLeft / 1000);
+          set({
+            stopwatchRemainingSec: sec,
+            practiceSecondsRemaining: sec,
+          });
+        }
+      }, 100);
+    },
+
+    pauseStopwatch: () => {
+      if (stopwatchInterval) {
+        clearInterval(stopwatchInterval);
+        stopwatchInterval = null;
+      }
+      const now = performance.now();
+      const msLeft = Math.max(0, stopwatchTargetEndTime - now);
+      const sec = Math.ceil(msLeft / 1000);
+      set({
+        stopwatchRemainingSec: sec,
+        stopwatchIsRunning: false,
+        practiceTimerActive: false,
+        practiceSecondsRemaining: sec,
+      });
+    },
+
+    toggleStopwatch: () => {
+      if (get().stopwatchIsRunning) {
+        get().pauseStopwatch();
+      } else {
+        get().startStopwatch();
+      }
+    },
+
+    resetStopwatch: () => {
+      if (stopwatchInterval) {
+        clearInterval(stopwatchInterval);
+        stopwatchInterval = null;
+      }
+      const dur = get().stopwatchDurationSec;
+      set({
+        stopwatchRemainingSec: dur,
+        stopwatchIsRunning: false,
+        stopwatchIsCompleted: false,
+        practiceTimerActive: false,
+        practiceSecondsRemaining: dur,
+      });
+    },
+
+    adjustStopwatchDuration: (deltaSec: number) => {
+      const currentDur = get().stopwatchDurationSec;
+      const nextDur = Math.max(60, Math.min(3600, currentDur + deltaSec));
+      const wasRunning = get().stopwatchIsRunning;
+      if (wasRunning) {
+        stopwatchTargetEndTime += deltaSec * 1000;
+        const msLeft = Math.max(0, stopwatchTargetEndTime - performance.now());
+        const sec = Math.ceil(msLeft / 1000);
+        set({
+          stopwatchDurationSec: nextDur,
+          stopwatchRemainingSec: sec,
+          practiceSecondsRemaining: sec,
+        });
+      } else {
+        set({
+          stopwatchDurationSec: nextDur,
+          stopwatchRemainingSec: nextDur,
+          stopwatchIsCompleted: false,
+          practiceSecondsRemaining: nextDur,
+        });
+      }
+    },
+
+    setStopwatchDuration: (seconds: number) => {
+      const clamped = Math.max(60, Math.min(3600, Math.round(seconds)));
+      if (get().stopwatchIsRunning) {
+        get().pauseStopwatch();
+      }
+      set({
+        stopwatchDurationSec: clamped,
+        stopwatchRemainingSec: clamped,
+        stopwatchIsCompleted: false,
+        practiceSecondsRemaining: clamped,
+      });
+    },
+
+    setPracticeTimerMinutes: (minutes: number) => {
+      if (minutes <= 0) {
+        get().pauseStopwatch();
+        get().resetStopwatch();
+        set({ practiceTimerMinutes: 0, practiceTimerActive: false });
+      } else {
+        get().setStopwatchDuration(minutes * 60);
+        get().startStopwatch();
+        set({ practiceTimerMinutes: minutes, practiceTimerActive: true });
+      }
     },
 
     togglePracticeTimer: () => {

@@ -823,3 +823,196 @@ export function TempoRampModal({
     </AnimatePresence>
   );
 }
+
+// ── COUNT-IN CONFIGURATION MODAL ──────────────────────────────────────────
+
+interface CountInModalProps {
+  isOpen: boolean;
+  countInBars: number;
+  countInVoiceEnabled: boolean;
+  onSelectBars: (bars: number) => void;
+  onToggleVoice: (enabled: boolean) => void;
+  onPreviewVoice?: () => void;
+  onClose: () => void;
+}
+
+const COUNT_IN_BAR_OPTIONS = [
+  { bars: 0, label: 'Off', sub: 'Disabled' },
+  { bars: 1, label: '1 Bar', sub: 'Standard' },
+  { bars: 2, label: '2 Bars', sub: 'Rehearsal' },
+  { bars: 3, label: '3 Bars', sub: 'Long Intro' },
+];
+
+export function CountInModal({
+  isOpen,
+  countInBars,
+  countInVoiceEnabled,
+  onSelectBars,
+  onToggleVoice,
+  onPreviewVoice,
+  onClose,
+}: CountInModalProps) {
+  if (!isOpen) return null;
+
+  return (
+    <AnimatePresence>
+      <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
+        {/* Dimmed Backdrop */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.18 }}
+          onClick={onClose}
+          className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        />
+
+        {/* Centered Modern Card Surface */}
+        <motion.div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="countin-modal-title"
+          initial={{ scale: 0.94, opacity: 0, y: 8 }}
+          animate={{ scale: 1, opacity: 1, y: 0 }}
+          exit={{ scale: 0.95, opacity: 0, y: 6 }}
+          transition={{ type: 'spring', damping: 26, stiffness: 320 }}
+          className="relative w-full max-w-sm bg-white dark:bg-zinc-900 rounded-3xl border border-slate-200/90 dark:border-zinc-800 shadow-2xl overflow-hidden z-10 flex flex-col max-h-[85vh]"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Header */}
+          <div className="px-5 pt-5 pb-3 border-b border-slate-100 dark:border-zinc-800/80 flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-[#007aff] flex items-center justify-center">
+                <span className="material-symbols-outlined text-[19px]">timelapse</span>
+              </div>
+              <div>
+                <h3
+                  id="countin-modal-title"
+                  className="text-base font-extrabold font-manrope text-slate-900 dark:text-zinc-100 tracking-tight"
+                >
+                  Count-In Settings
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5">
+                  Configure intro duration & spoken voice
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={onClose}
+              aria-label="Close"
+              type="button"
+              className="w-8 h-8 rounded-full bg-slate-100 dark:bg-zinc-800 text-slate-500 hover:text-slate-800 dark:hover:text-zinc-200 flex items-center justify-center transition cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-[18px]">close</span>
+            </button>
+          </div>
+
+          {/* Body content */}
+          <div className="p-4 overflow-y-auto space-y-4 no-scrollbar">
+            {/* Section 1: Count-In Bars */}
+            <div>
+              <div className="text-[10px] font-extrabold text-slate-400 dark:text-zinc-500 uppercase font-manrope tracking-wider mb-2">
+                COUNT-IN LENGTH
+              </div>
+              <div className="grid grid-cols-4 gap-2">
+                {COUNT_IN_BAR_OPTIONS.map((opt) => {
+                  const isSelected = countInBars === opt.bars;
+                  return (
+                    <button
+                      key={opt.bars}
+                      type="button"
+                      onClick={() => onSelectBars(opt.bars)}
+                      className={`p-2.5 rounded-2xl flex flex-col items-center justify-center transition tap-press cursor-pointer border ${
+                        isSelected
+                          ? 'bg-blue-50 dark:bg-blue-950/50 border-[#007aff] text-[#007aff] shadow-xs'
+                          : 'bg-slate-50 dark:bg-zinc-800/80 border-slate-200/80 dark:border-zinc-700/80 text-slate-700 dark:text-zinc-300 hover:border-slate-300'
+                      }`}
+                    >
+                      <span className="text-xs font-black font-manrope">{opt.label}</span>
+                      <span className="text-[9px] font-medium opacity-75 mt-0.5">{opt.sub}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Section 2: Spoken Voice Count-In */}
+            <div className="bg-slate-50 dark:bg-zinc-800/60 rounded-2xl p-3.5 border border-slate-200/80 dark:border-zinc-700/80">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-8 h-8 rounded-xl bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
+                    <span className="material-symbols-outlined text-[18px]">record_voice_over</span>
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-xs font-extrabold text-slate-900 dark:text-zinc-100 font-manrope">
+                      Voice Count-In
+                    </div>
+                    <div className="text-[11px] text-slate-500 dark:text-zinc-400 truncate mt-0.5">
+                      Natural female voice speaks count
+                    </div>
+                  </div>
+                </div>
+
+                {/* iOS Style Toggle Switch */}
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={countInVoiceEnabled}
+                  onClick={() => onToggleVoice(!countInVoiceEnabled)}
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                    countInVoiceEnabled ? 'bg-[#007aff]' : 'bg-slate-200 dark:bg-zinc-700'
+                  }`}
+                >
+                  <span
+                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                      countInVoiceEnabled ? 'translate-x-5' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
+              </div>
+            </div>
+
+            {/* Section 3: Voice Profile & Preview */}
+            <div className="bg-slate-50 dark:bg-zinc-800/60 rounded-2xl p-3.5 border border-slate-200/80 dark:border-zinc-700/80 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-pink-50 dark:bg-pink-950/40 text-pink-600 dark:text-pink-400 flex items-center justify-center shrink-0">
+                  <span className="material-symbols-outlined text-[18px]">face_3</span>
+                </div>
+                <div>
+                  <div className="text-xs font-extrabold text-slate-900 dark:text-zinc-100 font-manrope">
+                    Voice: Natural Female
+                  </div>
+                  <div className="text-[10px] text-slate-400 dark:text-zinc-500 mt-0.5">
+                    Calm, relaxed • Preloaded 0ms latency
+                  </div>
+                </div>
+              </div>
+
+              {onPreviewVoice && (
+                <button
+                  type="button"
+                  onClick={onPreviewVoice}
+                  className="px-2.5 py-1.5 rounded-xl bg-white dark:bg-zinc-700 hover:bg-slate-100 dark:hover:bg-zinc-600 border border-slate-200 dark:border-zinc-600 text-[#007aff] dark:text-blue-400 font-manrope font-bold text-xs flex items-center gap-1 transition tap-press cursor-pointer shadow-xs"
+                >
+                  <span className="material-symbols-outlined text-[15px]">volume_up</span>
+                  <span>Preview</span>
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Footer Action */}
+          <div className="p-4 border-t border-slate-100 dark:border-zinc-800/80 flex">
+            <button
+              type="button"
+              onClick={onClose}
+              className="w-full py-3 rounded-2xl bg-[#007aff] hover:bg-blue-600 text-white font-manrope font-bold text-xs tracking-tight shadow-md transition cursor-pointer"
+            >
+              Done
+            </button>
+          </div>
+        </motion.div>
+      </div>
+    </AnimatePresence>
+  );
+}
