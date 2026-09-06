@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import {
   useMetronomeStore,
+  useSettingsStore,
   metronomeAudioEngine,
   SOUND_LABELS,
   useBackHandler,
@@ -21,9 +22,16 @@ import {
 interface MetronomePanelProps {
   onBack?: () => void;
   onScroll?: (e: React.UIEvent<HTMLDivElement>) => void;
+  isAmoled?: boolean;
 }
 
-export function MetronomePanel({ onBack, onScroll }: MetronomePanelProps) {
+export function MetronomePanel({ onBack, onScroll, isAmoled: propIsAmoled }: MetronomePanelProps) {
+  const storeAmoled = useSettingsStore((s) => {
+    const drumexAmoled = s.settings?.perApp?.drumex?.amoledMode;
+    return drumexAmoled !== undefined ? drumexAmoled : (s.settings?.amoledMode ?? false);
+  });
+  const isAmoled = propIsAmoled ?? storeAmoled;
+
   const {
     bpm,
     timeSignature,
@@ -321,7 +329,11 @@ export function MetronomePanel({ onBack, onScroll }: MetronomePanelProps) {
   };
 
   return (
-    <div className="w-full h-full flex flex-col bg-[#f8f9fb] dark:bg-[#000000] text-[#0e0e0e] dark:text-white font-sans antialiased select-none relative overflow-hidden">
+    <div
+      className={`w-full h-full flex flex-col ${
+        isAmoled ? 'bg-black' : 'bg-[#f8f9fb] dark:bg-black'
+      } text-[#0e0e0e] dark:text-white font-sans antialiased select-none relative overflow-hidden`}
+    >
       <style>{`
         /* Custom Range Slider */
         .metronome-range {
@@ -395,7 +407,13 @@ export function MetronomePanel({ onBack, onScroll }: MetronomePanelProps) {
         }}
       >
         {/* 1. BEAT TRACKER STRIP */}
-        <section className="bg-white dark:bg-zinc-900 rounded-2xl p-3 border border-slate-200/80 dark:border-zinc-800 shadow-[0_4px_16px_rgba(0,0,0,0.03)] flex flex-col gap-2">
+        <section
+          className={`${
+            isAmoled
+              ? 'bg-black border-white/15 shadow-none'
+              : 'bg-white dark:bg-zinc-900 border-slate-200/80 dark:border-zinc-800 shadow-[0_4px_16px_rgba(0,0,0,0.03)]'
+          } rounded-2xl p-3 border flex flex-col gap-2`}
+        >
           <div className="flex items-center justify-between px-1">
             <span className="text-[10px] font-extrabold tracking-wider text-slate-400 dark:text-zinc-500 uppercase font-manrope">
               BEAT TRACKER • {timeSignature}
@@ -447,8 +465,12 @@ export function MetronomePanel({ onBack, onScroll }: MetronomePanelProps) {
                   onClick={() => setAccentBeat(accentBeat === idx ? -1 : idx)}
                   className={`${isCompact ? 'h-10' : 'h-12'} rounded-xl border flex flex-col items-center justify-center font-manrope font-bold transition cursor-pointer relative ${
                     isAccentBeat
-                      ? 'bg-blue-50/70 dark:bg-blue-950/30 text-[#007aff] border-[#007aff]/60 hover:bg-blue-100/80 dark:hover:bg-blue-900/40'
-                      : 'bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 border-slate-200/80 dark:border-zinc-700 hover:bg-slate-200 dark:hover:bg-zinc-700'
+                      ? isAmoled
+                        ? 'bg-[#007aff]/20 text-[#007aff] border-[#007aff] hover:bg-[#007aff]/30'
+                        : 'bg-blue-50/70 dark:bg-blue-950/30 text-[#007aff] border-[#007aff]/60 hover:bg-blue-100/80 dark:hover:bg-blue-900/40'
+                      : isAmoled
+                        ? 'bg-[#0a0a0c] text-zinc-300 border-white/10 hover:bg-white/10'
+                        : 'bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 border-slate-200/80 dark:border-zinc-700 hover:bg-slate-200 dark:hover:bg-zinc-700'
                   }`}
                 >
                   <span className={`${isCompact ? 'text-base' : 'text-lg'} leading-none`}>
@@ -472,7 +494,11 @@ export function MetronomePanel({ onBack, onScroll }: MetronomePanelProps) {
           </div>
 
           {/* Subdivision Visual Dots */}
-          <div className="flex items-center justify-between px-2 pt-1 border-t border-slate-100 dark:border-zinc-800/80">
+          <div
+            className={`flex items-center justify-between px-2 pt-1 border-t ${
+              isAmoled ? 'border-white/10' : 'border-slate-100 dark:border-zinc-800/80'
+            }`}
+          >
             <span className="text-[9px] font-medium text-slate-400 dark:text-zinc-500">
               Subdivisions
             </span>
@@ -487,8 +513,12 @@ export function MetronomePanel({ onBack, onScroll }: MetronomePanelProps) {
                       isPlaying && activeSubdivision === i
                         ? 'bg-[#007aff]'
                         : i === 0
-                          ? 'bg-slate-400 dark:bg-zinc-600'
-                          : 'bg-slate-200 dark:bg-zinc-800'
+                          ? isAmoled
+                            ? 'bg-zinc-500'
+                            : 'bg-slate-400 dark:bg-zinc-600'
+                          : isAmoled
+                            ? 'bg-zinc-800'
+                            : 'bg-slate-200 dark:bg-zinc-800'
                     }`}
                   />
                 ))}
@@ -501,10 +531,22 @@ export function MetronomePanel({ onBack, onScroll }: MetronomePanelProps) {
         </section>
 
         {/* 2. GIANT BPM DISPLAY & CONTROLS */}
-        <section className="bg-white dark:bg-zinc-900 rounded-3xl p-5 border border-slate-200/80 dark:border-zinc-800 shadow-[0_8px_28px_rgba(0,0,0,0.04)] flex flex-col items-center text-center relative overflow-hidden">
+        <section
+          className={`${
+            isAmoled
+              ? 'bg-black border-white/15 shadow-none'
+              : 'bg-white dark:bg-zinc-900 border-slate-200/80 dark:border-zinc-800 shadow-[0_8px_28px_rgba(0,0,0,0.04)]'
+          } rounded-3xl p-5 border flex flex-col items-center text-center relative overflow-hidden`}
+        >
           {/* Tempo Description & Status */}
           <div className="flex items-center gap-2 mb-1">
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 border border-slate-200/70 dark:border-zinc-700">
+            <span
+              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
+                isAmoled
+                  ? 'bg-[#0a0a0c] text-zinc-300 border-white/10'
+                  : 'bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 border-slate-200/70 dark:border-zinc-700'
+              } border`}
+            >
               {tempoDescriptor}
             </span>
             <span className="text-xs font-semibold text-slate-400 dark:text-zinc-500">
@@ -525,10 +567,16 @@ export function MetronomePanel({ onBack, onScroll }: MetronomePanelProps) {
                 aria-label="Decrease BPM by 5"
                 disabled={isTempoLocked}
                 onClick={() => adjustBpm(-5)}
-                className={`w-9 h-9 rounded-full bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 font-manrope font-bold text-xs flex items-center justify-center border border-slate-200/70 dark:border-zinc-700 transition ${
+                className={`w-9 h-9 rounded-full ${
+                  isAmoled
+                    ? 'bg-[#0a0a0c] text-zinc-300 border-white/10'
+                    : 'bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 border-slate-200/70 dark:border-zinc-700'
+                } font-manrope font-bold text-xs flex items-center justify-center border transition ${
                   isTempoLocked
                     ? 'opacity-40 cursor-not-allowed'
-                    : 'hover:bg-slate-200 dark:hover:bg-zinc-700 tap-press cursor-pointer'
+                    : isAmoled
+                      ? 'hover:bg-white/10 tap-press cursor-pointer'
+                      : 'hover:bg-slate-200 dark:hover:bg-zinc-700 tap-press cursor-pointer'
                 }`}
                 type="button"
               >
@@ -538,10 +586,16 @@ export function MetronomePanel({ onBack, onScroll }: MetronomePanelProps) {
                 aria-label="Decrease BPM by 1"
                 disabled={isTempoLocked}
                 onClick={() => adjustBpm(-1)}
-                className={`w-11 h-11 rounded-full bg-slate-100 dark:bg-zinc-800 text-slate-800 dark:text-zinc-100 flex items-center justify-center shadow-xs border border-slate-200 dark:border-zinc-700 transition ${
+                className={`w-11 h-11 rounded-full ${
+                  isAmoled
+                    ? 'bg-[#0a0a0c] text-zinc-100 border-white/10'
+                    : 'bg-slate-100 dark:bg-zinc-800 text-slate-800 dark:text-zinc-100 border-slate-200 dark:border-zinc-700'
+                } flex items-center justify-center shadow-xs border transition ${
                   isTempoLocked
                     ? 'opacity-40 cursor-not-allowed'
-                    : 'hover:bg-slate-200 dark:hover:bg-zinc-700 tap-press cursor-pointer'
+                    : isAmoled
+                      ? 'hover:bg-white/10 tap-press cursor-pointer'
+                      : 'hover:bg-slate-200 dark:hover:bg-zinc-700 tap-press cursor-pointer'
                 }`}
                 type="button"
               >
@@ -563,10 +617,16 @@ export function MetronomePanel({ onBack, onScroll }: MetronomePanelProps) {
                 aria-label="Increase BPM by 1"
                 disabled={isTempoLocked}
                 onClick={() => adjustBpm(1)}
-                className={`w-11 h-11 rounded-full bg-slate-100 dark:bg-zinc-800 text-slate-800 dark:text-zinc-100 flex items-center justify-center shadow-xs border border-slate-200 dark:border-zinc-700 transition ${
+                className={`w-11 h-11 rounded-full ${
+                  isAmoled
+                    ? 'bg-[#0a0a0c] text-zinc-100 border-white/10'
+                    : 'bg-slate-100 dark:bg-zinc-800 text-slate-800 dark:text-zinc-100 border-slate-200 dark:border-zinc-700'
+                } flex items-center justify-center shadow-xs border transition ${
                   isTempoLocked
                     ? 'opacity-40 cursor-not-allowed'
-                    : 'hover:bg-slate-200 dark:hover:bg-zinc-700 tap-press cursor-pointer'
+                    : isAmoled
+                      ? 'hover:bg-white/10 tap-press cursor-pointer'
+                      : 'hover:bg-slate-200 dark:hover:bg-zinc-700 tap-press cursor-pointer'
                 }`}
                 type="button"
               >
@@ -576,10 +636,16 @@ export function MetronomePanel({ onBack, onScroll }: MetronomePanelProps) {
                 aria-label="Increase BPM by 5"
                 disabled={isTempoLocked}
                 onClick={() => adjustBpm(5)}
-                className={`w-9 h-9 rounded-full bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 font-manrope font-bold text-xs flex items-center justify-center border border-slate-200/70 dark:border-zinc-700 transition ${
+                className={`w-9 h-9 rounded-full ${
+                  isAmoled
+                    ? 'bg-[#0a0a0c] text-zinc-300 border-white/10'
+                    : 'bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 border-slate-200/70 dark:border-zinc-700'
+                } font-manrope font-bold text-xs flex items-center justify-center border transition ${
                   isTempoLocked
                     ? 'opacity-40 cursor-not-allowed'
-                    : 'hover:bg-slate-200 dark:hover:bg-zinc-700 tap-press cursor-pointer'
+                    : isAmoled
+                      ? 'hover:bg-white/10 tap-press cursor-pointer'
+                      : 'hover:bg-slate-200 dark:hover:bg-zinc-700 tap-press cursor-pointer'
                 }`}
                 type="button"
               >
@@ -613,7 +679,11 @@ export function MetronomePanel({ onBack, onScroll }: MetronomePanelProps) {
             <button
               type="button"
               onClick={() => setShowTempoRampModal(true)}
-              className="mt-3 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-50 dark:bg-blue-950/60 border border-blue-200/80 dark:border-blue-900/60 text-[#007aff] text-[11px] font-bold font-manrope hover:bg-blue-100 dark:hover:bg-blue-900/80 transition cursor-pointer"
+              className={`mt-3 flex items-center gap-1.5 px-3 py-1.5 rounded-full ${
+                isAmoled
+                  ? 'bg-[#007aff]/15 border-[#007aff]/40 text-[#007aff] hover:bg-[#007aff]/25'
+                  : 'bg-blue-50 dark:bg-blue-950/60 border-blue-200/80 dark:border-blue-900/60 text-[#007aff] hover:bg-blue-100 dark:hover:bg-blue-900/80'
+              } border text-[11px] font-bold font-manrope transition cursor-pointer`}
             >
               <span className="material-symbols-outlined text-[15px]">trending_up</span>
               <span>
@@ -628,15 +698,25 @@ export function MetronomePanel({ onBack, onScroll }: MetronomePanelProps) {
           )}
 
           {/* Tap Tempo Button */}
-          <div className="w-full mt-4 pt-3 border-t border-slate-100 dark:border-zinc-800/80 flex items-center justify-center gap-3">
+          <div
+            className={`w-full mt-4 pt-3 border-t ${
+              isAmoled ? 'border-white/10' : 'border-slate-100 dark:border-zinc-800/80'
+            } flex items-center justify-center gap-3`}
+          >
             <button
               aria-label="Tap Tempo"
               disabled={isTempoLocked}
               onClick={tapTempo}
-              className={`w-full py-2.5 px-4 rounded-xl bg-slate-50 dark:bg-zinc-800 border border-slate-200/90 dark:border-zinc-700 flex items-center justify-center gap-2 text-slate-800 dark:text-zinc-200 font-manrope font-bold text-xs tracking-tight shadow-xs transition ${
+              className={`w-full py-2.5 px-4 rounded-xl ${
+                isAmoled
+                  ? 'bg-[#0a0a0c] border-white/10 text-zinc-200'
+                  : 'bg-slate-50 dark:bg-zinc-800 border-slate-200/90 dark:border-zinc-700 text-slate-800 dark:text-zinc-200'
+              } border flex items-center justify-center gap-2 font-manrope font-bold text-xs tracking-tight shadow-xs transition ${
                 isTempoLocked
                   ? 'opacity-40 cursor-not-allowed'
-                  : 'hover:bg-slate-100 dark:hover:bg-zinc-700 tap-press cursor-pointer'
+                  : isAmoled
+                    ? 'hover:bg-white/10 tap-press cursor-pointer'
+                    : 'hover:bg-slate-100 dark:hover:bg-zinc-700 tap-press cursor-pointer'
               }`}
               type="button"
             >
@@ -656,14 +736,26 @@ export function MetronomePanel({ onBack, onScroll }: MetronomePanelProps) {
         {/* 3. RHYTHM METRICS (Segmented Pills & Modals) */}
         <section className="grid grid-cols-2 gap-2.5">
           {/* Time Signature */}
-          <div className="bg-white dark:bg-zinc-900 rounded-2xl p-3 border border-slate-200/80 dark:border-zinc-800 shadow-xs flex flex-col justify-between">
+          <div
+            className={`${
+              isAmoled
+                ? 'bg-black border-white/15 shadow-none'
+                : 'bg-white dark:bg-zinc-900 border-slate-200/80 dark:border-zinc-800 shadow-xs'
+            } rounded-2xl p-3 border flex flex-col justify-between`}
+          >
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-1.5 min-w-0">
                 <span className="text-[10px] font-extrabold text-slate-400 dark:text-zinc-500 uppercase font-manrope tracking-wider truncate">
                   TIME SIGNATURE
                 </span>
                 {!['4/4', '3/4', '6/8', '2/4'].includes(timeSignature) && (
-                  <span className="px-1.5 py-0.5 rounded bg-blue-50 dark:bg-blue-950/40 text-[#007aff] text-[9px] font-extrabold shrink-0">
+                  <span
+                    className={`px-1.5 py-0.5 rounded ${
+                      isAmoled
+                        ? 'bg-[#007aff]/20 text-[#007aff]'
+                        : 'bg-blue-50 dark:bg-blue-950/40 text-[#007aff]'
+                    } text-[9px] font-extrabold shrink-0`}
+                  >
                     {timeSignature}
                   </span>
                 )}
@@ -689,7 +781,9 @@ export function MetronomePanel({ onBack, onScroll }: MetronomePanelProps) {
                     className={`py-2 rounded-xl text-xs font-extrabold font-manrope tap-press cursor-pointer transition-all flex items-center justify-center ${
                       isSelected
                         ? 'bg-[#007aff] text-white shadow-xs'
-                        : 'bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 hover:bg-slate-200 dark:hover:bg-zinc-700'
+                        : isAmoled
+                          ? 'bg-[#0a0a0c] text-zinc-300 border border-white/10 hover:bg-white/10'
+                          : 'bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 hover:bg-slate-200 dark:hover:bg-zinc-700'
                     }`}
                   >
                     {sig}
@@ -700,14 +794,26 @@ export function MetronomePanel({ onBack, onScroll }: MetronomePanelProps) {
           </div>
 
           {/* Subdivision */}
-          <div className="bg-white dark:bg-zinc-900 rounded-2xl p-3 border border-slate-200/80 dark:border-zinc-800 shadow-xs flex flex-col justify-between">
+          <div
+            className={`${
+              isAmoled
+                ? 'bg-black border-white/15 shadow-none'
+                : 'bg-white dark:bg-zinc-900 border-slate-200/80 dark:border-zinc-800 shadow-xs'
+            } rounded-2xl p-3 border flex flex-col justify-between`}
+          >
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-1.5 min-w-0">
                 <span className="text-[10px] font-extrabold text-slate-400 dark:text-zinc-500 uppercase font-manrope tracking-wider truncate">
                   SUBDIVISION
                 </span>
                 {!['1/4', '1/8', '1/16', '3let'].includes(subdivision) && (
-                  <span className="px-1.5 py-0.5 rounded bg-blue-50 dark:bg-blue-950/40 text-[#007aff] text-[9px] font-extrabold shrink-0">
+                  <span
+                    className={`px-1.5 py-0.5 rounded ${
+                      isAmoled
+                        ? 'bg-[#007aff]/20 text-[#007aff]'
+                        : 'bg-blue-50 dark:bg-blue-950/40 text-[#007aff]'
+                    } text-[9px] font-extrabold shrink-0`}
+                  >
                     {subdivision}
                   </span>
                 )}
@@ -733,7 +839,9 @@ export function MetronomePanel({ onBack, onScroll }: MetronomePanelProps) {
                     className={`py-2 rounded-xl text-xs font-extrabold font-manrope tap-press cursor-pointer transition-all flex items-center justify-center ${
                       isSelected
                         ? 'bg-[#007aff] text-white shadow-xs'
-                        : 'bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 hover:bg-slate-200 dark:hover:bg-zinc-700'
+                        : isAmoled
+                          ? 'bg-[#0a0a0c] text-zinc-300 border border-white/10 hover:bg-white/10'
+                          : 'bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 hover:bg-slate-200 dark:hover:bg-zinc-700'
                     }`}
                   >
                     {sub}
@@ -745,10 +853,22 @@ export function MetronomePanel({ onBack, onScroll }: MetronomePanelProps) {
         </section>
 
         {/* 4. AUDIO CONTROLS & COUNT-IN ROW */}
-        <section className="bg-white dark:bg-zinc-900 rounded-2xl p-3.5 border border-slate-200/80 dark:border-zinc-800 shadow-xs flex items-center justify-between relative">
+        <section
+          className={`${
+            isAmoled
+              ? 'bg-black border-white/15 shadow-none'
+              : 'bg-white dark:bg-zinc-900 border-slate-200/80 dark:border-zinc-800 shadow-xs'
+          } rounded-2xl p-3.5 border flex items-center justify-between relative`}
+        >
           {/* Click Sound Selector */}
           <div className="flex items-center gap-2 relative">
-            <div className="w-7 h-7 rounded-full bg-blue-50 dark:bg-blue-950/40 text-[#007aff] flex items-center justify-center">
+            <div
+              className={`w-7 h-7 rounded-full ${
+                isAmoled
+                  ? 'bg-[#007aff]/15 text-[#007aff]'
+                  : 'bg-blue-50 dark:bg-blue-950/40 text-[#007aff]'
+              } flex items-center justify-center`}
+            >
               <span className="material-symbols-outlined text-[16px]">graphic_eq</span>
             </div>
             <div className="cursor-pointer" onClick={() => setShowSoundMenu(!showSoundMenu)}>
@@ -767,7 +887,13 @@ export function MetronomePanel({ onBack, onScroll }: MetronomePanelProps) {
 
             {/* Sound Dropdown Popover */}
             {showSoundMenu && (
-              <div className="absolute top-10 left-0 z-50 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl shadow-lg p-1 min-w-[170px] flex flex-col gap-0.5">
+              <div
+                className={`absolute top-10 left-0 z-50 ${
+                  isAmoled
+                    ? 'bg-black border-white/15'
+                    : 'bg-white dark:bg-zinc-800 border-slate-200 dark:border-zinc-700'
+                } border rounded-xl shadow-lg p-1 min-w-[170px] flex flex-col gap-0.5`}
+              >
                 {(
                   [
                     'woodblock',
@@ -789,7 +915,9 @@ export function MetronomePanel({ onBack, onScroll }: MetronomePanelProps) {
                     className={`w-full text-left px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-between ${
                       sound === sId
                         ? 'bg-[#007aff] text-white'
-                        : 'text-slate-700 dark:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-700'
+                        : isAmoled
+                          ? 'text-zinc-200 hover:bg-white/10'
+                          : 'text-slate-700 dark:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-700'
                     }`}
                   >
                     <span>{SOUND_LABELS[sId]}</span>
@@ -803,7 +931,11 @@ export function MetronomePanel({ onBack, onScroll }: MetronomePanelProps) {
           {/* Count-in Trigger & Bars */}
           <div
             onClick={() => setShowCountInModal(true)}
-            className="flex items-center gap-2 bg-slate-50 dark:bg-zinc-800/80 border border-slate-200/80 dark:border-zinc-700 rounded-xl px-2.5 py-1.5 cursor-pointer tap-press"
+            className={`flex items-center gap-2 ${
+              isAmoled
+                ? 'bg-[#0a0a0c] border-white/10'
+                : 'bg-slate-50 dark:bg-zinc-800/80 border-slate-200/80 dark:border-zinc-700'
+            } border rounded-xl px-2.5 py-1.5 cursor-pointer tap-press`}
           >
             <span className="material-symbols-outlined text-[16px] text-slate-500 dark:text-zinc-400">
               timelapse
@@ -826,7 +958,9 @@ export function MetronomePanel({ onBack, onScroll }: MetronomePanelProps) {
               className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ml-0.5 transition-colors cursor-pointer ${
                 countInEnabled && countInBars > 0
                   ? 'bg-[#007aff] text-white'
-                  : 'bg-slate-200 dark:bg-zinc-700 text-transparent'
+                  : isAmoled
+                    ? 'bg-zinc-800 text-transparent'
+                    : 'bg-slate-200 dark:bg-zinc-700 text-transparent'
               }`}
               type="button"
               title={countInEnabled && countInBars > 0 ? 'Disable Count-In' : 'Enable Count-In'}
@@ -837,13 +971,23 @@ export function MetronomePanel({ onBack, onScroll }: MetronomePanelProps) {
         </section>
 
         {/* 5. TEMPO LOCK / BPM HOLD (Protection during practice) */}
-        <section className="bg-white dark:bg-zinc-900 rounded-2xl p-3.5 border border-slate-200/80 dark:border-zinc-800 shadow-xs flex items-center justify-between">
+        <section
+          className={`${
+            isAmoled
+              ? 'bg-black border-white/15 shadow-none'
+              : 'bg-white dark:bg-zinc-900 border-slate-200/80 dark:border-zinc-800 shadow-xs'
+          } rounded-2xl p-3.5 border flex items-center justify-between`}
+        >
           <div className="flex items-center gap-2.5">
             <div
               className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
                 isTempoLocked
-                  ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
-                  : 'bg-slate-100 dark:bg-zinc-800 text-slate-500 dark:text-zinc-400'
+                  ? isAmoled
+                    ? 'bg-amber-500/20 text-amber-400'
+                    : 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
+                  : isAmoled
+                    ? 'bg-[#0a0a0c] text-zinc-400'
+                    : 'bg-slate-100 dark:bg-zinc-800 text-slate-500 dark:text-zinc-400'
               }`}
             >
               <span className="material-symbols-outlined text-[18px]">
@@ -873,7 +1017,9 @@ export function MetronomePanel({ onBack, onScroll }: MetronomePanelProps) {
             className={`px-3 py-1.5 rounded-xl text-xs font-bold font-manrope transition-all tap-press cursor-pointer flex items-center gap-1.5 ${
               isTempoLocked
                 ? 'bg-amber-500 text-white shadow-xs hover:bg-amber-600'
-                : 'bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 hover:bg-slate-200 dark:hover:bg-zinc-700'
+                : isAmoled
+                  ? 'bg-[#0a0a0c] text-zinc-300 hover:bg-white/10 border border-white/10'
+                  : 'bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 hover:bg-slate-200 dark:hover:bg-zinc-700'
             }`}
           >
             <span className="material-symbols-outlined text-[14px]">
@@ -901,7 +1047,11 @@ export function MetronomePanel({ onBack, onScroll }: MetronomePanelProps) {
       >
         <aside
           aria-label="Metronome quick controls"
-          className="pointer-events-auto bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md rounded-full px-2.5 py-1.5 shadow-[0_4px_24px_rgba(0,0,0,0.12)] border border-slate-200/80 dark:border-zinc-800 flex items-center transition-all duration-200 ease-out"
+          className={`pointer-events-auto ${
+            isAmoled
+              ? 'bg-black/95 border-white/15'
+              : 'bg-white/95 dark:bg-zinc-900/95 border-slate-200/80 dark:border-zinc-800'
+          } backdrop-blur-md rounded-full px-2.5 py-1.5 shadow-[0_4px_24px_rgba(0,0,0,0.12)] border flex items-center transition-all duration-200 ease-out`}
         >
           {bottomBarMode === 'volume' ? (
             /* Volume Configuration Morphed Mode */
@@ -912,8 +1062,12 @@ export function MetronomePanel({ onBack, onScroll }: MetronomePanelProps) {
                 onClick={toggleMute}
                 className={`w-[36px] h-[36px] rounded-full flex items-center justify-center transition tap-press cursor-pointer shrink-0 ${
                   isMuted
-                    ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-500'
-                    : 'bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-200 hover:bg-slate-200 dark:hover:bg-zinc-700'
+                    ? isAmoled
+                      ? 'bg-rose-950/40 text-rose-400'
+                      : 'bg-rose-50 dark:bg-rose-950/40 text-rose-500'
+                    : isAmoled
+                      ? 'bg-[#0a0a0c] text-zinc-200 hover:bg-white/10'
+                      : 'bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-200 hover:bg-slate-200 dark:hover:bg-zinc-700'
                 }`}
                 title={isMuted ? 'Unmute' : 'Mute'}
               >
@@ -951,7 +1105,11 @@ export function MetronomePanel({ onBack, onScroll }: MetronomePanelProps) {
                 type="button"
                 aria-label="Reset stopwatch"
                 onClick={resetStopwatch}
-                className="w-[34px] h-[34px] rounded-full bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-200 flex items-center justify-center transition tap-press cursor-pointer shrink-0"
+                className={`w-[34px] h-[34px] rounded-full ${
+                  isAmoled
+                    ? 'bg-[#0a0a0c] hover:bg-white/10 text-zinc-200'
+                    : 'bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-200'
+                } flex items-center justify-center transition tap-press cursor-pointer shrink-0`}
                 title="Reset timer"
               >
                 <span className="material-symbols-outlined text-[18px]">
@@ -966,7 +1124,9 @@ export function MetronomePanel({ onBack, onScroll }: MetronomePanelProps) {
                       ? 'text-rose-500 animate-pulse'
                       : stopwatchIsRunning
                         ? 'text-[#007aff]'
-                        : 'text-slate-800 dark:text-zinc-100'
+                        : isAmoled
+                          ? 'text-zinc-100'
+                          : 'text-slate-800 dark:text-zinc-100'
                   }`}
                 >
                   {formatTimerTime(stopwatchRemainingSec)}
@@ -985,7 +1145,11 @@ export function MetronomePanel({ onBack, onScroll }: MetronomePanelProps) {
                   type="button"
                   aria-label="Decrease time by 1 minute"
                   onClick={() => adjustStopwatchDuration(-60)}
-                  className="w-[30px] h-[30px] rounded-full bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-800 dark:text-zinc-200 flex items-center justify-center font-bold text-xs tap-press cursor-pointer shrink-0 border border-slate-200/60 dark:border-zinc-700"
+                  className={`w-[30px] h-[30px] rounded-full ${
+                    isAmoled
+                      ? 'bg-[#0a0a0c] hover:bg-white/10 text-zinc-200 border-white/10'
+                      : 'bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-800 dark:text-zinc-200 border-slate-200/60 dark:border-zinc-700'
+                  } flex items-center justify-center font-bold text-xs tap-press cursor-pointer shrink-0 border`}
                 >
                   <span className="material-symbols-outlined text-[15px]">remove</span>
                 </button>
@@ -993,7 +1157,11 @@ export function MetronomePanel({ onBack, onScroll }: MetronomePanelProps) {
                   type="button"
                   aria-label="Increase time by 1 minute"
                   onClick={() => adjustStopwatchDuration(60)}
-                  className="w-[30px] h-[30px] rounded-full bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-800 dark:text-zinc-200 flex items-center justify-center font-bold text-xs tap-press cursor-pointer shrink-0 border border-slate-200/60 dark:border-zinc-700"
+                  className={`w-[30px] h-[30px] rounded-full ${
+                    isAmoled
+                      ? 'bg-[#0a0a0c] hover:bg-white/10 text-zinc-200 border-white/10'
+                      : 'bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-800 dark:text-zinc-200 border-slate-200/60 dark:border-zinc-700'
+                  } flex items-center justify-center font-bold text-xs tap-press cursor-pointer shrink-0 border`}
                 >
                   <span className="material-symbols-outlined text-[15px]">add</span>
                 </button>
@@ -1019,7 +1187,11 @@ export function MetronomePanel({ onBack, onScroll }: MetronomePanelProps) {
                 type="button"
                 aria-label="Close stopwatch"
                 onClick={() => setBottomBarMode('normal')}
-                className="w-[30px] h-[30px] rounded-full bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-400 hover:text-slate-600 dark:text-zinc-400 dark:hover:text-zinc-200 flex items-center justify-center transition tap-press cursor-pointer shrink-0"
+                className={`w-[30px] h-[30px] rounded-full ${
+                  isAmoled
+                    ? 'bg-[#0a0a0c] hover:bg-white/10 text-zinc-400 hover:text-zinc-200'
+                    : 'bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-400 hover:text-slate-600 dark:text-zinc-400 dark:hover:text-zinc-200'
+                } flex items-center justify-center transition tap-press cursor-pointer shrink-0`}
                 title="Done"
               >
                 <span className="material-symbols-outlined text-[16px]">close</span>
@@ -1034,8 +1206,12 @@ export function MetronomePanel({ onBack, onScroll }: MetronomePanelProps) {
                 onClick={() => setBottomBarMode('volume')}
                 className={`w-[38px] h-[38px] rounded-full flex items-center justify-center transition tap-press focus:outline-none cursor-pointer relative ${
                   isMuted
-                    ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-500'
-                    : 'bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-200'
+                    ? isAmoled
+                      ? 'bg-rose-950/40 text-rose-400'
+                      : 'bg-rose-50 dark:bg-rose-950/40 text-rose-500'
+                    : isAmoled
+                      ? 'bg-[#0a0a0c] hover:bg-white/10 text-zinc-200'
+                      : 'bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-200'
                 }`}
                 title={`Volume: ${isMuted ? 'Muted' : `${volume}%`}`}
                 type="button"
@@ -1051,8 +1227,12 @@ export function MetronomePanel({ onBack, onScroll }: MetronomePanelProps) {
                 onClick={() => setBottomBarMode('stopwatch')}
                 className={`w-[38px] h-[38px] rounded-full flex items-center justify-center transition tap-press focus:outline-none cursor-pointer relative ${
                   stopwatchIsRunning
-                    ? 'bg-blue-50 dark:bg-blue-950/40 text-[#007aff]'
-                    : 'bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-200'
+                    ? isAmoled
+                      ? 'bg-blue-950/40 text-[#007aff]'
+                      : 'bg-blue-50 dark:bg-blue-950/40 text-[#007aff]'
+                    : isAmoled
+                      ? 'bg-[#0a0a0c] hover:bg-white/10 text-zinc-200'
+                      : 'bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-200'
                 }`}
                 title={
                   stopwatchIsRunning
@@ -1075,8 +1255,12 @@ export function MetronomePanel({ onBack, onScroll }: MetronomePanelProps) {
                 onClick={() => setShowTempoRampModal(true)}
                 className={`w-[38px] h-[38px] rounded-full flex items-center justify-center transition tap-press focus:outline-none cursor-pointer relative ${
                   tempoRamp.enabled
-                    ? 'bg-blue-50 dark:bg-blue-950/40 text-[#007aff]'
-                    : 'bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-200'
+                    ? isAmoled
+                      ? 'bg-blue-950/40 text-[#007aff]'
+                      : 'bg-blue-50 dark:bg-blue-950/40 text-[#007aff]'
+                    : isAmoled
+                      ? 'bg-[#0a0a0c] hover:bg-white/10 text-zinc-200'
+                      : 'bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-200'
                 }`}
                 title={
                   tempoRamp.enabled
@@ -1087,7 +1271,11 @@ export function MetronomePanel({ onBack, onScroll }: MetronomePanelProps) {
               >
                 <span className="material-symbols-outlined text-[19px]">trending_up</span>
                 {tempoRamp.enabled && (
-                  <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-[#007aff] ring-2 ring-white dark:ring-zinc-900" />
+                  <span
+                    className={`absolute -top-1 -right-1 w-2 h-2 rounded-full bg-[#007aff] ring-2 ring-white ${
+                      isAmoled ? 'dark:ring-black' : 'dark:ring-zinc-900'
+                    }`}
+                  />
                 )}
               </button>
 
@@ -1095,12 +1283,20 @@ export function MetronomePanel({ onBack, onScroll }: MetronomePanelProps) {
               <button
                 aria-label="Presets"
                 onClick={() => setIsPresetsOpen(true)}
-                className="w-[38px] h-[38px] rounded-full bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-200 flex items-center justify-center transition tap-press focus:outline-none relative cursor-pointer"
+                className={`w-[38px] h-[38px] rounded-full ${
+                  isAmoled
+                    ? 'bg-[#0a0a0c] hover:bg-white/10 text-zinc-200'
+                    : 'bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-200'
+                } flex items-center justify-center transition tap-press focus:outline-none relative cursor-pointer`}
                 title="Presets"
                 type="button"
               >
                 <span className="material-symbols-outlined text-[19px]">bookmark</span>
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#007aff] ring-2 ring-white dark:ring-zinc-900" />
+                <span
+                  className={`absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#007aff] ring-2 ring-white ${
+                    isAmoled ? 'dark:ring-black' : 'dark:ring-zinc-900'
+                  }`}
+                />
               </button>
 
               {/* Start/Stop FAB */}
@@ -1140,7 +1336,11 @@ export function MetronomePanel({ onBack, onScroll }: MetronomePanelProps) {
 
         {/* Sheet container */}
         <div
-          className={`absolute inset-x-0 bottom-0 max-w-md mx-auto transform transition-transform duration-300 ease-out flex flex-col max-h-[88vh] bg-white dark:bg-zinc-900 rounded-t-[32px] sm:rounded-3xl shadow-[0_-12px_40px_rgba(0,0,0,0.18)] border-t border-x border-slate-200/90 dark:border-zinc-800 overflow-hidden ${
+          className={`absolute inset-x-0 bottom-0 max-w-md mx-auto transform transition-transform duration-300 ease-out flex flex-col max-h-[88vh] ${
+            isAmoled
+              ? 'bg-black border-white/15'
+              : 'bg-white dark:bg-zinc-900 border-slate-200/90 dark:border-zinc-800'
+          } rounded-t-[32px] sm:rounded-3xl shadow-[0_-12px_40px_rgba(0,0,0,0.18)] border-t border-x overflow-hidden ${
             isPresetsOpen ? 'translate-y-0' : 'translate-y-full'
           }`}
           style={{
@@ -1149,11 +1349,19 @@ export function MetronomePanel({ onBack, onScroll }: MetronomePanelProps) {
         >
           {/* Drag pill handle */}
           <div className="pt-3 pb-1 flex justify-center items-center cursor-grab">
-            <div className="w-10 h-1 rounded-full bg-slate-300 dark:bg-zinc-700" />
+            <div
+              className={`w-10 h-1 rounded-full ${
+                isAmoled ? 'bg-zinc-800' : 'bg-slate-300 dark:bg-zinc-700'
+              }`}
+            />
           </div>
 
           {/* Modal Header */}
-          <div className="px-5 pt-1.5 pb-3 flex items-center justify-between border-b border-slate-100 dark:border-zinc-800">
+          <div
+            className={`px-5 pt-1.5 pb-3 flex items-center justify-between border-b ${
+              isAmoled ? 'border-white/10' : 'border-slate-100 dark:border-zinc-800'
+            }`}
+          >
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-lg font-extrabold font-manrope text-slate-900 dark:text-zinc-100 tracking-tight leading-tight">
@@ -1164,7 +1372,13 @@ export function MetronomePanel({ onBack, onScroll }: MetronomePanelProps) {
                       : 'Metronome Presets'}
                 </h2>
                 {presetFormMode === null && (
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-blue-50 dark:bg-blue-950/40 text-[#007aff] border border-blue-100 dark:border-blue-900">
+                  <span
+                    className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
+                      isAmoled
+                        ? 'bg-[#007aff]/20 text-[#007aff] border-blue-900/50'
+                        : 'bg-blue-50 dark:bg-blue-950/40 text-[#007aff] border-blue-100 dark:border-blue-900'
+                    } border`}
+                  >
                     {userPresets.length} saved
                   </span>
                 )}
@@ -1193,7 +1407,11 @@ export function MetronomePanel({ onBack, onScroll }: MetronomePanelProps) {
                   <button
                     aria-label="Close presets"
                     onClick={() => setIsPresetsOpen(false)}
-                    className="w-8 h-8 rounded-full bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-600 dark:text-zinc-300 flex items-center justify-center transition tap-press focus:outline-none cursor-pointer"
+                    className={`w-8 h-8 rounded-full ${
+                      isAmoled
+                        ? 'bg-[#0a0a0c] hover:bg-white/10 text-zinc-300 border border-white/10'
+                        : 'bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-600 dark:text-zinc-300'
+                    } flex items-center justify-center transition tap-press focus:outline-none cursor-pointer`}
                     type="button"
                   >
                     <span className="material-symbols-outlined text-[18px]">close</span>
@@ -1203,7 +1421,11 @@ export function MetronomePanel({ onBack, onScroll }: MetronomePanelProps) {
                 <button
                   aria-label="Cancel preset editing"
                   onClick={handleCancelForm}
-                  className="w-8 h-8 rounded-full bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-600 dark:text-zinc-300 flex items-center justify-center transition tap-press focus:outline-none cursor-pointer"
+                  className={`w-8 h-8 rounded-full ${
+                    isAmoled
+                      ? 'bg-[#0a0a0c] hover:bg-white/10 text-zinc-300 border border-white/10'
+                      : 'bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-600 dark:text-zinc-300'
+                  } flex items-center justify-center transition tap-press focus:outline-none cursor-pointer`}
                   type="button"
                 >
                   <span className="material-symbols-outlined text-[18px]">close</span>
@@ -1226,7 +1448,11 @@ export function MetronomePanel({ onBack, onScroll }: MetronomePanelProps) {
                     value={presetFormData.name}
                     onChange={(e) => setPresetFormData({ ...presetFormData, name: e.target.value })}
                     placeholder="e.g., Fast Paradiddle Drill"
-                    className="w-full px-3.5 py-2.5 text-xs bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200/60 focus:bg-white dark:focus:bg-zinc-900 border border-slate-200/80 dark:border-zinc-700 rounded-xl font-medium text-slate-800 dark:text-zinc-100 placeholder:text-slate-400 transition focus:outline-none focus:border-[#007aff]"
+                    className={`w-full px-3.5 py-2.5 text-xs ${
+                      isAmoled
+                        ? 'bg-[#0a0a0c] focus:bg-black border-white/15 text-zinc-100'
+                        : 'bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200/60 focus:bg-white dark:focus:bg-zinc-900 border-slate-200/80 dark:border-zinc-700 text-slate-800 dark:text-zinc-100'
+                    } border rounded-xl font-medium placeholder:text-slate-400 transition focus:outline-none focus:border-[#007aff]`}
                     type="text"
                   />
                 </div>
@@ -1250,7 +1476,11 @@ export function MetronomePanel({ onBack, onScroll }: MetronomePanelProps) {
                           bpm: Math.max(40, presetFormData.bpm - 5),
                         })
                       }
-                      className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 font-bold text-xs flex items-center justify-center border border-slate-200/70 dark:border-zinc-700 cursor-pointer"
+                      className={`w-9 h-9 rounded-xl ${
+                        isAmoled
+                          ? 'bg-[#0a0a0c] text-zinc-300 border-white/10 hover:bg-white/10'
+                          : 'bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 border-slate-200/70 dark:border-zinc-700'
+                      } font-bold text-xs flex items-center justify-center border cursor-pointer`}
                     >
                       -5
                     </button>
@@ -1262,7 +1492,11 @@ export function MetronomePanel({ onBack, onScroll }: MetronomePanelProps) {
                           bpm: Math.max(40, presetFormData.bpm - 1),
                         })
                       }
-                      className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 font-bold text-xs flex items-center justify-center border border-slate-200/70 dark:border-zinc-700 cursor-pointer"
+                      className={`w-9 h-9 rounded-xl ${
+                        isAmoled
+                          ? 'bg-[#0a0a0c] text-zinc-300 border-white/10 hover:bg-white/10'
+                          : 'bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 border-slate-200/70 dark:border-zinc-700'
+                      } font-bold text-xs flex items-center justify-center border cursor-pointer`}
                     >
                       -1
                     </button>
@@ -1284,7 +1518,11 @@ export function MetronomePanel({ onBack, onScroll }: MetronomePanelProps) {
                           bpm: Math.min(280, presetFormData.bpm + 1),
                         })
                       }
-                      className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 font-bold text-xs flex items-center justify-center border border-slate-200/70 dark:border-zinc-700 cursor-pointer"
+                      className={`w-9 h-9 rounded-xl ${
+                        isAmoled
+                          ? 'bg-[#0a0a0c] text-zinc-300 border-white/10 hover:bg-white/10'
+                          : 'bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 border-slate-200/70 dark:border-zinc-700'
+                      } font-bold text-xs flex items-center justify-center border cursor-pointer`}
                     >
                       +1
                     </button>
@@ -1296,7 +1534,11 @@ export function MetronomePanel({ onBack, onScroll }: MetronomePanelProps) {
                           bpm: Math.min(280, presetFormData.bpm + 5),
                         })
                       }
-                      className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 font-bold text-xs flex items-center justify-center border border-slate-200/70 dark:border-zinc-700 cursor-pointer"
+                      className={`w-9 h-9 rounded-xl ${
+                        isAmoled
+                          ? 'bg-[#0a0a0c] text-zinc-300 border-white/10 hover:bg-white/10'
+                          : 'bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 border-slate-200/70 dark:border-zinc-700'
+                      } font-bold text-xs flex items-center justify-center border cursor-pointer`}
                     >
                       +5
                     </button>
@@ -1327,8 +1569,12 @@ export function MetronomePanel({ onBack, onScroll }: MetronomePanelProps) {
                         onClick={() => setPresetFormData({ ...presetFormData, timeSignature: sig })}
                         className={`py-2 rounded-xl text-xs font-manrope font-bold border transition cursor-pointer ${
                           presetFormData.timeSignature === sig
-                            ? 'bg-blue-50 dark:bg-blue-950/40 border-[#007aff] text-[#007aff]'
-                            : 'bg-slate-50 dark:bg-zinc-800/60 border-slate-200/80 dark:border-zinc-700 text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800'
+                            ? isAmoled
+                              ? 'bg-[#007aff]/20 border-[#007aff] text-[#007aff]'
+                              : 'bg-blue-50 dark:bg-blue-950/40 border-[#007aff] text-[#007aff]'
+                            : isAmoled
+                              ? 'bg-[#0a0a0c] border-white/10 text-zinc-300 hover:bg-white/10'
+                              : 'bg-slate-50 dark:bg-zinc-800/60 border-slate-200/80 dark:border-zinc-700 text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800'
                         }`}
                       >
                         {sig}
@@ -1351,8 +1597,12 @@ export function MetronomePanel({ onBack, onScroll }: MetronomePanelProps) {
                           onClick={() => setPresetFormData({ ...presetFormData, subdivision: sub })}
                           className={`py-2 rounded-xl text-xs font-manrope font-bold border transition cursor-pointer ${
                             presetFormData.subdivision === sub
-                              ? 'bg-blue-50 dark:bg-blue-950/40 border-[#007aff] text-[#007aff]'
-                              : 'bg-slate-50 dark:bg-zinc-800/60 border-slate-200/80 dark:border-zinc-700 text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800'
+                              ? isAmoled
+                                ? 'bg-[#007aff]/20 border-[#007aff] text-[#007aff]'
+                                : 'bg-blue-50 dark:bg-blue-950/40 border-[#007aff] text-[#007aff]'
+                              : isAmoled
+                                ? 'bg-[#0a0a0c] border-white/10 text-zinc-300 hover:bg-white/10'
+                                : 'bg-slate-50 dark:bg-zinc-800/60 border-slate-200/80 dark:border-zinc-700 text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800'
                           }`}
                         >
                           {sub}
@@ -1380,8 +1630,12 @@ export function MetronomePanel({ onBack, onScroll }: MetronomePanelProps) {
                       onClick={() => setPresetFormData({ ...presetFormData, accentBeat: -1 })}
                       className={`py-2 px-3 rounded-xl text-xs font-manrope font-bold border transition cursor-pointer ${
                         presetFormData.accentBeat === -1
-                          ? 'bg-blue-50 dark:bg-blue-950/40 border-[#007aff] text-[#007aff]'
-                          : 'bg-slate-50 dark:bg-zinc-800/60 border-slate-200/80 dark:border-zinc-700 text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800'
+                          ? isAmoled
+                            ? 'bg-[#007aff]/20 border-[#007aff] text-[#007aff]'
+                            : 'bg-blue-50 dark:bg-blue-950/40 border-[#007aff] text-[#007aff]'
+                          : isAmoled
+                            ? 'bg-[#0a0a0c] border-white/10 text-zinc-300 hover:bg-white/10'
+                            : 'bg-slate-50 dark:bg-zinc-800/60 border-slate-200/80 dark:border-zinc-700 text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800'
                       }`}
                     >
                       None
@@ -1395,8 +1649,12 @@ export function MetronomePanel({ onBack, onScroll }: MetronomePanelProps) {
                         onClick={() => setPresetFormData({ ...presetFormData, accentBeat: idx })}
                         className={`py-2 px-3 rounded-xl text-xs font-manrope font-bold border transition cursor-pointer ${
                           presetFormData.accentBeat === idx
-                            ? 'bg-blue-50 dark:bg-blue-950/40 border-[#007aff] text-[#007aff]'
-                            : 'bg-slate-50 dark:bg-zinc-800/60 border-slate-200/80 dark:border-zinc-700 text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800'
+                            ? isAmoled
+                              ? 'bg-[#007aff]/20 border-[#007aff] text-[#007aff]'
+                              : 'bg-blue-50 dark:bg-blue-950/40 border-[#007aff] text-[#007aff]'
+                            : isAmoled
+                              ? 'bg-[#0a0a0c] border-white/10 text-zinc-300 hover:bg-white/10'
+                              : 'bg-slate-50 dark:bg-zinc-800/60 border-slate-200/80 dark:border-zinc-700 text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800'
                         }`}
                       >
                         Beat {idx + 1}
@@ -1420,8 +1678,12 @@ export function MetronomePanel({ onBack, onScroll }: MetronomePanelProps) {
                         onClick={() => setPresetFormData({ ...presetFormData, sound: snd })}
                         className={`py-2 px-3 rounded-xl text-xs font-medium text-left border transition cursor-pointer truncate ${
                           presetFormData.sound === snd
-                            ? 'bg-blue-50 dark:bg-blue-950/40 border-[#007aff] text-[#007aff] font-bold'
-                            : 'bg-slate-50 dark:bg-zinc-800/60 border-slate-200/80 dark:border-zinc-700 text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800'
+                            ? isAmoled
+                              ? 'bg-[#007aff]/20 border-[#007aff] text-[#007aff] font-bold'
+                              : 'bg-blue-50 dark:bg-blue-950/40 border-[#007aff] text-[#007aff] font-bold'
+                            : isAmoled
+                              ? 'bg-[#0a0a0c] border-white/10 text-zinc-300 hover:bg-white/10'
+                              : 'bg-slate-50 dark:bg-zinc-800/60 border-slate-200/80 dark:border-zinc-700 text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800'
                         }`}
                       >
                         {SOUND_LABELS[snd]}
@@ -1431,7 +1693,13 @@ export function MetronomePanel({ onBack, onScroll }: MetronomePanelProps) {
                 </div>
 
                 {/* Count-In Toggle */}
-                <div className="p-3 rounded-2xl bg-slate-50 dark:bg-zinc-800/40 border border-slate-200/80 dark:border-zinc-800 flex items-center justify-between">
+                <div
+                  className={`p-3 rounded-2xl ${
+                    isAmoled
+                      ? 'bg-[#0a0a0c] border-white/10'
+                      : 'bg-slate-50 dark:bg-zinc-800/40 border-slate-200/80 dark:border-zinc-800'
+                  } border flex items-center justify-between`}
+                >
                   <div>
                     <div className="text-xs font-bold font-manrope text-slate-900 dark:text-zinc-100">
                       Count-In (1 Bar)
@@ -1453,7 +1721,9 @@ export function MetronomePanel({ onBack, onScroll }: MetronomePanelProps) {
                     className={`w-10 h-6 rounded-full transition-colors relative cursor-pointer flex items-center px-0.5 ${
                       presetFormData.countInEnabled
                         ? 'bg-[#007aff]'
-                        : 'bg-slate-300 dark:bg-zinc-700'
+                        : isAmoled
+                          ? 'bg-zinc-800'
+                          : 'bg-slate-300 dark:bg-zinc-700'
                     }`}
                   >
                     <div
@@ -1466,11 +1736,19 @@ export function MetronomePanel({ onBack, onScroll }: MetronomePanelProps) {
               </div>
 
               {/* Form Actions Footer */}
-              <div className="px-5 py-3 border-t border-slate-100 dark:border-zinc-800 flex gap-2">
+              <div
+                className={`px-5 py-3 border-t ${
+                  isAmoled ? 'border-white/10' : 'border-slate-100 dark:border-zinc-800'
+                } flex gap-2`}
+              >
                 <button
                   type="button"
                   onClick={handleCancelForm}
-                  className="flex-1 py-3 rounded-2xl bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-300 font-manrope font-bold text-xs tracking-tight transition cursor-pointer"
+                  className={`flex-1 py-3 rounded-2xl ${
+                    isAmoled
+                      ? 'bg-[#0a0a0c] hover:bg-white/10 text-zinc-300 border border-white/10'
+                      : 'bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-300'
+                  } font-manrope font-bold text-xs tracking-tight transition cursor-pointer`}
                 >
                   Cancel
                 </button>
@@ -1495,7 +1773,11 @@ export function MetronomePanel({ onBack, onScroll }: MetronomePanelProps) {
                     value={presetSearch}
                     onChange={(e) => setPresetSearch(e.target.value)}
                     placeholder="Search presets..."
-                    className="w-full pl-9 pr-3 py-2 text-xs bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200/60 focus:bg-white dark:focus:bg-zinc-900 border border-slate-200/80 dark:border-zinc-700 rounded-xl text-slate-800 dark:text-zinc-100 placeholder:text-slate-400 transition focus:outline-none focus:border-[#007aff]"
+                    className={`w-full pl-9 pr-3 py-2 text-xs ${
+                      isAmoled
+                        ? 'bg-[#0a0a0c] focus:bg-black border-white/15 text-zinc-100'
+                        : 'bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200/60 focus:bg-white dark:focus:bg-zinc-900 border-slate-200/80 dark:border-zinc-700 text-slate-800 dark:text-zinc-100'
+                    } border rounded-xl placeholder:text-slate-400 transition focus:outline-none focus:border-[#007aff]`}
                     type="text"
                   />
                 </div>
@@ -1512,8 +1794,20 @@ export function MetronomePanel({ onBack, onScroll }: MetronomePanelProps) {
                   </div>
 
                   {filteredUserPresets.length === 0 ? (
-                    <div className="py-8 px-4 rounded-2xl bg-slate-50 dark:bg-zinc-800/40 border border-dashed border-slate-200 dark:border-zinc-800 text-center flex flex-col items-center justify-center gap-3">
-                      <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-950/40 text-[#007aff] flex items-center justify-center">
+                    <div
+                      className={`py-8 px-4 rounded-2xl ${
+                        isAmoled
+                          ? 'bg-[#0a0a0c] border-white/15'
+                          : 'bg-slate-50 dark:bg-zinc-800/40 border-slate-200 dark:border-zinc-800'
+                      } border border-dashed text-center flex flex-col items-center justify-center gap-3`}
+                    >
+                      <div
+                        className={`w-12 h-12 rounded-2xl ${
+                          isAmoled
+                            ? 'bg-[#007aff]/15 text-[#007aff]'
+                            : 'bg-blue-50 dark:bg-blue-950/40 text-[#007aff]'
+                        } flex items-center justify-center`}
+                      >
                         <span className="material-symbols-outlined text-[28px]">
                           bookmark_border
                         </span>
@@ -1548,16 +1842,24 @@ export function MetronomePanel({ onBack, onScroll }: MetronomePanelProps) {
                           }}
                           className={`relative p-3 rounded-2xl flex items-center justify-between transition tap-press cursor-pointer ${
                             isCurrent
-                              ? 'bg-white dark:bg-zinc-900 border-2 border-[#007aff] shadow-[0_4px_16px_rgba(0,122,255,0.08)]'
-                              : 'bg-white dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-800 shadow-xs hover:border-slate-300 dark:hover:border-zinc-700'
+                              ? isAmoled
+                                ? 'bg-black border-2 border-[#007aff] shadow-[0_4px_16px_rgba(0,122,255,0.15)]'
+                                : 'bg-white dark:bg-zinc-900 border-2 border-[#007aff] shadow-[0_4px_16px_rgba(0,122,255,0.08)]'
+                              : isAmoled
+                                ? 'bg-black border border-white/15 shadow-none hover:border-white/25'
+                                : 'bg-white dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-800 shadow-xs hover:border-slate-300 dark:hover:border-zinc-700'
                           }`}
                         >
                           <div className="flex items-center gap-3">
                             <div
                               className={`w-10 h-10 rounded-xl flex items-center justify-center font-manrope font-extrabold text-sm border flex-shrink-0 ${
                                 isCurrent
-                                  ? 'bg-blue-50 dark:bg-blue-950/40 text-[#007aff] border-blue-100 dark:border-blue-900'
-                                  : 'bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 border-slate-200 dark:border-zinc-700'
+                                  ? isAmoled
+                                    ? 'bg-[#007aff]/15 text-[#007aff] border-[#007aff]/30'
+                                    : 'bg-blue-50 dark:bg-blue-950/40 text-[#007aff] border-blue-100 dark:border-blue-900'
+                                  : isAmoled
+                                    ? 'bg-[#0a0a0c] text-zinc-400 border-white/10'
+                                    : 'bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 border-slate-200 dark:border-zinc-700'
                               }`}
                             >
                               <span className="material-symbols-outlined text-[20px]">
@@ -1570,7 +1872,13 @@ export function MetronomePanel({ onBack, onScroll }: MetronomePanelProps) {
                                   {p.name}
                                 </h3>
                                 {isCurrent && (
-                                  <span className="px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-900/60 text-[#007aff] text-[9px] font-extrabold uppercase tracking-wide">
+                                  <span
+                                    className={`px-1.5 py-0.5 rounded ${
+                                      isAmoled
+                                        ? 'bg-[#007aff]/20 text-[#007aff]'
+                                        : 'bg-blue-100 dark:bg-blue-900/60 text-[#007aff]'
+                                    } text-[9px] font-extrabold uppercase tracking-wide`}
+                                  >
                                     Current
                                   </span>
                                 )}
@@ -1593,8 +1901,12 @@ export function MetronomePanel({ onBack, onScroll }: MetronomePanelProps) {
                             <span
                               className={`px-2 py-1 rounded-lg font-manrope text-xs ${
                                 isCurrent
-                                  ? 'bg-blue-50 dark:bg-blue-950/40 text-[#007aff] font-extrabold'
-                                  : 'bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 font-bold'
+                                  ? isAmoled
+                                    ? 'bg-[#007aff]/20 text-[#007aff] font-extrabold'
+                                    : 'bg-blue-50 dark:bg-blue-950/40 text-[#007aff] font-extrabold'
+                                  : isAmoled
+                                    ? 'bg-[#0a0a0c] text-zinc-300 font-bold border border-white/10'
+                                    : 'bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 font-bold'
                               }`}
                             >
                               {p.bpm} <span className="text-[9px]">BPM</span>
@@ -1606,7 +1918,11 @@ export function MetronomePanel({ onBack, onScroll }: MetronomePanelProps) {
                                   e.stopPropagation();
                                   setActivePresetMenuId(activePresetMenuId === p.id ? null : p.id);
                                 }}
-                                className="w-7 h-7 rounded-full hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-400 hover:text-slate-700 dark:hover:text-zinc-200 flex items-center justify-center transition cursor-pointer"
+                                className={`w-7 h-7 rounded-full ${
+                                  isAmoled
+                                    ? 'hover:bg-white/10 text-zinc-400 hover:text-zinc-200'
+                                    : 'hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-400 hover:text-slate-700 dark:hover:text-zinc-200'
+                                } flex items-center justify-center transition cursor-pointer`}
                                 type="button"
                               >
                                 <span className="material-symbols-outlined text-[16px]">
@@ -1618,11 +1934,19 @@ export function MetronomePanel({ onBack, onScroll }: MetronomePanelProps) {
                               {activePresetMenuId === p.id && (
                                 <div
                                   onClick={(e) => e.stopPropagation()}
-                                  className="absolute right-0 top-8 z-50 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl shadow-lg py-1 min-w-[130px] flex flex-col"
+                                  className={`absolute right-0 top-8 z-50 ${
+                                    isAmoled
+                                      ? 'bg-black border-white/15'
+                                      : 'bg-white dark:bg-zinc-800 border-slate-200 dark:border-zinc-700'
+                                  } border rounded-xl shadow-lg py-1 min-w-[130px] flex flex-col`}
                                 >
                                   <button
                                     onClick={() => handleOpenEditForm(p)}
-                                    className="px-3 py-1.5 text-left text-xs font-medium text-slate-700 dark:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-700"
+                                    className={`px-3 py-1.5 text-left text-xs font-medium ${
+                                      isAmoled
+                                        ? 'text-zinc-200 hover:bg-white/10'
+                                        : 'text-slate-700 dark:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-700'
+                                    }`}
                                   >
                                     Edit
                                   </button>
@@ -1631,7 +1955,11 @@ export function MetronomePanel({ onBack, onScroll }: MetronomePanelProps) {
                                       updateCurrentPreset();
                                       setActivePresetMenuId(null);
                                     }}
-                                    className="px-3 py-1.5 text-left text-xs font-medium text-slate-700 dark:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-700"
+                                    className={`px-3 py-1.5 text-left text-xs font-medium ${
+                                      isAmoled
+                                        ? 'text-zinc-200 hover:bg-white/10'
+                                        : 'text-slate-700 dark:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-700'
+                                    }`}
                                   >
                                     Update with current
                                   </button>
@@ -1640,7 +1968,11 @@ export function MetronomePanel({ onBack, onScroll }: MetronomePanelProps) {
                                       duplicatePreset(p.id);
                                       setActivePresetMenuId(null);
                                     }}
-                                    className="px-3 py-1.5 text-left text-xs font-medium text-slate-700 dark:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-700"
+                                    className={`px-3 py-1.5 text-left text-xs font-medium ${
+                                      isAmoled
+                                        ? 'text-zinc-200 hover:bg-white/10'
+                                        : 'text-slate-700 dark:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-700'
+                                    }`}
                                   >
                                     Duplicate
                                   </button>
@@ -1649,7 +1981,11 @@ export function MetronomePanel({ onBack, onScroll }: MetronomePanelProps) {
                                       deletePreset(p.id);
                                       setActivePresetMenuId(null);
                                     }}
-                                    className="px-3 py-1.5 text-left text-xs font-medium text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40"
+                                    className={`px-3 py-1.5 text-left text-xs font-medium ${
+                                      isAmoled
+                                        ? 'text-rose-400 hover:bg-rose-950/40'
+                                        : 'text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40'
+                                    }`}
                                   >
                                     Delete
                                   </button>
@@ -1672,6 +2008,7 @@ export function MetronomePanel({ onBack, onScroll }: MetronomePanelProps) {
       <TimeSignatureModal
         isOpen={showTimeSigModal}
         value={timeSignature}
+        isAmoled={isAmoled}
         onSelect={(sig) => setTimeSignature(sig)}
         onClose={() => setShowTimeSigModal(false)}
       />
@@ -1679,6 +2016,7 @@ export function MetronomePanel({ onBack, onScroll }: MetronomePanelProps) {
       <SubdivisionModal
         isOpen={showSubdivisionModal}
         value={subdivision}
+        isAmoled={isAmoled}
         onSelect={(sub) => setSubdivision(sub)}
         onClose={() => setShowSubdivisionModal(false)}
       />
@@ -1688,6 +2026,7 @@ export function MetronomePanel({ onBack, onScroll }: MetronomePanelProps) {
         isOpen={showTempoRampModal}
         config={tempoRamp}
         currentBpm={bpm}
+        isAmoled={isAmoled}
         onSave={(cfg) => setTempoRamp(cfg)}
         onClose={() => setShowTempoRampModal(false)}
       />
@@ -1697,6 +2036,7 @@ export function MetronomePanel({ onBack, onScroll }: MetronomePanelProps) {
         isOpen={showCountInModal}
         countInBars={countInBars}
         countInVoiceEnabled={countInVoiceEnabled}
+        isAmoled={isAmoled}
         onSelectBars={(bars) => setCountInBars(bars)}
         onToggleVoice={(enabled) => setCountInVoice(enabled)}
         onPreviewVoice={() => metronomeAudioEngine.playVoicePreview(1)}
@@ -1706,7 +2046,13 @@ export function MetronomePanel({ onBack, onScroll }: MetronomePanelProps) {
       {/* Synchronized Visual Count-In Countdown Overlay */}
       {isPlaying && isCountIn && (
         <div className="fixed inset-0 z-[100] pointer-events-none flex flex-col items-center justify-center bg-black/40 backdrop-blur-[2px] animate-in fade-in duration-100">
-          <div className="flex flex-col items-center justify-center px-10 py-8 rounded-3xl bg-white/95 dark:bg-zinc-900/95 shadow-2xl border border-slate-200/80 dark:border-zinc-800 animate-in zoom-in-95 duration-100 min-w-[200px]">
+          <div
+            className={`flex flex-col items-center justify-center px-10 py-8 rounded-3xl ${
+              isAmoled
+                ? 'bg-black/95 border-white/15'
+                : 'bg-white/95 dark:bg-zinc-900/95 border-slate-200/80 dark:border-zinc-800'
+            } shadow-2xl border animate-in zoom-in-95 duration-100 min-w-[200px]`}
+          >
             <span className="text-[11px] font-extrabold tracking-widest text-[#007aff] uppercase font-manrope mb-1">
               {(countInTotalBars ?? 1) > 1
                 ? `BAR ${countInBar ?? 1} OF ${countInTotalBars}`

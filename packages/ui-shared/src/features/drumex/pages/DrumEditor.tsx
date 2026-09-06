@@ -4287,6 +4287,7 @@ export default function DrumEditor() {
                   case 'metronome':
                     return (
                       <MetronomePanel
+                        isAmoled={isAmoled}
                         onScroll={drumScrollHide}
                         onBack={() => {
                           const history = useNavigationStore.getState().history;

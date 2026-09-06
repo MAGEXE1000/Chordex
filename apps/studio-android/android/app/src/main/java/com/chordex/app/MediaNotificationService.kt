@@ -225,8 +225,9 @@ class MediaNotificationService : Service() {
             } else {
                 loadArtwork(artworkUrl)
             }
-        } else if (artworkUrl.isNullOrEmpty() && (currentArtist == "Drumex Metronome" || currentTitle.contains("Metronome") || currentAlbum.contains("BPM"))) {
+        } else if (artworkUrl.isNullOrEmpty() && (currentArtist == "Drumex Metronome" || currentTitle.contains("Metronome") || currentAlbum.contains("BPM") || currentArtist.contains("BPM"))) {
             val bpmMatch = Regex("""(\d+)\s*BPM""", RegexOption.IGNORE_CASE).find(currentAlbum)
+                ?: Regex("""(\d+)\s*BPM""", RegexOption.IGNORE_CASE).find(currentArtist)
                 ?: Regex("""(\d+)\s*BPM""", RegexOption.IGNORE_CASE).find(currentTitle)
             val bpmStr = bpmMatch?.groupValues?.get(1) ?: "120"
             currentArtworkBitmap = generateBpmArtwork(bpmStr)
@@ -336,50 +337,50 @@ class MediaNotificationService : Service() {
         val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
 
-        // 1. Sleek deep black background
+        // 1. Sleek deep black background (#000000)
         val bgPaint = Paint().apply {
-            color = Color.parseColor("#09090B")
+            color = Color.parseColor("#000000")
             isAntiAlias = true
         }
         canvas.drawRect(0f, 0f, size.toFloat(), size.toFloat(), bgPaint)
 
-        // 2. Centered inner card / badge with generous 64px padding on all sides (384x384)
-        val inset = 64f
+        // 2. Centered compact inner card badge with generous 146px padding (220x220 in 512x512)
+        val inset = 146f
         val innerCardPaint = Paint().apply {
-            color = Color.parseColor("#18181B")
+            color = Color.parseColor("#121215")
             isAntiAlias = true
         }
-        canvas.drawRoundRect(inset, inset, size - inset, size - inset, 40f, 40f, innerCardPaint)
+        canvas.drawRoundRect(inset, inset, size - inset, size - inset, 28f, 28f, innerCardPaint)
 
         val ringPaint = Paint().apply {
             color = Color.parseColor("#27272A")
             style = Paint.Style.STROKE
-            strokeWidth = 4f
+            strokeWidth = 2.5f
             isAntiAlias = true
         }
-        canvas.drawRoundRect(inset, inset, size - inset, size - inset, 40f, 40f, ringPaint)
+        canvas.drawRoundRect(inset, inset, size - inset, size - inset, 28f, 28f, ringPaint)
 
-        // 3. Crisp modern white BPM number centered with breathing room
+        // 3. Crisp modern white BPM number centered
         val numPaint = Paint().apply {
             color = Color.WHITE
-            textSize = 100f
+            textSize = 56f
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
             textAlign = Paint.Align.CENTER
             isAntiAlias = true
         }
-        val yPosNum = (size / 2f) - ((numPaint.descent() + numPaint.ascent()) / 2f) - 22f
+        val yPosNum = (size / 2f) - ((numPaint.descent() + numPaint.ascent()) / 2f) - 14f
         canvas.drawText(bpm, size / 2f, yPosNum, numPaint)
 
         // 4. "BPM" badge label in clean slate/light gray
         val labelPaint = Paint().apply {
             color = Color.parseColor("#A1A1AA")
-            textSize = 26f
+            textSize = 16f
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
             textAlign = Paint.Align.CENTER
-            letterSpacing = 0.12f
+            letterSpacing = 0.10f
             isAntiAlias = true
         }
-        canvas.drawText(subtext, size / 2f, yPosNum + 58f, labelPaint)
+        canvas.drawText(subtext, size / 2f, yPosNum + 42f, labelPaint)
 
         return bitmap
     }

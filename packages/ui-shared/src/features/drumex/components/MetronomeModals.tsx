@@ -11,6 +11,7 @@ interface TimeSignatureModalProps {
   value: MetronomeTimeSignature;
   onSelect: (sig: MetronomeTimeSignature) => void;
   onClose: () => void;
+  isAmoled?: boolean;
 }
 
 interface TimeSignatureOption {
@@ -61,7 +62,13 @@ const TIME_SIGNATURE_OPTIONS: TimeSignatureOption[] = [
   },
 ];
 
-export function TimeSignatureModal({ isOpen, value, onSelect, onClose }: TimeSignatureModalProps) {
+export function TimeSignatureModal({
+  isOpen,
+  value,
+  onSelect,
+  onClose,
+  isAmoled,
+}: TimeSignatureModalProps) {
   if (!isOpen) return null;
 
   return (
@@ -86,11 +93,19 @@ export function TimeSignatureModal({ isOpen, value, onSelect, onClose }: TimeSig
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.95, opacity: 0, y: 6 }}
           transition={{ type: 'spring', damping: 26, stiffness: 320 }}
-          className="relative w-full max-w-sm bg-white dark:bg-zinc-900 rounded-3xl border border-slate-200/90 dark:border-zinc-800 shadow-2xl overflow-hidden z-10 flex flex-col max-h-[85vh]"
+          className={`relative w-full max-w-sm ${
+            isAmoled
+              ? 'bg-black border-white/15'
+              : 'bg-white dark:bg-zinc-900 border-slate-200/90 dark:border-zinc-800'
+          } rounded-3xl border shadow-2xl overflow-hidden z-10 flex flex-col max-h-[85vh]`}
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="px-5 pt-5 pb-3 border-b border-slate-100 dark:border-zinc-800/80 flex items-center justify-between">
+          <div
+            className={`px-5 pt-5 pb-3 border-b ${
+              isAmoled ? 'border-white/10' : 'border-slate-100 dark:border-zinc-800/80'
+            } flex items-center justify-between`}
+          >
             <div>
               <h3
                 id="time-sig-modal-title"
@@ -106,7 +121,11 @@ export function TimeSignatureModal({ isOpen, value, onSelect, onClose }: TimeSig
               onClick={onClose}
               aria-label="Close"
               type="button"
-              className="w-8 h-8 rounded-full bg-slate-100 dark:bg-zinc-800 text-slate-500 hover:text-slate-800 dark:hover:text-zinc-200 flex items-center justify-center transition cursor-pointer"
+              className={`w-8 h-8 rounded-full ${
+                isAmoled
+                  ? 'bg-[#0a0a0c] text-zinc-400 hover:text-white border border-white/10'
+                  : 'bg-slate-100 dark:bg-zinc-800 text-slate-500 hover:text-slate-800 dark:hover:text-zinc-200'
+              } flex items-center justify-center transition cursor-pointer`}
             >
               <span className="material-symbols-outlined text-[18px]">close</span>
             </button>
@@ -127,7 +146,9 @@ export function TimeSignatureModal({ isOpen, value, onSelect, onClose }: TimeSig
                   className={`w-full p-3 rounded-2xl border text-left flex items-center justify-between transition-all cursor-pointer ${
                     isSelected
                       ? 'bg-blue-50/80 dark:bg-blue-950/40 border-[#007aff] text-slate-900 dark:text-zinc-100 shadow-sm'
-                      : 'bg-slate-50/70 dark:bg-zinc-800/60 border-slate-200/80 dark:border-zinc-800 text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800'
+                      : isAmoled
+                        ? 'bg-[#0a0a0c] border-white/10 text-zinc-300 hover:bg-white/5'
+                        : 'bg-slate-50/70 dark:bg-zinc-800/60 border-slate-200/80 dark:border-zinc-800 text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800'
                   }`}
                 >
                   <div className="flex items-center gap-3">
@@ -135,7 +156,9 @@ export function TimeSignatureModal({ isOpen, value, onSelect, onClose }: TimeSig
                       className={`w-11 h-11 rounded-xl flex items-center justify-center font-manrope font-extrabold text-sm border ${
                         isSelected
                           ? 'bg-[#007aff] text-white border-blue-600 shadow-xs'
-                          : 'bg-white dark:bg-zinc-800 text-slate-800 dark:text-zinc-200 border-slate-200 dark:border-zinc-700'
+                          : isAmoled
+                            ? 'bg-black text-white border-white/10'
+                            : 'bg-white dark:bg-zinc-800 text-slate-800 dark:text-zinc-200 border-slate-200 dark:border-zinc-700'
                       }`}
                     >
                       {opt.signature}
@@ -161,7 +184,11 @@ export function TimeSignatureModal({ isOpen, value, onSelect, onClose }: TimeSig
           </div>
 
           {/* Footer Action */}
-          <div className="p-4 border-t border-slate-100 dark:border-zinc-800/80">
+          <div
+            className={`p-4 border-t ${
+              isAmoled ? 'border-white/10' : 'border-slate-100 dark:border-zinc-800/80'
+            }`}
+          >
             <button
               type="button"
               onClick={onClose}
@@ -181,6 +208,7 @@ interface SubdivisionModalProps {
   value: MetronomeSubdivision;
   onSelect: (sub: MetronomeSubdivision) => void;
   onClose: () => void;
+  isAmoled?: boolean;
 }
 
 interface SubdivisionOption {
@@ -236,7 +264,13 @@ const SUBDIVISION_OPTIONS: SubdivisionOption[] = [
   },
 ];
 
-export function SubdivisionModal({ isOpen, value, onSelect, onClose }: SubdivisionModalProps) {
+export function SubdivisionModal({
+  isOpen,
+  value,
+  onSelect,
+  onClose,
+  isAmoled,
+}: SubdivisionModalProps) {
   if (!isOpen) return null;
 
   return (
@@ -261,11 +295,19 @@ export function SubdivisionModal({ isOpen, value, onSelect, onClose }: Subdivisi
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.95, opacity: 0, y: 6 }}
           transition={{ type: 'spring', damping: 26, stiffness: 320 }}
-          className="relative w-full max-w-sm bg-white dark:bg-zinc-900 rounded-3xl border border-slate-200/90 dark:border-zinc-800 shadow-2xl overflow-hidden z-10 flex flex-col max-h-[85vh]"
+          className={`relative w-full max-w-sm ${
+            isAmoled
+              ? 'bg-black border-white/15'
+              : 'bg-white dark:bg-zinc-900 border-slate-200/90 dark:border-zinc-800'
+          } rounded-3xl border shadow-2xl overflow-hidden z-10 flex flex-col max-h-[85vh]`}
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="px-5 pt-5 pb-3 border-b border-slate-100 dark:border-zinc-800/80 flex items-center justify-between">
+          <div
+            className={`px-5 pt-5 pb-3 border-b ${
+              isAmoled ? 'border-white/10' : 'border-slate-100 dark:border-zinc-800/80'
+            } flex items-center justify-between`}
+          >
             <div>
               <h3
                 id="subdivision-modal-title"
@@ -281,7 +323,11 @@ export function SubdivisionModal({ isOpen, value, onSelect, onClose }: Subdivisi
               onClick={onClose}
               aria-label="Close"
               type="button"
-              className="w-8 h-8 rounded-full bg-slate-100 dark:bg-zinc-800 text-slate-500 hover:text-slate-800 dark:hover:text-zinc-200 flex items-center justify-center transition cursor-pointer"
+              className={`w-8 h-8 rounded-full ${
+                isAmoled
+                  ? 'bg-[#0a0a0c] text-zinc-400 hover:text-white border border-white/10'
+                  : 'bg-slate-100 dark:bg-zinc-800 text-slate-500 hover:text-slate-800 dark:hover:text-zinc-200'
+              } flex items-center justify-center transition cursor-pointer`}
             >
               <span className="material-symbols-outlined text-[18px]">close</span>
             </button>
@@ -302,7 +348,9 @@ export function SubdivisionModal({ isOpen, value, onSelect, onClose }: Subdivisi
                   className={`w-full p-3 rounded-2xl border text-left flex items-center justify-between transition-all cursor-pointer ${
                     isSelected
                       ? 'bg-blue-50/80 dark:bg-blue-950/40 border-[#007aff] text-slate-900 dark:text-zinc-100 shadow-sm'
-                      : 'bg-slate-50/70 dark:bg-zinc-800/60 border-slate-200/80 dark:border-zinc-800 text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800'
+                      : isAmoled
+                        ? 'bg-[#0a0a0c] border-white/10 text-zinc-300 hover:bg-white/5'
+                        : 'bg-slate-50/70 dark:bg-zinc-800/60 border-slate-200/80 dark:border-zinc-800 text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800'
                   }`}
                 >
                   <div className="flex items-center gap-3">
@@ -310,7 +358,9 @@ export function SubdivisionModal({ isOpen, value, onSelect, onClose }: Subdivisi
                       className={`w-11 h-11 rounded-xl flex items-center justify-center font-manrope font-extrabold text-xs border ${
                         isSelected
                           ? 'bg-[#007aff] text-white border-blue-600 shadow-xs'
-                          : 'bg-white dark:bg-zinc-800 text-slate-800 dark:text-zinc-200 border-slate-200 dark:border-zinc-700'
+                          : isAmoled
+                            ? 'bg-black text-white border-white/10'
+                            : 'bg-white dark:bg-zinc-800 text-slate-800 dark:text-zinc-200 border-slate-200 dark:border-zinc-700'
                       }`}
                     >
                       {opt.iconText}
@@ -336,7 +386,11 @@ export function SubdivisionModal({ isOpen, value, onSelect, onClose }: Subdivisi
           </div>
 
           {/* Footer Action */}
-          <div className="p-4 border-t border-slate-100 dark:border-zinc-800/80">
+          <div
+            className={`p-4 border-t ${
+              isAmoled ? 'border-white/10' : 'border-slate-100 dark:border-zinc-800/80'
+            }`}
+          >
             <button
               type="button"
               onClick={onClose}
@@ -357,6 +411,7 @@ export interface TempoRampModalProps {
   currentBpm: number;
   onSave: (config: MetronomeTempoRampConfig) => void;
   onClose: () => void;
+  isAmoled?: boolean;
 }
 
 function formatDurationLabel(sec: number): string {
@@ -372,6 +427,7 @@ export function TempoRampModal({
   currentBpm,
   onSave,
   onClose,
+  isAmoled,
 }: TempoRampModalProps) {
   const [enabled, setEnabled] = React.useState(config.enabled);
   const [mode, setMode] = React.useState<'bars' | 'time'>(config.mode || 'bars');
@@ -461,11 +517,19 @@ export function TempoRampModal({
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.95, opacity: 0, y: 6 }}
           transition={{ type: 'spring', damping: 26, stiffness: 320 }}
-          className="relative w-full max-w-sm bg-white dark:bg-zinc-900 rounded-3xl border border-slate-200/90 dark:border-zinc-800 shadow-2xl overflow-hidden z-10 flex flex-col max-h-[90vh]"
+          className={`relative w-full max-w-sm ${
+            isAmoled
+              ? 'bg-black border-white/15'
+              : 'bg-white dark:bg-zinc-900 border-slate-200/90 dark:border-zinc-800'
+          } rounded-3xl border shadow-2xl overflow-hidden z-10 flex flex-col max-h-[90vh]`}
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="px-5 pt-5 pb-3 border-b border-slate-100 dark:border-zinc-800/80 flex items-center justify-between">
+          <div
+            className={`px-5 pt-5 pb-3 border-b ${
+              isAmoled ? 'border-white/10' : 'border-slate-100 dark:border-zinc-800/80'
+            } flex items-center justify-between`}
+          >
             <div>
               <h3
                 id="tempo-ramp-modal-title"
@@ -481,7 +545,11 @@ export function TempoRampModal({
               onClick={onClose}
               aria-label="Close"
               type="button"
-              className="w-8 h-8 rounded-full bg-slate-100 dark:bg-zinc-800 text-slate-500 hover:text-slate-800 dark:hover:text-zinc-200 flex items-center justify-center transition cursor-pointer"
+              className={`w-8 h-8 rounded-full ${
+                isAmoled
+                  ? 'bg-[#0a0a0c] text-zinc-400 hover:text-white border border-white/10'
+                  : 'bg-slate-100 dark:bg-zinc-800 text-slate-500 hover:text-slate-800 dark:hover:text-zinc-200'
+              } flex items-center justify-center transition cursor-pointer`}
             >
               <span className="material-symbols-outlined text-[18px]">close</span>
             </button>
@@ -490,7 +558,13 @@ export function TempoRampModal({
           {/* Body Content */}
           <div className="p-4 overflow-y-auto space-y-4 no-scrollbar">
             {/* Enable Toggle Card */}
-            <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-zinc-800/60 border border-slate-200/80 dark:border-zinc-800 flex items-center justify-between">
+            <div
+              className={`p-3.5 rounded-2xl ${
+                isAmoled
+                  ? 'bg-[#0a0a0c] border border-white/10'
+                  : 'bg-slate-50 dark:bg-zinc-800/60 border border-slate-200/80 dark:border-zinc-800'
+              } flex items-center justify-between`}
+            >
               <div>
                 <div className="text-xs font-bold font-manrope text-slate-900 dark:text-zinc-100">
                   Enable Progression
@@ -521,13 +595,21 @@ export function TempoRampModal({
               <label className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-zinc-500 font-manrope">
                 Progression Mode
               </label>
-              <div className="grid grid-cols-2 p-1 bg-slate-100 dark:bg-zinc-800/80 rounded-2xl border border-slate-200/80 dark:border-zinc-700">
+              <div
+                className={`grid grid-cols-2 p-1 ${
+                  isAmoled
+                    ? 'bg-[#0a0a0c] border-white/10'
+                    : 'bg-slate-100 dark:bg-zinc-800/80 border-slate-200/80 dark:border-zinc-700'
+                } rounded-2xl border`}
+              >
                 <button
                   type="button"
                   onClick={() => setMode('bars')}
                   className={`py-2 rounded-xl text-xs font-bold font-manrope transition flex items-center justify-center gap-1.5 cursor-pointer ${
                     mode === 'bars'
-                      ? 'bg-white dark:bg-zinc-900 text-[#007aff] shadow-xs'
+                      ? isAmoled
+                        ? 'bg-black text-[#007aff] shadow-xs border border-white/10'
+                        : 'bg-white dark:bg-zinc-900 text-[#007aff] shadow-xs'
                       : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200'
                   }`}
                 >
@@ -539,7 +621,9 @@ export function TempoRampModal({
                   onClick={() => setMode('time')}
                   className={`py-2 rounded-xl text-xs font-bold font-manrope transition flex items-center justify-center gap-1.5 cursor-pointer ${
                     mode === 'time'
-                      ? 'bg-white dark:bg-zinc-900 text-[#007aff] shadow-xs'
+                      ? isAmoled
+                        ? 'bg-black text-[#007aff] shadow-xs border border-white/10'
+                        : 'bg-white dark:bg-zinc-900 text-[#007aff] shadow-xs'
                       : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200'
                   }`}
                 >
@@ -552,7 +636,13 @@ export function TempoRampModal({
             {/* Start & Target BPM */}
             <div className="grid grid-cols-2 gap-2.5">
               {/* Start BPM */}
-              <div className="p-3 rounded-2xl bg-slate-50/70 dark:bg-zinc-800/40 border border-slate-200/80 dark:border-zinc-800 flex flex-col items-center">
+              <div
+                className={`p-3 rounded-2xl ${
+                  isAmoled
+                    ? 'bg-[#0a0a0c] border-white/10'
+                    : 'bg-slate-50/70 dark:bg-zinc-800/40 border-slate-200/80 dark:border-zinc-800'
+                } border flex flex-col items-center`}
+              >
                 <span className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider mb-1">
                   Start BPM
                 </span>
@@ -560,7 +650,11 @@ export function TempoRampModal({
                   <button
                     type="button"
                     onClick={() => setStartBpm((v) => Math.max(40, v - 5))}
-                    className="w-7 h-7 rounded-lg bg-white dark:bg-zinc-700 text-slate-700 dark:text-zinc-200 font-bold text-xs flex items-center justify-center border border-slate-200 dark:border-zinc-600 active:scale-95 transition cursor-pointer"
+                    className={`w-7 h-7 rounded-lg ${
+                      isAmoled
+                        ? 'bg-black text-white border-white/10 hover:bg-white/10'
+                        : 'bg-white dark:bg-zinc-700 text-slate-700 dark:text-zinc-200 border-slate-200 dark:border-zinc-600'
+                    } font-bold text-xs flex items-center justify-center border active:scale-95 transition cursor-pointer`}
                   >
                     -
                   </button>
@@ -570,7 +664,11 @@ export function TempoRampModal({
                   <button
                     type="button"
                     onClick={() => setStartBpm((v) => Math.min(280, v + 5))}
-                    className="w-7 h-7 rounded-lg bg-white dark:bg-zinc-700 text-slate-700 dark:text-zinc-200 font-bold text-xs flex items-center justify-center border border-slate-200 dark:border-zinc-600 active:scale-95 transition cursor-pointer"
+                    className={`w-7 h-7 rounded-lg ${
+                      isAmoled
+                        ? 'bg-black text-white border-white/10 hover:bg-white/10'
+                        : 'bg-white dark:bg-zinc-700 text-slate-700 dark:text-zinc-200 border-slate-200 dark:border-zinc-600'
+                    } font-bold text-xs flex items-center justify-center border active:scale-95 transition cursor-pointer`}
                   >
                     +
                   </button>
@@ -585,7 +683,13 @@ export function TempoRampModal({
               </div>
 
               {/* Target BPM */}
-              <div className="p-3 rounded-2xl bg-slate-50/70 dark:bg-zinc-800/40 border border-slate-200/80 dark:border-zinc-800 flex flex-col items-center">
+              <div
+                className={`p-3 rounded-2xl ${
+                  isAmoled
+                    ? 'bg-[#0a0a0c] border-white/10'
+                    : 'bg-slate-50/70 dark:bg-zinc-800/40 border-slate-200/80 dark:border-zinc-800'
+                } border flex flex-col items-center`}
+              >
                 <span className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider mb-1">
                   Target BPM
                 </span>
@@ -593,7 +697,11 @@ export function TempoRampModal({
                   <button
                     type="button"
                     onClick={() => setTargetBpm((v) => Math.max(40, v - 5))}
-                    className="w-7 h-7 rounded-lg bg-white dark:bg-zinc-700 text-slate-700 dark:text-zinc-200 font-bold text-xs flex items-center justify-center border border-slate-200 dark:border-zinc-600 active:scale-95 transition cursor-pointer"
+                    className={`w-7 h-7 rounded-lg ${
+                      isAmoled
+                        ? 'bg-black text-white border-white/10 hover:bg-white/10'
+                        : 'bg-white dark:bg-zinc-700 text-slate-700 dark:text-zinc-200 border-slate-200 dark:border-zinc-600'
+                    } font-bold text-xs flex items-center justify-center border active:scale-95 transition cursor-pointer`}
                   >
                     -
                   </button>
@@ -603,7 +711,11 @@ export function TempoRampModal({
                   <button
                     type="button"
                     onClick={() => setTargetBpm((v) => Math.min(280, v + 5))}
-                    className="w-7 h-7 rounded-lg bg-white dark:bg-zinc-700 text-slate-700 dark:text-zinc-200 font-bold text-xs flex items-center justify-center border border-slate-200 dark:border-zinc-600 active:scale-95 transition cursor-pointer"
+                    className={`w-7 h-7 rounded-lg ${
+                      isAmoled
+                        ? 'bg-black text-white border-white/10 hover:bg-white/10'
+                        : 'bg-white dark:bg-zinc-700 text-slate-700 dark:text-zinc-200 border-slate-200 dark:border-zinc-600'
+                    } font-bold text-xs flex items-center justify-center border active:scale-95 transition cursor-pointer`}
                   >
                     +
                   </button>
@@ -635,7 +747,9 @@ export function TempoRampModal({
                     className={`flex-1 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
                       stepBpm === step
                         ? 'bg-[#007aff] text-white shadow-xs'
-                        : 'bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 hover:bg-slate-200 dark:hover:bg-zinc-700'
+                        : isAmoled
+                          ? 'bg-[#0a0a0c] text-zinc-300 border border-white/10 hover:bg-white/10'
+                          : 'bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 hover:bg-slate-200 dark:hover:bg-zinc-700'
                     }`}
                   >
                     +{step}
@@ -666,7 +780,9 @@ export function TempoRampModal({
                         className={`flex-1 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
                           intervalBars === bars
                             ? 'bg-[#007aff] text-white shadow-xs'
-                            : 'bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 hover:bg-slate-200 dark:hover:bg-zinc-700'
+                            : isAmoled
+                              ? 'bg-[#0a0a0c] text-zinc-300 border border-white/10 hover:bg-white/10'
+                              : 'bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 hover:bg-slate-200 dark:hover:bg-zinc-700'
                         }`}
                       >
                         {bars}b
@@ -694,7 +810,9 @@ export function TempoRampModal({
                         className={`flex-1 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
                           startDelayBars === bars
                             ? 'bg-[#007aff] text-white shadow-xs'
-                            : 'bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 hover:bg-slate-200 dark:hover:bg-zinc-700'
+                            : isAmoled
+                              ? 'bg-[#0a0a0c] text-zinc-300 border border-white/10 hover:bg-white/10'
+                              : 'bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 hover:bg-slate-200 dark:hover:bg-zinc-700'
                         }`}
                       >
                         {bars === 0 ? '0' : `${bars}b`}
@@ -724,7 +842,9 @@ export function TempoRampModal({
                         className={`flex-1 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
                           intervalSec === sec
                             ? 'bg-[#007aff] text-white shadow-xs'
-                            : 'bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 hover:bg-slate-200 dark:hover:bg-zinc-700'
+                            : isAmoled
+                              ? 'bg-[#0a0a0c] text-zinc-300 border border-white/10 hover:bg-white/10'
+                              : 'bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 hover:bg-slate-200 dark:hover:bg-zinc-700'
                         }`}
                       >
                         {formatDurationLabel(sec)}
@@ -754,7 +874,9 @@ export function TempoRampModal({
                         className={`flex-1 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
                           startDelaySec === sec
                             ? 'bg-[#007aff] text-white shadow-xs'
-                            : 'bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 hover:bg-slate-200 dark:hover:bg-zinc-700'
+                            : isAmoled
+                              ? 'bg-[#0a0a0c] text-zinc-300 border border-white/10 hover:bg-white/10'
+                              : 'bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 hover:bg-slate-200 dark:hover:bg-zinc-700'
                         }`}
                       >
                         {sec === 0 ? '0s' : formatDurationLabel(sec)}
@@ -766,7 +888,13 @@ export function TempoRampModal({
             )}
 
             {/* Hold Final BPM Toggle */}
-            <div className="p-3 rounded-2xl bg-slate-50/70 dark:bg-zinc-800/40 border border-slate-200/80 dark:border-zinc-800 flex items-center justify-between">
+            <div
+              className={`p-3 rounded-2xl ${
+                isAmoled
+                  ? 'bg-[#0a0a0c] border-white/10'
+                  : 'bg-slate-50/70 dark:bg-zinc-800/40 border-slate-200/80 dark:border-zinc-800'
+              } border flex items-center justify-between`}
+            >
               <div>
                 <div className="text-xs font-bold font-manrope text-slate-900 dark:text-zinc-100">
                   Hold Final BPM
@@ -793,7 +921,13 @@ export function TempoRampModal({
             </div>
 
             {/* Dynamic Live Summary Box */}
-            <div className="p-3.5 rounded-2xl bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200/60 dark:border-blue-900/40 text-xs text-blue-950 dark:text-blue-200 flex items-start gap-2.5">
+            <div
+              className={`p-3.5 rounded-2xl ${
+                isAmoled
+                  ? 'bg-[#0a0a0c] border border-white/10 text-zinc-300'
+                  : 'bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200/60 dark:border-blue-900/40 text-blue-950 dark:text-blue-200'
+              } text-xs flex items-start gap-2.5`}
+            >
               <span className="material-symbols-outlined text-[18px] text-[#007aff] shrink-0 mt-0.5">
                 info
               </span>
@@ -802,11 +936,19 @@ export function TempoRampModal({
           </div>
 
           {/* Footer Action */}
-          <div className="p-4 border-t border-slate-100 dark:border-zinc-800/80 flex gap-2">
+          <div
+            className={`p-4 border-t ${
+              isAmoled ? 'border-white/10' : 'border-slate-100 dark:border-zinc-800/80'
+            } flex gap-2`}
+          >
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-3 rounded-2xl bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-300 font-manrope font-bold text-xs tracking-tight transition cursor-pointer"
+              className={`flex-1 py-3 rounded-2xl ${
+                isAmoled
+                  ? 'bg-[#0a0a0c] hover:bg-white/10 text-zinc-300 border border-white/10'
+                  : 'bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-300'
+              } font-manrope font-bold text-xs tracking-tight transition cursor-pointer`}
             >
               Cancel
             </button>
@@ -830,6 +972,7 @@ interface CountInModalProps {
   isOpen: boolean;
   countInBars: number;
   countInVoiceEnabled: boolean;
+  isAmoled?: boolean;
   onSelectBars: (bars: number) => void;
   onToggleVoice: (enabled: boolean) => void;
   onPreviewVoice?: () => void;
@@ -847,6 +990,7 @@ export function CountInModal({
   isOpen,
   countInBars,
   countInVoiceEnabled,
+  isAmoled,
   onSelectBars,
   onToggleVoice,
   onPreviewVoice,
@@ -876,13 +1020,27 @@ export function CountInModal({
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.95, opacity: 0, y: 6 }}
           transition={{ type: 'spring', damping: 26, stiffness: 320 }}
-          className="relative w-full max-w-sm bg-white dark:bg-zinc-900 rounded-3xl border border-slate-200/90 dark:border-zinc-800 shadow-2xl overflow-hidden z-10 flex flex-col max-h-[85vh]"
+          className={`relative w-full max-w-sm ${
+            isAmoled
+              ? 'bg-black border-white/15'
+              : 'bg-white dark:bg-zinc-900 border-slate-200/90 dark:border-zinc-800'
+          } rounded-3xl border shadow-2xl overflow-hidden z-10 flex flex-col max-h-[85vh]`}
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="px-5 pt-5 pb-3 border-b border-slate-100 dark:border-zinc-800/80 flex items-center justify-between">
+          <div
+            className={`px-5 pt-5 pb-3 border-b ${
+              isAmoled ? 'border-white/10' : 'border-slate-100 dark:border-zinc-800/80'
+            } flex items-center justify-between`}
+          >
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-[#007aff] flex items-center justify-center">
+              <div
+                className={`w-8 h-8 rounded-xl ${
+                  isAmoled
+                    ? 'bg-[#007aff]/15 text-[#007aff]'
+                    : 'bg-blue-50 dark:bg-blue-950/40 text-[#007aff]'
+                } flex items-center justify-center`}
+              >
                 <span className="material-symbols-outlined text-[19px]">timelapse</span>
               </div>
               <div>
@@ -901,7 +1059,11 @@ export function CountInModal({
               onClick={onClose}
               aria-label="Close"
               type="button"
-              className="w-8 h-8 rounded-full bg-slate-100 dark:bg-zinc-800 text-slate-500 hover:text-slate-800 dark:hover:text-zinc-200 flex items-center justify-center transition cursor-pointer"
+              className={`w-8 h-8 rounded-full ${
+                isAmoled
+                  ? 'bg-[#0a0a0c] hover:bg-white/10 text-zinc-400 border border-white/10'
+                  : 'bg-slate-100 dark:bg-zinc-800 text-slate-500 hover:text-slate-800 dark:hover:text-zinc-200'
+              } flex items-center justify-center transition cursor-pointer`}
             >
               <span className="material-symbols-outlined text-[18px]">close</span>
             </button>
@@ -924,8 +1086,12 @@ export function CountInModal({
                       onClick={() => onSelectBars(opt.bars)}
                       className={`p-2.5 rounded-2xl flex flex-col items-center justify-center transition tap-press cursor-pointer border ${
                         isSelected
-                          ? 'bg-blue-50 dark:bg-blue-950/50 border-[#007aff] text-[#007aff] shadow-xs'
-                          : 'bg-slate-50 dark:bg-zinc-800/80 border-slate-200/80 dark:border-zinc-700/80 text-slate-700 dark:text-zinc-300 hover:border-slate-300'
+                          ? isAmoled
+                            ? 'bg-[#007aff]/20 border-[#007aff] text-[#007aff] shadow-xs'
+                            : 'bg-blue-50 dark:bg-blue-950/50 border-[#007aff] text-[#007aff] shadow-xs'
+                          : isAmoled
+                            ? 'bg-[#0a0a0c] border-white/10 text-zinc-300 hover:border-white/20'
+                            : 'bg-slate-50 dark:bg-zinc-800/80 border-slate-200/80 dark:border-zinc-700/80 text-slate-700 dark:text-zinc-300 hover:border-slate-300'
                       }`}
                     >
                       <span className="text-xs font-black font-manrope">{opt.label}</span>
@@ -937,10 +1103,22 @@ export function CountInModal({
             </div>
 
             {/* Section 2: Spoken Voice Count-In */}
-            <div className="bg-slate-50 dark:bg-zinc-800/60 rounded-2xl p-3.5 border border-slate-200/80 dark:border-zinc-700/80">
+            <div
+              className={`${
+                isAmoled
+                  ? 'bg-[#0a0a0c] border-white/10'
+                  : 'bg-slate-50 dark:bg-zinc-800/60 border-slate-200/80 dark:border-zinc-700/80'
+              } rounded-2xl p-3.5 border`}
+            >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="w-8 h-8 rounded-xl bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
+                  <div
+                    className={`w-8 h-8 rounded-xl ${
+                      isAmoled
+                        ? 'bg-purple-950/40 text-purple-400 border border-purple-900/30'
+                        : 'bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400'
+                    } flex items-center justify-center shrink-0`}
+                  >
                     <span className="material-symbols-outlined text-[18px]">record_voice_over</span>
                   </div>
                   <div className="min-w-0">
@@ -960,7 +1138,11 @@ export function CountInModal({
                   aria-checked={countInVoiceEnabled}
                   onClick={() => onToggleVoice(!countInVoiceEnabled)}
                   className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                    countInVoiceEnabled ? 'bg-[#007aff]' : 'bg-slate-200 dark:bg-zinc-700'
+                    countInVoiceEnabled
+                      ? 'bg-[#007aff]'
+                      : isAmoled
+                        ? 'bg-zinc-800'
+                        : 'bg-slate-200 dark:bg-zinc-700'
                   }`}
                 >
                   <span
@@ -973,9 +1155,21 @@ export function CountInModal({
             </div>
 
             {/* Section 3: Voice Profile & Preview */}
-            <div className="bg-slate-50 dark:bg-zinc-800/60 rounded-2xl p-3.5 border border-slate-200/80 dark:border-zinc-700/80 flex items-center justify-between">
+            <div
+              className={`${
+                isAmoled
+                  ? 'bg-[#0a0a0c] border-white/10'
+                  : 'bg-slate-50 dark:bg-zinc-800/60 border-slate-200/80 dark:border-zinc-700/80'
+              } rounded-2xl p-3.5 border flex items-center justify-between`}
+            >
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-pink-50 dark:bg-pink-950/40 text-pink-600 dark:text-pink-400 flex items-center justify-center shrink-0">
+                <div
+                  className={`w-8 h-8 rounded-xl ${
+                    isAmoled
+                      ? 'bg-pink-950/40 text-pink-400 border border-pink-900/30'
+                      : 'bg-pink-50 dark:bg-pink-950/40 text-pink-600 dark:text-pink-400'
+                  } flex items-center justify-center shrink-0`}
+                >
                   <span className="material-symbols-outlined text-[18px]">face_3</span>
                 </div>
                 <div>
@@ -992,7 +1186,11 @@ export function CountInModal({
                 <button
                   type="button"
                   onClick={onPreviewVoice}
-                  className="px-2.5 py-1.5 rounded-xl bg-white dark:bg-zinc-700 hover:bg-slate-100 dark:hover:bg-zinc-600 border border-slate-200 dark:border-zinc-600 text-[#007aff] dark:text-blue-400 font-manrope font-bold text-xs flex items-center gap-1 transition tap-press cursor-pointer shadow-xs"
+                  className={`px-2.5 py-1.5 rounded-xl ${
+                    isAmoled
+                      ? 'bg-black hover:bg-white/10 border-white/15 text-[#007aff]'
+                      : 'bg-white dark:bg-zinc-700 hover:bg-slate-100 dark:hover:bg-zinc-600 border-slate-200 dark:border-zinc-600 text-[#007aff] dark:text-blue-400'
+                  } border font-manrope font-bold text-xs flex items-center gap-1 transition tap-press cursor-pointer shadow-xs`}
                 >
                   <span className="material-symbols-outlined text-[15px]">volume_up</span>
                   <span>Preview</span>
@@ -1002,7 +1200,11 @@ export function CountInModal({
           </div>
 
           {/* Footer Action */}
-          <div className="p-4 border-t border-slate-100 dark:border-zinc-800/80 flex">
+          <div
+            className={`p-4 border-t ${
+              isAmoled ? 'border-white/10' : 'border-slate-100 dark:border-zinc-800/80'
+            } flex`}
+          >
             <button
               type="button"
               onClick={onClose}
