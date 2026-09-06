@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.5.69';
-export const NATIVE_VERSION_CODE = 40569;
-export const WEB_VERSION = '4.5.69';
+export const NATIVE_VERSION = '4.5.70';
+export const NATIVE_VERSION_CODE = 40570;
+export const WEB_VERSION = '4.5.70';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -73,13 +73,13 @@ export const APP_VERSION_DATE = '8/12/2026';
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = 'afdc8c18';
+export const APP_COMMIT_SHA = 'c3ac7fd1';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '9/6/2026, 2:36:20 PM CST';
+export const APP_BUILD_TIMESTAMP = '9/6/2026, 4:42:33 PM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -96,23 +96,13 @@ export interface ChangelogSection {
 
 export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
-    heading: 'Added',
-    items: [
-      'Restored GrooveX Vinyl Turntable Audio Feedback: Restored authentic vinyl turntable scratch and platter brake audio feedback on pause and resume, operating via an independent dedicated turntableBus connected to masterGain without modifying stem playback rates.',
-      'Pre-Synthesized Analytical Turntable AudioBuffers: Mathematically pre-synthesized 520ms vinyl platter deceleration stop and 260ms needle cue direct-drive spin-up AudioBuffers with anti-click zero-crossing envelopes, zero network latency, and zero decoding overhead.',
-      'Drumex Metronome User-First Presets: Replaced factory presets with an intentional "MY PRESETS" empty state and full CRUD workflow (create, in-place edit, duplicate with unique copy names, rename, delete).',
-      'Dual-Mode Incremental Tempo Progression: Implemented deterministic tempo progression engine supporting both By Bars (evaluated strictly at bar boundaries) and By Time (on the monotonic Web Audio clock) with live summary cards.',
-      'Synchronized Visual Count-In Countdown: Added floating 4-3-2-1 countdown overlay locked to Web Audio beat schedule events, unmounting cleanly at the exact instant performance begins.',
-    ],
-  },
-  {
     heading: 'Fixed',
     items: [
-      'Transposition & Stem Synchronization Preservation: All stem buffer sources remain locked to an invariant 1.0000x playback rate, guaranteeing 100% time and tempo preservation across -12 to +12 semitones with zero cumulative drift and bit-exact drum alignment.',
-      'Android Media Controls Transport Alignment: Android notification shade, Quick Settings media card, lock screen, and Bluetooth play/pause actions seamlessly trigger the restored turntable stop and start audio feedback.',
-      'Android Media Notification Badge Scaling: Redesigned notification artwork badge with generous padding and centered typography, eliminating SystemUI media card cropping and clipped BPM text.',
-      'Neutral Accent Beat Toggle: Tapping the active accent beat toggles to a neutral state (-1) for unaccented metronome practice across all meters and subdivisions.',
-      "Streamlined Rhythm Cards: Removed intrusive '+' tiles from Time Signature and Subdivision cards, presenting clean quick-selection grids alongside compact modal configuration triggers.",
+      'Drumex Metronome True AMOLED Mode: Pure black (#000000) and elevated (#0a0a0c) surfaces across Beat Tracker, BPM Hero card, rhythm metrics, audio controls, floating dock, preset drawer, and all configuration modals.',
+      'Dynamic Preset Identity Tracking: Active preset selection immediately clears (activePresetId: null) when any defining parameter (BPM, time signature, subdivision, sound, accent, count-in, tempo ramp) is modified, and automatically restores when parameters match the saved preset definition.',
+      'Startup Preset Isolation: Clean default startup state on application restart with activePresetId: null while keeping saved presets library fully persistent.',
+      'Android Media Player Notification Metadata: Track title displays active preset name when a preset is active, or "Drumex Metronome" as fallback, with secondary metadata displaying BPM and time signature.',
+      'Android Media Notification Artwork Scaling: Reduced badge content scale to a compact 220x220 inner card centered on 512x512 canvas with generous black margins, preventing SystemUI notification shade crowding and control clipping.',
     ],
   },
 ];
@@ -124,6 +114,17 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.5.70',
+    date: '2026-09-06',
+    highlights: [
+      'Drumex Metronome True AMOLED Mode: Pure black (#000000) and elevated (#0a0a0c) surfaces across Beat Tracker, BPM Hero card, rhythm metrics, audio controls, floating dock, preset drawer, and all configuration modals.',
+      'Dynamic Preset Identity Tracking: Active preset selection immediately clears (activePresetId: null) when any defining parameter (BPM, time signature, subdivision, sound, accent, count-in, tempo ramp) is modified, and automatically restores when parameters match the saved preset definition.',
+      'Startup Preset Isolation: Clean default startup state on application restart with activePresetId: null while keeping saved presets library fully persistent.',
+      'Android Media Player Notification Metadata: Track title displays active preset name when a preset is active, or "Drumex Metronome" as fallback, with secondary metadata displaying BPM and time signature.',
+      'Android Media Notification Artwork Scaling: Reduced badge content scale to a compact 220x220 inner card centered on 512x512 canvas with generous black margins, preventing SystemUI notification shade crowding and control clipping.',
+    ],
+  },
   {
     version: '4.5.69',
     date: '2026-09-06',
@@ -224,18 +225,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'Real-Time Audio Mute/Solo Synchronization: Integrated dynamic volume zeroing directly into DrumScheduler audio context without pausing playback or interrupting scheduling.',
       '4-Button Floating Action Controls (FAB Stack): Replaced legacy floating buttons with canonical vertical FAB stack for Reset/Erase, Loop, Metronome/Tempo, and primary Play/Pause.',
       'Musical Subdivision Ruler: Monospace subdivision labels with subtle downbeat background tint, bar line boundaries, and semantic measure menu icon.',
-    ],
-  },
-  {
-    version: '4.5.60',
-    date: '2026-09-04',
-    highlights: [
-      'Stagex Setup Subsections Bilingual Localization: Implemented comprehensive English and Spanish translation coverage across all four Setup subviews—Technical Rider, Setlist Management, Gear Inventory, and Band & Crew Roster.',
-      'Stagex History Surface & Floating Toolbar Localization: Integrated reactive bilingual dictionary hooks into the History surface and canvas floating action controls.',
-      'Live Language Transition Architecture: Wired all Stagex setup components to `useT()` and `useSettingsStore` allowing instantaneous language switching (EN ↔ ES) with zero page reloads.',
-      'Updater Ecosystem Bilingual Localization: Fully localized all updater states, progress bars, version comparisons, and action prompts in StudioUpdateScreen and UpdateIndicator.',
-      'Roadmap Language Governance: Maintained visible, disabled, and greyed-out future languages (de, fr, zh, pt, it, ja, ko) with standardized "Próximamente" / "Coming soon" status chips.',
-      'Stagex Canvas Landscape Presentation: Decoupled the editing history surface and optimized full-screen canvas aspect ratios.',
     ],
   },
 ];
