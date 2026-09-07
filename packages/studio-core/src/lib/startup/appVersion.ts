@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.5.71';
-export const NATIVE_VERSION_CODE = 40571;
-export const WEB_VERSION = '4.5.71';
+export const NATIVE_VERSION = '4.5.72';
+export const NATIVE_VERSION_CODE = 40572;
+export const WEB_VERSION = '4.5.72';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -73,13 +73,13 @@ export const APP_VERSION_DATE = '8/12/2026';
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = '2448bb9f';
+export const APP_COMMIT_SHA = '38d1b890';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '9/6/2026, 6:48:13 PM CST';
+export const APP_BUILD_TIMESTAMP = '9/6/2026, 11:00:10 PM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -98,17 +98,16 @@ export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
     heading: 'Added',
     items: [
-      'Drumex Metronome Direct BPM Entry: Tapping the giant BPM hero display transitions into an inline editable numeric input state with the native Android keyboard (`inputMode="numeric"`, `pattern="[0-9]*"`), automatic text selection, integer validation clamped strictly to 40-280 BPM, commit on Enter / "Set BPM", and clean cancellation on Escape / "Cancel" / empty input / Android Back gesture.',
-      'Multi-Accent & Multi-Tier Beat Pattern System: Full support for multiple accented beats across any time signature (4/4, 3/4, 5/4, 7/8, 9/8, 12/8) with three distinct accent tiers: strong, accent, and normal. Tapping any beat in the visual Beat Tracker strip cycles normal -> accent -> strong -> normal.',
-      'Physical AudioBuffer Waveform Synthesis for All Accent Tiers: Synthesized distinct acoustic and electronic waveforms for all 4 sound buffers (strong, accent, normal, sub) across all 13 metronome sounds, featuring tuned resonant cavity frequencies, transient noise bursts, and distinct velocity gains.',
-      'Robust Rapid Tap Tempo Engine: Eliminated the 4-tap requirement. Two taps immediately calculate an authoritative tempo, with subsequent taps refining the estimate via a recency-weighted rolling average of up to 6 intervals. Includes a 70ms touch-noise debounce (< 857 BPM) removing any artificial tempo ceiling up to canonical 280 BPM, and automatic sequence reset after a > 2000ms pause.',
+      'Drumex 3-State Exclusive Audio Volume Mode: Introduced a 3-state volume controller (Normal -> Exclusive -> Mute -> Normal) accessible via a compact morphing dock in the bottom navigation area, supporting hardware volume key interception and background audio management.',
+      'Direct BPM Input with Viewport Stability: Native Android soft keyboard integration with clamped [40, 280] range, enterKeyHint="done", and zero layout reflow via adjustNothing window mode.',
     ],
   },
   {
     heading: 'Fixed',
     items: [
-      'Beat Tracker Summary Badge: Real-time dynamic accent summary in the tracker strip header (e.g. 1 Strong • 2 Accent) with visual accent indicators.',
-      'Tap Tempo Helper Label: Updated helper text from (Tap 4 times) to (Tap to set tempo).',
+      'Chordex Library Android Vertical Touch Scrolling: Resolved vertical scrolling lockout across the entire Chordex Library page on Android. Enclosed LibraryMainView in a canonical flex container and configured its scroll container with hardware-accelerated momentum touch scrolling, overscroll containment, and explicit pan-y touch action.',
+      'Android Motion Transition Containment: Enforced strict flex column layout on StudioPageTransition wrappers in LibraryPanel, preventing block-flow height expansion and ancestor viewport clipping.',
+      'Touch Action Alignment Across Views: Standardized min-h-0, touch-action pan-y, and overscroll-behavior-y contain across CategoryScreenView and LibraryChordDetail, while assigning pan-x pan-y to horizontal carousels to eliminate gesture conflicts.',
     ],
   },
 ];
@@ -120,6 +119,17 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.5.72',
+    date: '2026-09-06',
+    highlights: [
+      'Drumex 3-State Exclusive Audio Volume Mode: Introduced a 3-state volume controller (Normal -> Exclusive -> Mute -> Normal) accessible via a compact morphing dock in the bottom navigation area, supporting hardware volume key interception and background audio management.',
+      'Direct BPM Input with Viewport Stability: Native Android soft keyboard integration with clamped [40, 280] range, enterKeyHint="done", and zero layout reflow via adjustNothing window mode.',
+      'Chordex Library Android Vertical Touch Scrolling: Resolved vertical scrolling lockout across the entire Chordex Library page on Android. Enclosed LibraryMainView in a canonical flex container and configured its scroll container with hardware-accelerated momentum touch scrolling, overscroll containment, and explicit pan-y touch action.',
+      'Android Motion Transition Containment: Enforced strict flex column layout on StudioPageTransition wrappers in LibraryPanel, preventing block-flow height expansion and ancestor viewport clipping.',
+      'Touch Action Alignment Across Views: Standardized min-h-0, touch-action pan-y, and overscroll-behavior-y contain across CategoryScreenView and LibraryChordDetail, while assigning pan-x pan-y to horizontal carousels to eliminate gesture conflicts.',
+    ],
+  },
   {
     version: '4.5.71',
     date: '2026-09-06',
@@ -219,18 +229,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'Studio Performance & Architecture Optimization: Consolidated redundant orientation and navigation listeners in Stagex, purged dead module candidate scoring loops in Studio Hub, and eliminated unreferenced redesign imports across Chordex and Vocalex.',
       'Drumex Pattern Library Layout Unification: Unified desktop and mobile pattern browsing under the canonical `DrumPatternsPanel`, removing over 700 lines of duplicate code and reducing bundle overhead.',
       'Groovex Store Selector Memoization: Converted broad store subscriptions in Groovex Preferences to fine-grained atomic Zustand selectors, isolating preference views from unrelated playback state mutations.',
-    ],
-  },
-  {
-    version: '4.5.62',
-    date: '2026-09-05',
-    highlights: [
-      'GrooveX Song Player Stitch Redesign: Redesigned the complete GrooveX Song Player into the canonical Stitch layout with elevated turntable plinth card, live waveform audio visualizer, timeline scrubber with section badges, 5-button transport cluster with vibrant illuminated Play/Pause FAB, semitone transposition stepper, and 6-channel multitrack stems mixer workstation.',
-      'Realistic 60fps Vinyl Turntable Simulation: Implemented requestAnimationFrame rotational physics with realistic acceleration curve, natural ~1.8s inertia deceleration on pause, and absolute rotational angle preservation across pause/resume cycles.',
-      'High-Fidelity Vinyl Styling & Tonearm Assembly: Multi-groove radial vinyl disc with center spindle label, dual conic sheen reflection, and articulated tonearm assembly with gimbal pivot base, tone arm needle, and smooth cueing transition to playing position.',
-      'Studio Floating Header Song Lockup: Added subtitle support to SharedFloatingHeader housing the song title and artist strictly in the top floating pill, eliminating duplicate page body headers.',
-      'Transposition Audio Engine Architecture: Eliminated digital buzzing and clicking in SoundTouch AudioWorklet processor by adding a 1024-sample pre-buffer threshold that guarantees full 128-sample render quantums.',
-      'Bit-Exact Master Audio Bypass: Added bit-exact passthrough path at 0 semitones bypassing WSOLA processing entirely for 100% studio master clarity with zero latency or phase coloration.',
     ],
   },
 ];
