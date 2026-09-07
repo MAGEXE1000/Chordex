@@ -1,27 +1,27 @@
-import { useT, createAudioContext, useChordStore, useSettingsStore } from '@workspace/studio-core';
+import { useT, createAudioContext, useSettingsStore, resolveAccent } from '@workspace/studio-core';
 import { Capacitor } from '@capacitor/core';
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Button } from '../../../shared/design-system/buttons';
+import { StudioHeader } from '../../../shared/layout/StudioHeader';
 import { detectPitch, type PitchResult } from '../services/pitchYin';
 
-const HISTORY_LEN = 12;
+const HISTORY_LEN = 24;
 const SMOOTHING = 0.3;
 
 function centsToColor(cents: number): string {
   const abs = Math.abs(cents);
-  if (abs <= 5) return '#007aff';
-  if (abs <= 15) return '#eab308';
+  if (abs <= 5) return '#10b981';
+  if (abs <= 15) return '#f59e0b';
   return '#ef4444';
 }
 
 function centsToLabel(
   cents: number,
-  labels: { inTune: string; close: string; offKey: string }
+  labels: { inTune?: string; close?: string; offKey?: string }
 ): string {
   const abs = Math.abs(cents);
-  if (abs <= 5) return labels.inTune;
-  if (abs <= 15) return labels.close;
-  return labels.offKey;
+  if (abs <= 5) return labels.inTune || 'IN TUNE';
+  if (abs <= 15) return labels.close || 'CLOSE';
+  return labels.offKey || 'OFF KEY';
 }
 
 function centsToNeedleRotation(cents: number): number {
@@ -30,7 +30,15 @@ function centsToNeedleRotation(cents: number): number {
 
 export default function PitchPanel({ active: panelActive = true }: { active?: boolean }) {
   const t = useT();
-  const language = useSettingsStore((s) => s.settings.language);
+  const settings = useSettingsStore((s) => s.settings);
+  const language = settings.language;
+  const accent = resolveAccent(settings.accentColor);
+  const activeVis = settings.perApp?.vocalex ?? { theme: 'dark', amoledMode: false };
+  const isLight =
+    activeVis.theme === 'light' ||
+    (activeVis.theme === 'system' &&
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-color-scheme: light)').matches);
   const [listening, setListening] = useState(false);
   const [result, setResult] = useState<PitchResult | null>(null);
   const [history, setHistory] = useState<PitchResult[]>([]);
@@ -222,12 +230,13 @@ export default function PitchPanel({ active: panelActive = true }: { active?: bo
   const statusColor = active
     ? centsToColor(result!.cents)
     : listening
-      ? '#007aff'
-      : 'rgba(120,120,120,0.3)';
+      ? accent.from
+      : isLight
+        ? 'rgba(0,0,0,0.2)'
+        : 'rgba(255,255,255,0.2)';
   const statusLabel = active ? centsToLabel(result!.cents, t.vocalex) : '';
 
-  const barHeights = [40, 60, 85, 70, 95, 50, 30, 65, 80, 45, 20, 55];
-  const barColors = [false, true, true, true, true];
+  const vt = t.vocalex as any;
 
   return (
     <div
@@ -235,350 +244,496 @@ export default function PitchPanel({ active: panelActive = true }: { active?: bo
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        padding: '0 24px 24px',
+        padding:
+          '0 20px calc(var(--bottom-nav-height, 68px) + env(safe-area-inset-bottom, 16px) + 24px)',
         gap: 0,
         minHeight: '100%',
+        boxSizing: 'border-box',
       }}
     >
-      {/* ── Pitch Monitor ── */}
+      {/* ── Canonical Vocalex Page Header ── */}
+      <StudioHeader
+        title={vt.tabMonitor || (language === 'es' ? 'Monitor de Voz' : 'Vocal Monitor')}
+        subtitle={
+          language === 'es'
+            ? 'Detección y afinación vocal en tiempo real'
+            : 'Real-time vocal pitch detection and tuning'
+        }
+        disableHorizontalPadding={true}
+        containerStyle={{ marginBottom: '14px', width: '100%', maxWidth: 360 }}
+      />
+
+      {/* ── Main Tuner Card ── */}
       <div
         style={{
           width: '100%',
           maxWidth: 360,
-          aspectRatio: '1',
-          position: 'relative',
+          background: isLight
+            ? '#ffffff'
+            : activeVis.amoledMode
+              ? '#000000'
+              : 'var(--app-surface-low, rgba(255,255,255,0.04))',
+          border: '1px solid var(--c-border, rgba(128,128,128,0.15))',
+          borderRadius: 24,
+          padding: '24px 20px 20px',
+          boxShadow: isLight ? '0 10px 30px -5px rgba(0,0,0,0.05)' : 'none',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          justifyContent: 'center',
-          marginBottom: 24,
+          boxSizing: 'border-box',
+          position: 'relative',
         }}
       >
+        {/* Gauge Dial Presentation */}
         <div
           style={{
-            position: 'absolute',
-            inset: 0,
-            background: 'radial-gradient(circle, rgba(0,122,255,0.05) 0%, transparent 70%)',
-            borderRadius: '50%',
-            filter: 'blur(60px)',
-            pointerEvents: 'none',
-          }}
-        />
-
-        <svg
-          viewBox="0 0 100 100"
-          style={{
-            position: 'absolute',
-            inset: 0,
-            width: '100%',
-            height: '100%',
-          }}
-        >
-          <circle
-            cx="50"
-            cy="50"
-            r="45"
-            fill="none"
-            stroke="rgba(72,72,72,0.15)"
-            strokeWidth="0.5"
-          />
-
-          {(() => {
-            const r = 45;
-            const C = 2 * Math.PI * r;
-            const greenDeg = 14;
-            const yellowDeg = 12;
-            const redDeg = 20;
-            const greenLen = (greenDeg / 360) * C;
-            const yellowLen = (yellowDeg / 360) * C;
-            const redLen = (redDeg / 360) * C;
-
-            const greenStart = -greenDeg / 2;
-            const yellowLeftStart = -(greenDeg / 2 + yellowDeg);
-            const yellowRightStart = greenDeg / 2;
-            const redLeftStart = -(greenDeg / 2 + yellowDeg + redDeg);
-            const redRightStart = greenDeg / 2 + yellowDeg;
-
-            return (
-              <>
-                <circle
-                  cx="50"
-                  cy="50"
-                  r={r}
-                  fill="none"
-                  stroke="#ef4444"
-                  strokeWidth="3"
-                  opacity="0.45"
-                  strokeDasharray={`${(redDeg / 360) * C} ${C - (redDeg / 360) * C}`}
-                  strokeLinecap="round"
-                  transform={`rotate(${-90 + redLeftStart} 50 50)`}
-                />
-                <circle
-                  cx="50"
-                  cy="50"
-                  r={r}
-                  fill="none"
-                  stroke="#ef4444"
-                  strokeWidth="3"
-                  opacity="0.45"
-                  strokeDasharray={`${redLen} ${C - redLen}`}
-                  strokeLinecap="round"
-                  transform={`rotate(${-90 + redRightStart} 50 50)`}
-                />
-
-                <circle
-                  cx="50"
-                  cy="50"
-                  r={r}
-                  fill="none"
-                  stroke="#eab308"
-                  strokeWidth="3"
-                  opacity="0.55"
-                  strokeDasharray={`${yellowLen} ${C - yellowLen}`}
-                  strokeLinecap="round"
-                  transform={`rotate(${-90 + yellowLeftStart} 50 50)`}
-                />
-                <circle
-                  cx="50"
-                  cy="50"
-                  r={r}
-                  fill="none"
-                  stroke="#eab308"
-                  strokeWidth="3"
-                  opacity="0.55"
-                  strokeDasharray={`${yellowLen} ${C - yellowLen}`}
-                  strokeLinecap="round"
-                  transform={`rotate(${-90 + yellowRightStart} 50 50)`}
-                />
-
-                <circle
-                  cx="50"
-                  cy="50"
-                  r={r}
-                  fill="none"
-                  stroke="#34d399"
-                  strokeWidth="4"
-                  opacity="0.8"
-                  strokeDasharray={`${greenLen} ${C - greenLen}`}
-                  strokeLinecap="round"
-                  transform={`rotate(${-90 + greenStart} 50 50)`}
-                />
-              </>
-            );
-          })()}
-        </svg>
-
-        <div
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: '50%',
-            transform: `translateX(-50%) rotate(${needleRot}deg)`,
-            transformOrigin: '50% 50cqw',
-            width: 6,
-            height: 48,
+            position: 'relative',
+            width: 270,
+            height: 270,
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            transition: 'transform 80ms cubic-bezier(0.4,0,0.2,1)',
-            zIndex: 2,
+            justifyContent: 'center',
+            margin: '0 auto',
           }}
         >
-          <div
+          {/* Circular Arc & Cent Scale SVG Gauge */}
+          <svg
+            viewBox="0 0 240 240"
             style={{
-              width: 6,
-              height: 6,
-              borderRadius: '50%',
-              background: statusColor,
-              boxShadow: `0 0 8px ${statusColor}99`,
-              transition: 'background 150ms ease, box-shadow 150ms ease',
+              position: 'absolute',
+              inset: 0,
+              width: '100%',
+              height: '100%',
+              transform: 'rotate(-90deg)',
             }}
-          />
-          <div
-            style={{
-              width: 2,
-              flex: 1,
-              background: `linear-gradient(to bottom, ${statusColor}, transparent)`,
-              transition: 'background 150ms ease',
-            }}
-          />
-        </div>
+          >
+            {/* Background Track Arc */}
+            <circle
+              cx="120"
+              cy="120"
+              r="102"
+              fill="none"
+              stroke={isLight ? '#E5E7EB' : 'rgba(255,255,255,0.08)'}
+              strokeWidth="8"
+              strokeLinecap="round"
+              strokeDasharray="480 640"
+              strokeDashoffset="-80"
+            />
+            {/* In-Tune Sweet Spot Arc */}
+            <circle
+              cx="120"
+              cy="120"
+              r="102"
+              fill="none"
+              stroke="#10B981"
+              strokeWidth="8.5"
+              strokeLinecap="round"
+              strokeDasharray="75 640"
+              strokeDashoffset="-282"
+            />
+          </svg>
 
-        <div style={{ textAlign: 'center', zIndex: 1, position: 'relative' }}>
-          <p
+          {/* Cent Scale Marks */}
+          <div
             style={{
-              fontFamily: 'var(--font-body)',
-              fontSize: 12,
-              fontWeight: 500,
-              color: 'var(--vx-text-2)',
-              letterSpacing: '0.2em',
-              marginBottom: 8,
+              position: 'absolute',
+              top: 20,
+              left: 20,
+              right: 20,
+              display: 'flex',
+              justifyContent: 'space-between',
+              fontSize: 11,
+              fontFamily: 'var(--studio-font-mono)',
+              fontWeight: 600,
+              color: 'var(--c-text-secondary)',
+              pointerEvents: 'none',
             }}
           >
-            {t.vocalex.currentNote}
-          </p>
-          <h1
+            <span style={{ opacity: 0.55 }}>-50</span>
+            <span style={{ opacity: 0.55, transform: 'translateX(-3px)' }}>-20</span>
+            <span
+              style={{
+                fontSize: 12,
+                fontWeight: 800,
+                color:
+                  active && Math.abs(result!.cents) <= 5 ? '#10B981' : 'var(--c-text-secondary)',
+                transform: 'translateY(-2px)',
+                transition: 'color 150ms ease',
+              }}
+            >
+              0
+            </span>
+            <span style={{ opacity: 0.55, transform: 'translateX(3px)' }}>+20</span>
+            <span style={{ opacity: 0.55 }}>+50</span>
+          </div>
+
+          {/* Needle / Indicator Pointing Along Arc */}
+          <div
             style={{
-              fontFamily: 'var(--font-headline)',
-              fontSize: 96,
-              fontWeight: 800,
-              color: active ? 'var(--vx-text)' : 'rgba(231,229,228,0.08)',
-              lineHeight: 1,
-              letterSpacing: '-0.04em',
-              margin: 0,
-              transition: 'color 200ms ease',
+              position: 'absolute',
+              inset: 0,
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'flex-start',
+              transform: `rotate(${needleRot}deg)`,
+              transformOrigin: '50% 50%',
+              pointerEvents: 'none',
+              transition: 'transform 90ms cubic-bezier(0.16, 1, 0.3, 1)',
+              zIndex: 2,
             }}
           >
-            {active ? `${result!.noteName}${result!.octave}` : '—'}
-          </h1>
-          {active && statusLabel && (
-            <div style={{ marginTop: 16, display: 'flex', justifyContent: 'center' }}>
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                marginTop: 8,
+              }}
+            >
+              <div
+                style={{
+                  width: 12,
+                  height: 12,
+                  borderRadius: '50%',
+                  background: statusColor,
+                  boxShadow: `0 0 0 4px ${statusColor}26`,
+                  transition: 'background 150ms ease, box-shadow 150ms ease',
+                }}
+              />
+              <div
+                style={{
+                  width: 2.5,
+                  height: 14,
+                  borderRadius: 2,
+                  background: statusColor,
+                  marginTop: 2,
+                  transition: 'background 150ms ease',
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Central Note Display Hub */}
+          <div
+            style={{
+              position: 'relative',
+              zIndex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              textAlign: 'center',
+              marginTop: 18,
+            }}
+          >
+            <span
+              style={{
+                fontFamily: 'var(--studio-font-mono)',
+                fontSize: 11,
+                fontWeight: 700,
+                letterSpacing: '0.12em',
+                textTransform: 'uppercase',
+                color: 'var(--c-text-secondary)',
+                marginBottom: 2,
+              }}
+            >
+              {t.vocalex.currentNote || (language === 'es' ? 'NOTA ACTUAL' : 'CURRENT NOTE')}
+            </span>
+
+            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center' }}>
               <span
                 style={{
-                  fontFamily: 'var(--font-body)',
-                  fontSize: 11,
-                  fontWeight: 600,
-                  color: statusColor,
-                  padding: '4px 14px',
-                  borderRadius: 9999,
-                  background: `${statusColor}1a`,
-                  border: `1px solid ${statusColor}33`,
+                  fontFamily: 'var(--studio-font-display)',
+                  fontSize: 72,
+                  fontWeight: 800,
+                  lineHeight: 1,
+                  letterSpacing: '-0.04em',
+                  color: active ? 'var(--c-text-primary)' : 'var(--c-text-secondary)',
+                  opacity: active ? 1 : 0.35,
+                  transition: 'color 180ms ease, opacity 180ms ease',
                 }}
               >
-                {statusLabel}
+                {active ? result!.noteName : '—'}
               </span>
+              {active && (
+                <span
+                  style={{
+                    fontFamily: 'var(--studio-font-mono)',
+                    fontSize: 34,
+                    fontWeight: 700,
+                    color: accent.from,
+                    marginLeft: 3,
+                    lineHeight: 1,
+                  }}
+                >
+                  {result!.octave}
+                </span>
+              )}
             </div>
-          )}
-        </div>
-      </div>
 
-      {/* ── Bento Grid ── */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
-          gap: 12,
-          width: '100%',
-          maxWidth: 360,
-        }}
-      >
+            {/* Status Pill */}
+            <div style={{ marginTop: 10, display: 'flex', justifyContent: 'center' }}>
+              {active ? (
+                <div
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    padding: '4px 14px',
+                    borderRadius: 9999,
+                    background: `${statusColor}18`,
+                    border: `1px solid ${statusColor}33`,
+                    color: statusColor,
+                    fontFamily: 'var(--studio-font-mono)',
+                    fontSize: 11.5,
+                    fontWeight: 700,
+                    letterSpacing: '0.04em',
+                  }}
+                >
+                  <span
+                    style={{
+                      width: 6,
+                      height: 6,
+                      borderRadius: '50%',
+                      background: statusColor,
+                    }}
+                  />
+                  <span>
+                    {statusLabel} • {result!.cents >= 0 ? '+' : ''}
+                    {result!.cents.toFixed(1)} ct
+                  </span>
+                </div>
+              ) : listening ? (
+                <div
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    padding: '4px 14px',
+                    borderRadius: 9999,
+                    background: 'var(--app-surface-low, rgba(255,255,255,0.04))',
+                    border: '1px solid var(--c-border, rgba(128,128,128,0.12))',
+                    color: 'var(--c-text-secondary)',
+                    fontFamily: 'var(--studio-font-mono)',
+                    fontSize: 11,
+                    fontWeight: 600,
+                    letterSpacing: '0.04em',
+                  }}
+                >
+                  <span
+                    style={{
+                      width: 6,
+                      height: 6,
+                      borderRadius: '50%',
+                      background: accent.from,
+                    }}
+                  />
+                  <span>{language === 'es' ? 'ESCUCHANDO...' : 'LISTENING...'}</span>
+                </div>
+              ) : (
+                <div
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    padding: '4px 14px',
+                    borderRadius: 9999,
+                    background: 'var(--app-surface-low, rgba(255,255,255,0.04))',
+                    border: '1px solid var(--c-border, rgba(128,128,128,0.12))',
+                    color: 'var(--c-text-secondary)',
+                    fontFamily: 'var(--studio-font-mono)',
+                    fontSize: 11,
+                    fontWeight: 600,
+                    letterSpacing: '0.04em',
+                    opacity: 0.65,
+                  }}
+                >
+                  <span>{language === 'es' ? 'LISTO' : 'READY'}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* ── Core Readouts (Frequency & Deviation) ── */}
         <div
           style={{
-            background: 'var(--vx-card-2)',
-            borderRadius: 12,
-            padding: '16px 18px',
-            borderLeft: '2px solid #007aff',
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: 12,
+            width: '100%',
+            marginTop: 14,
+            paddingTop: 16,
+            borderTop: '1px solid var(--c-border, rgba(128,128,128,0.12))',
           }}
         >
-          <p
+          <div
             style={{
-              fontFamily: 'var(--font-body)',
-              fontSize: 10,
-              fontWeight: 700,
-              color: 'var(--vx-text-2)',
-              letterSpacing: '0.14em',
-              textTransform: 'uppercase',
-              margin: '0 0 4px',
+              background: 'var(--app-surface-low, rgba(128,128,128,0.04))',
+              border: '1px solid var(--c-border, rgba(128,128,128,0.12))',
+              borderRadius: 16,
+              padding: '12px 14px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              textAlign: 'center',
             }}
           >
-            {t.vocalex.frequency}
-          </p>
-          <p
-            style={{
-              fontFamily: 'var(--font-headline)',
-              fontSize: 24,
-              fontWeight: 700,
-              color: active ? 'var(--vx-text)' : 'rgba(231,229,228,0.1)',
-              margin: 0,
-              transition: 'color 200ms ease',
-            }}
-          >
-            {active ? result!.frequency.toFixed(2) : '—'}
-            {active && (
+            <span
+              style={{
+                fontFamily: 'var(--studio-font-mono)',
+                fontSize: 11,
+                fontWeight: 700,
+                color: 'var(--c-text-secondary)',
+                letterSpacing: '0.08em',
+                textTransform: 'uppercase',
+              }}
+            >
+              {t.vocalex.frequency || (language === 'es' ? 'Frecuencia' : 'Frequency')}
+            </span>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 2, marginTop: 4 }}>
               <span
-                style={{ fontSize: 14, fontWeight: 400, color: 'var(--vx-text-2)', marginLeft: 4 }}
+                style={{
+                  fontFamily: 'var(--studio-font-mono)',
+                  fontSize: 20,
+                  fontWeight: 700,
+                  color: active ? 'var(--c-text-primary)' : 'var(--c-text-secondary)',
+                  opacity: active ? 1 : 0.4,
+                }}
+              >
+                {active ? result!.frequency.toFixed(2) : '—'}
+              </span>
+              <span
+                style={{
+                  fontFamily: 'var(--studio-font-mono)',
+                  fontSize: 12,
+                  fontWeight: 500,
+                  color: 'var(--c-text-secondary)',
+                  opacity: active ? 0.8 : 0.4,
+                  marginLeft: 2,
+                }}
               >
                 Hz
               </span>
-            )}
-          </p>
-        </div>
+            </div>
+          </div>
 
-        <div
-          style={{
-            background: 'var(--vx-card-2)',
-            borderRadius: 12,
-            padding: '16px 18px',
-          }}
-        >
-          <p
+          <div
             style={{
-              fontFamily: 'var(--font-body)',
-              fontSize: 10,
-              fontWeight: 700,
-              color: 'var(--vx-text-2)',
-              letterSpacing: '0.14em',
-              textTransform: 'uppercase',
-              margin: '0 0 4px',
+              background: 'var(--app-surface-low, rgba(128,128,128,0.04))',
+              border: '1px solid var(--c-border, rgba(128,128,128,0.12))',
+              borderRadius: 16,
+              padding: '12px 14px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              textAlign: 'center',
             }}
           >
-            {t.vocalex.precision}
-          </p>
-          <p
-            style={{
-              fontFamily: 'var(--font-headline)',
-              fontSize: 24,
-              fontWeight: 700,
-              color: active ? 'var(--vx-text)' : 'rgba(231,229,228,0.1)',
-              margin: 0,
-              transition: 'color 200ms ease',
-            }}
-          >
-            {active ? (result!.cents >= 0 ? '+' : '') + result!.cents.toFixed(1) : '—'}
-            {active && (
+            <span
+              style={{
+                fontFamily: 'var(--studio-font-mono)',
+                fontSize: 11,
+                fontWeight: 700,
+                color: 'var(--c-text-secondary)',
+                letterSpacing: '0.08em',
+                textTransform: 'uppercase',
+              }}
+            >
+              {t.vocalex.precision || (language === 'es' ? 'Precisión' : 'Accuracy')}
+            </span>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 2, marginTop: 4 }}>
               <span
-                style={{ fontSize: 14, fontWeight: 400, color: 'var(--vx-text-2)', marginLeft: 4 }}
+                style={{
+                  fontFamily: 'var(--studio-font-mono)',
+                  fontSize: 20,
+                  fontWeight: 700,
+                  color: active ? statusColor : 'var(--c-text-secondary)',
+                  opacity: active ? 1 : 0.4,
+                }}
               >
-                cents
+                {active
+                  ? `${Math.max(0, Math.min(100, 100 - (Math.abs(result!.cents) / 50) * 100)).toFixed(1)}`
+                  : '—'}
               </span>
-            )}
-          </p>
+              <span
+                style={{
+                  fontFamily: 'var(--studio-font-mono)',
+                  fontSize: 12,
+                  fontWeight: 500,
+                  color: active ? statusColor : 'var(--c-text-secondary)',
+                  opacity: active ? 0.8 : 0.4,
+                  marginLeft: 2,
+                }}
+              >
+                %
+              </span>
+            </div>
+          </div>
         </div>
 
+        {/* ── Real Pitch History / Stability Strip ── */}
         <div
           style={{
-            gridColumn: '1 / -1',
-            background: 'var(--vx-edge)',
-            borderRadius: 12,
-            padding: 16,
-            height: 96,
-            position: 'relative',
-            overflow: 'hidden',
+            width: '100%',
+            marginTop: 14,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 6,
           }}
         >
           <div
             style={{
               display: 'flex',
-              alignItems: 'flex-end',
               justifyContent: 'space-between',
-              height: '100%',
-              gap: 4,
-              opacity: active ? 0.8 : 0.5,
-              transition: 'opacity 300ms ease',
+              alignItems: 'center',
             }}
           >
-            {Array.from({ length: HISTORY_LEN }, (_, i) => {
-              const entry = history[history.length - HISTORY_LEN + i];
-              let h: number;
-              let bg: string;
+            <span
+              style={{
+                fontFamily: 'var(--studio-font-mono)',
+                fontSize: 10,
+                fontWeight: 700,
+                color: 'var(--c-text-secondary)',
+                letterSpacing: '0.1em',
+                textTransform: 'uppercase',
+              }}
+            >
+              {language === 'es' ? 'Estabilidad de Tono' : 'Pitch Stability'}
+            </span>
+            <span
+              style={{
+                fontFamily: 'var(--studio-font-mono)',
+                fontSize: 10,
+                fontWeight: 600,
+                color: 'var(--c-text-secondary)',
+                opacity: 0.6,
+              }}
+            >
+              {active ? `${history.length} pts` : '—'}
+            </span>
+          </div>
+
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'flex-end',
+              justifyContent: 'space-between',
+              height: 28,
+              gap: 4,
+            }}
+          >
+            {Array.from({ length: 24 }, (_, i) => {
+              const entry = history.length > 0 ? history[history.length - 24 + i] : undefined;
+              let barH = 4;
+              let barBg = isLight ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.08)';
 
               if (entry) {
                 const absCents = Math.abs(entry.cents);
-                h = Math.max(15, (1 - absCents / 50) * 100);
-                bg = absCents <= 10 ? '#007aff' : 'var(--vx-text-4)';
-              } else {
-                h = barHeights[i] ?? 30;
-                bg = barColors[i] ? '#007aff' : 'var(--vx-text-4)';
+                barH = Math.max(12, Math.min(100, (1 - absCents / 50) * 100));
+                barBg = absCents <= 5 ? '#10B981' : absCents <= 15 ? '#f59e0b' : '#ef4444';
               }
 
               return (
@@ -586,76 +741,114 @@ export default function PitchPanel({ active: panelActive = true }: { active?: bo
                   key={i}
                   style={{
                     flex: 1,
-                    height: `${h}%`,
-                    borderRadius: 9999,
-                    background: bg,
+                    height: `${barH}%`,
+                    borderRadius: 2,
+                    background: barBg,
                     transition: 'height 100ms ease, background 100ms ease',
                   }}
                 />
               );
             })}
           </div>
-          <div
-            style={{
-              position: 'absolute',
-              inset: 0,
-              background: 'linear-gradient(to top, var(--vx-edge), transparent)',
-              pointerEvents: 'none',
-            }}
-          />
         </div>
       </div>
 
-      {/* ── Action Buttons ── */}
+      {/* ── Primary Action Controls ── */}
       <div
         style={{
-          display: 'flex',
+          display: 'grid',
+          gridTemplateColumns: '4fr 8fr',
           gap: 12,
           width: '100%',
           maxWidth: 360,
-          marginTop: 20,
+          marginTop: 16,
         }}
       >
-        <Button
-          variant="secondary"
-          size="lg"
+        {/* Reset Button */}
+        <button
+          type="button"
           onClick={handleReset}
-          style={{ flex: 1 }}
-          icon={
-            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
-              restart_alt
-            </span>
-          }
+          disabled={history.length === 0 && !result}
+          style={{
+            height: 54,
+            borderRadius: 16,
+            background: isLight
+              ? '#ffffff'
+              : activeVis.amoledMode
+                ? '#000000'
+                : 'var(--app-surface-low, rgba(255,255,255,0.04))',
+            border: '1px solid var(--c-border, rgba(128,128,128,0.18))',
+            color: 'var(--c-text-primary)',
+            fontFamily: 'var(--studio-font-display)',
+            fontWeight: 600,
+            fontSize: 14,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 6,
+            cursor: history.length === 0 && !result ? 'default' : 'pointer',
+            opacity: history.length === 0 && !result ? 0.45 : 1,
+            boxShadow: isLight ? '0 1px 3px rgba(0,0,0,0.04)' : 'none',
+            transition: 'all 150ms ease',
+          }}
         >
-          {t.vocalex.reset}
-        </Button>
+          <span
+            className="material-symbols-outlined"
+            style={{ fontSize: 20, color: 'var(--c-text-secondary)' }}
+          >
+            restart_alt
+          </span>
+          <span>{t.vocalex.reset || (language === 'es' ? 'Restablecer' : 'Reset')}</span>
+        </button>
 
-        <Button
-          variant={listening ? 'danger' : 'primary'}
-          size="lg"
+        {/* Primary Stop/Start Monitoring Button */}
+        <button
+          type="button"
           onClick={listening ? stopListening : startListening}
-          style={{ flex: 1 }}
-          icon={
-            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
-              {listening ? 'mic_off' : 'mic'}
-            </span>
-          }
+          style={{
+            height: 54,
+            borderRadius: 16,
+            background: listening ? '#ef4444' : accent.from,
+            border: 'none',
+            color: '#ffffff',
+            fontFamily: 'var(--studio-font-display)',
+            fontWeight: 700,
+            fontSize: 15,
+            letterSpacing: '-0.01em',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 8,
+            cursor: 'pointer',
+            boxShadow: listening
+              ? '0 4px 16px rgba(239, 68, 68, 0.28)'
+              : `0 4px 16px ${accent.from}33`,
+            transition: 'all 180ms ease',
+          }}
         >
-          {listening ? t.vocalex.tunerStop : t.vocalex.tunerStart}
-        </Button>
+          <span className="material-symbols-outlined" style={{ fontSize: 22 }}>
+            {listening ? 'mic_off' : 'mic'}
+          </span>
+          <span>
+            {listening
+              ? t.vocalex.tunerStop || (language === 'es' ? 'Detener Monitor' : 'Stop Monitoring')
+              : t.vocalex.tunerStart ||
+                (language === 'es' ? 'Iniciar Monitor' : 'Start Monitoring')}
+          </span>
+        </button>
       </div>
 
       {permError && (
         <div
           style={{
             padding: '14px 16px',
-            borderRadius: 12,
-            marginTop: 12,
-            background: 'rgba(239,68,68,0.1)',
+            borderRadius: 16,
+            marginTop: 16,
+            background: 'rgba(239,68,68,0.08)',
             border: '1px solid rgba(239,68,68,0.2)',
             color: '#ef4444',
-            fontSize: 12,
-            fontFamily: 'var(--font-body)',
+            fontSize: 12.5,
+            fontFamily: 'var(--studio-font-body)',
             textAlign: 'center',
             maxWidth: 360,
             width: '100%',
@@ -663,6 +856,7 @@ export default function PitchPanel({ active: panelActive = true }: { active?: bo
             flexDirection: 'column',
             alignItems: 'center',
             gap: 10,
+            boxSizing: 'border-box',
           }}
         >
           <span style={{ fontWeight: 500, lineHeight: 1.4 }}>
@@ -673,9 +867,8 @@ export default function PitchPanel({ active: panelActive = true }: { active?: bo
               : permError}
           </span>
           {Capacitor.isNativePlatform() ? (
-            <Button
-              variant="danger"
-              size="sm"
+            <button
+              type="button"
               onClick={async () => {
                 try {
                   const { AppInstaller } = await import('@workspace/studio-core');
@@ -684,20 +877,41 @@ export default function PitchPanel({ active: panelActive = true }: { active?: bo
                   console.error('Failed to open app settings:', e);
                 }
               }}
+              style={{
+                background: '#ef4444',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: 10,
+                padding: '8px 16px',
+                fontSize: 12,
+                fontWeight: 600,
+                fontFamily: 'var(--studio-font-display)',
+                cursor: 'pointer',
+              }}
             >
               {language === 'es' ? 'Abrir Ajustes de la App' : 'Open App Settings'}
-            </Button>
+            </button>
           ) : (
-            <Button
-              variant="danger"
-              size="sm"
+            <button
+              type="button"
               onClick={() => {
                 setPermError(null);
                 startListening();
               }}
+              style={{
+                background: '#ef4444',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: 10,
+                padding: '8px 16px',
+                fontSize: 12,
+                fontWeight: 600,
+                fontFamily: 'var(--studio-font-display)',
+                cursor: 'pointer',
+              }}
             >
               {t.vocalex.tunerGrantStart}
-            </Button>
+            </button>
           )}
         </div>
       )}

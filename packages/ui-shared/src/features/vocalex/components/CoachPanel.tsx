@@ -1,10 +1,4 @@
-import {
-  useT,
-  useChordStore,
-  ACCENT_COLORS,
-  resolveAccent,
-  useSettingsStore,
-} from '@workspace/studio-core';
+import { useT, resolveAccent, useSettingsStore } from '@workspace/studio-core';
 import { useState } from 'react';
 import PitchPanel from './PitchPanel';
 import PracticePanel from './PracticePanel';
@@ -31,53 +25,60 @@ export default function CoachPanel({ active = true }: { active?: boolean }) {
           display: 'flex',
           justifyContent: 'center',
           padding:
-            'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 16px) var(--page-header-inset-h, var(--page-inset-h, 24px)) 8px',
+            'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 12px) var(--page-header-inset-h, var(--page-inset-h, 24px)) 10px',
         }}
       >
         <div
           style={{
             position: 'relative',
             display: 'flex',
-            width: '330px',
-            background: isLight ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.03)',
-            padding: '3px',
-            borderRadius: '10px',
-            border: '1px solid rgba(128,128,128,0.06)',
+            width: '100%',
+            maxWidth: 360,
+            background: isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.06)',
+            padding: 4,
+            borderRadius: 9999,
+            border: '1px solid var(--c-border, rgba(128,128,128,0.15))',
             userSelect: 'none',
+            boxSizing: 'border-box',
           }}
         >
           {/* Sliding Pill Indicator */}
           <div
             style={{
               position: 'absolute',
-              left: '3px',
-              top: '3px',
-              bottom: '3px',
-              width: 'calc(50% - 3px)',
+              left: 4,
+              top: 4,
+              bottom: 4,
+              width: 'calc(50% - 4px)',
               transform: subView === 'pitch' ? 'translateX(0)' : 'translateX(100%)',
-              background: isLight ? '#ffffff' : 'rgba(255,255,255,0.08)',
-              borderRadius: '7px',
+              background: isLight
+                ? '#ffffff'
+                : activeVis.amoledMode
+                  ? '#18181b'
+                  : 'rgba(255,255,255,0.12)',
+              borderRadius: 9999,
               transition: 'transform 260ms cubic-bezier(0.16, 1, 0.3, 1)',
-              boxShadow: isLight ? '0 1px 4px rgba(0,0,0,0.08)' : '0 1px 4px rgba(0,0,0,0.25)',
+              boxShadow: isLight ? '0 2px 8px rgba(0,0,0,0.08)' : '0 2px 8px rgba(0,0,0,0.3)',
               zIndex: 0,
             }}
           />
 
           <button
+            type="button"
             onClick={() => setSubView('pitch')}
             style={{
               position: 'relative',
               zIndex: 1,
               flex: 1,
-              height: '30px',
-              borderRadius: '7px',
+              height: 38,
+              borderRadius: 9999,
               fontWeight: 700,
-              fontSize: '12.5px',
-              fontFamily: 'var(--font-headline)',
+              fontSize: 13.5,
+              fontFamily: 'var(--studio-font-display)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: '6px',
+              gap: 6,
               cursor: 'pointer',
               border: 'none',
               background: 'transparent',
@@ -88,7 +89,7 @@ export default function CoachPanel({ active = true }: { active?: boolean }) {
             <span
               className="material-symbols-outlined"
               style={{
-                fontSize: '17px',
+                fontSize: 18,
                 color: subView === 'pitch' ? acc.from : 'inherit',
                 transition: 'color 200ms ease',
               }}
@@ -101,20 +102,21 @@ export default function CoachPanel({ active = true }: { active?: boolean }) {
           </button>
 
           <button
+            type="button"
             onClick={() => setSubView('practice')}
             style={{
               position: 'relative',
               zIndex: 1,
               flex: 1,
-              height: '30px',
-              borderRadius: '7px',
+              height: 38,
+              borderRadius: 9999,
               fontWeight: 700,
-              fontSize: '12.5px',
-              fontFamily: 'var(--font-headline)',
+              fontSize: 13.5,
+              fontFamily: 'var(--studio-font-display)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: '6px',
+              gap: 6,
               cursor: 'pointer',
               border: 'none',
               background: 'transparent',
@@ -125,7 +127,7 @@ export default function CoachPanel({ active = true }: { active?: boolean }) {
             <span
               className="material-symbols-outlined"
               style={{
-                fontSize: '17px',
+                fontSize: 18,
                 color: subView === 'practice' ? acc.from : 'inherit',
                 transition: 'color 200ms ease',
               }}
