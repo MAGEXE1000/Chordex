@@ -17,6 +17,7 @@ export interface MetronomePreset {
   sound: MetronomeSoundId;
   volume: number;
   countInEnabled: boolean;
+  countInBars?: number; // 0, 1, 2, 3
   accentBeat?: number; // 0-indexed measure beat (0 = Beat 1)
   tempoRamp?: MetronomeTempoRampConfig; // Optional integrated tempo ramp configuration
   isFactory?: boolean; // Immutable factory preset flag
@@ -40,15 +41,19 @@ export const DEFAULT_TEMPO_RAMP: MetronomeTempoRampConfig = {
 
 export const SOUND_LABELS: Record<MetronomeSoundId, string> = {
   woodblock: 'Acoustic Woodblock',
-  click: 'Acoustic Click',
-  sidestick: 'Studio Sidestick',
-  digital: 'Digital Beep',
+  click: 'Acoustic Stick Click',
+  sidestick: 'Studio Cross-Stick',
+  drystick: 'Dry Hickory Stick',
+  studioclick: 'Studio Master Click',
+  rimclick: 'Vintage Rim Click',
+  digital: 'Subtle Electronic Click',
+  // Backward compatibility labels for existing user presets
   soft: 'Soft Click',
   tick: 'Studio Tick',
   shaker: 'Studio Shaker',
   claves: 'Latin Claves',
   cowbell: 'Acoustic Woodblock',
-  rimshot: 'Studio Sidestick',
+  rimshot: 'Studio Cross-Stick',
 };
 
 export const FACTORY_PRESETS: MetronomePreset[] = [];
@@ -56,11 +61,10 @@ export const FACTORY_PRESETS: MetronomePreset[] = [];
 export const DEFAULT_PRESETS: MetronomePreset[] = [];
 
 /**
- * Generates an elegant high-contrast 512x512 artwork for Android MediaNotification & MediaSession.
- * Scaled down to a sleek compact badge (~220px centered in 512px canvas) with generous padding,
- * ensuring it fits cleanly inside Android Media Player notifications without dominating controls or text.
+ * Generates a clean 512x512 transparent Livex logo artwork for Android MediaNotification & MediaSession.
+ * Features 100% transparent background with the iconic Livex wave centered in crisp white (#ffffff).
  */
-export function generateMetronomeBpmArtwork(bpm: number, signature?: string): string {
+export function generateMetronomeBpmArtwork(_bpm?: number, _signature?: string): string {
   if (typeof document === 'undefined') return '';
   try {
     const size = 512;
@@ -70,40 +74,27 @@ export function generateMetronomeBpmArtwork(bpm: number, signature?: string): st
     const ctx = canvas.getContext('2d');
     if (!ctx) return '';
 
-    // 1. Sleek deep black background (#000000)
-    ctx.fillStyle = '#000000';
-    ctx.fillRect(0, 0, size, size);
+    // 100% transparent background
+    ctx.clearRect(0, 0, size, size);
 
-    // 2. Centered compact inner card badge with generous inset (220x220 in 512x512)
-    const inset = 146;
-    const innerSize = size - inset * 2;
-    const radius = 28;
+    ctx.save();
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 42;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
 
-    ctx.fillStyle = '#121215';
-    ctx.beginPath();
-    ctx.roundRect(inset, inset, innerSize, innerSize, radius);
-    ctx.fill();
-
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
-    ctx.lineWidth = 2.5;
-    ctx.beginPath();
-    ctx.roundRect(inset, inset, innerSize, innerSize, radius);
-    ctx.stroke();
-
-    // 3. Modern white BPM number centered
-    ctx.fillStyle = '#ffffff';
-    ctx.font =
-      '800 56px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(`${bpm}`, size / 2, size / 2 - 14);
-
-    // 4. Clean "BPM" badge label with signature
-    ctx.fillStyle = '#a1a1aa';
-    ctx.font =
-      '700 16px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-    const subtext = signature ? `BPM · ${signature}` : 'BPM';
-    ctx.fillText(subtext, size / 2, size / 2 + 28);
+    // Canonical Livex Logo path: M 72 256 C 128 60 192 60 256 256 S 384 452 440 256
+    if (typeof Path2D !== 'undefined') {
+      const p = new Path2D('M 72 256 C 128 60 192 60 256 256 S 384 452 440 256');
+      ctx.stroke(p);
+    } else {
+      ctx.beginPath();
+      ctx.moveTo(72, 256);
+      ctx.bezierCurveTo(128, 60, 192, 60, 256, 256);
+      ctx.bezierCurveTo(320, 452, 384, 452, 440, 256);
+      ctx.stroke();
+    }
+    ctx.restore();
 
     return canvas.toDataURL('image/png');
   } catch {
@@ -381,23 +372,11 @@ export const useMetronomeStore = create<MetronomeState>((set, get) => {
     const s = get();
     const isCurrentlyPlaying = playing !== undefined ? playing : s.isPlaying;
     const preset = s.activePresetId ? s.userPresets.find((p) => p.id === s.activePresetId) : null;
+    const secondaryInfo = `${s.bpm} BPM • ${s.timeSignature} • ${s.subdivision}`;
 
-    let title: string;
-    let artist: string;
-    let album: string;
-
-    if (preset) {
-      // When a named preset is active, title = preset name (e.g., "Te quiero")
-      title = preset.name;
-      artist = 'Drumex Metronome';
-      album = `${s.bpm} BPM · ${s.timeSignature} · ${SOUND_LABELS[s.sound] || 'Acoustic Woodblock'}`;
-    } else {
-      // When no preset is active, title = "Drumex Metronome"
-      title = 'Drumex Metronome';
-      artist = `${s.bpm} BPM · ${s.timeSignature}`;
-      album = `${SOUND_LABELS[s.sound] || 'Acoustic Woodblock'}${s.subdivision ? ` · ${s.subdivision}` : ''}`;
-    }
-
+    const title = preset ? preset.name : 'Drumex Metronome';
+    const artist = secondaryInfo;
+    const album = preset ? 'Drumex Metronome' : SOUND_LABELS[s.sound] || 'Acoustic Woodblock';
     const artworkUrl = generateMetronomeBpmArtwork(s.bpm, s.timeSignature);
 
     if (isCurrentlyPlaying) {
@@ -408,18 +387,19 @@ export const useMetronomeStore = create<MetronomeState>((set, get) => {
           const p = state.activePresetId
             ? state.userPresets.find((pr) => pr.id === state.activePresetId)
             : null;
+          const info = `${state.bpm} BPM • ${state.timeSignature} • ${state.subdivision}`;
           if (p) {
             return {
               title: p.name,
-              artist: 'Drumex Metronome',
-              album: `${state.bpm} BPM · ${state.timeSignature} · ${SOUND_LABELS[state.sound] || 'Acoustic Woodblock'}`,
+              artist: info,
+              album: 'Drumex Metronome',
               artworkUrl: generateMetronomeBpmArtwork(state.bpm, state.timeSignature),
             };
           }
           return {
             title: 'Drumex Metronome',
-            artist: `${state.bpm} BPM · ${state.timeSignature}`,
-            album: `${SOUND_LABELS[state.sound] || 'Acoustic Woodblock'}${state.subdivision ? ` · ${state.subdivision}` : ''}`,
+            artist: info,
+            album: SOUND_LABELS[state.sound] || 'Acoustic Woodblock',
             artworkUrl: generateMetronomeBpmArtwork(state.bpm, state.timeSignature),
           };
         },
@@ -577,6 +557,9 @@ export const useMetronomeStore = create<MetronomeState>((set, get) => {
     practiceSecondsRemaining: 300,
 
     start: () => {
+      const s = get();
+      metronomeAudioEngine.setVoiceCountIn(s.countInVoiceEnabled);
+      metronomeAudioEngine.setCountIn(s.countInEnabled, s.countInBars, s.countInVoiceEnabled);
       metronomeAudioEngine.start();
     },
 
@@ -585,6 +568,11 @@ export const useMetronomeStore = create<MetronomeState>((set, get) => {
     },
 
     togglePlay: () => {
+      const s = get();
+      if (!s.isPlaying) {
+        metronomeAudioEngine.setVoiceCountIn(s.countInVoiceEnabled);
+        metronomeAudioEngine.setCountIn(s.countInEnabled, s.countInBars, s.countInVoiceEnabled);
+      }
       metronomeAudioEngine.togglePlay();
     },
 
@@ -751,7 +739,8 @@ export const useMetronomeStore = create<MetronomeState>((set, get) => {
       metronomeAudioEngine.setVolume(preset.volume / 100);
       metronomeAudioEngine.setAccentBeat(preset.accentBeat ?? 0);
       const countInEnabled = preset.countInEnabled ?? true;
-      metronomeAudioEngine.setCountIn(countInEnabled, countInEnabled ? 1 : 0);
+      const countInBars = preset.countInBars ?? (countInEnabled ? 1 : 0);
+      metronomeAudioEngine.setCountIn(countInEnabled, countInBars, get().countInVoiceEnabled);
 
       const nextRamp = preset.tempoRamp
         ? { ...preset.tempoRamp }
@@ -767,7 +756,7 @@ export const useMetronomeStore = create<MetronomeState>((set, get) => {
         volume: preset.volume,
         accentBeat: preset.accentBeat ?? 0,
         countInEnabled,
-        countInBars: countInEnabled ? 1 : 0,
+        countInBars,
         tempoRamp: nextRamp,
         activePresetId: id,
       });
@@ -797,6 +786,8 @@ export const useMetronomeStore = create<MetronomeState>((set, get) => {
           isObject && nameOrData.countInEnabled !== undefined
             ? nameOrData.countInEnabled
             : s.countInEnabled,
+        countInBars:
+          isObject && nameOrData.countInBars !== undefined ? nameOrData.countInBars : s.countInBars,
         tempoRamp:
           isObject && nameOrData.tempoRamp
             ? { ...nameOrData.tempoRamp }
@@ -829,6 +820,7 @@ export const useMetronomeStore = create<MetronomeState>((set, get) => {
             volume: s.volume,
             accentBeat: s.accentBeat,
             countInEnabled: s.countInEnabled,
+            countInBars: s.countInBars,
             tempoRamp: s.tempoRamp.enabled ? { ...s.tempoRamp } : undefined,
           };
         }
@@ -860,9 +852,11 @@ export const useMetronomeStore = create<MetronomeState>((set, get) => {
         if (updates.sound !== undefined) get().setSound(updates.sound);
         if (updates.volume !== undefined) get().setVolume(updates.volume);
         if (updates.accentBeat !== undefined) get().setAccentBeat(updates.accentBeat);
-        if (updates.countInEnabled !== undefined) {
-          metronomeAudioEngine.setCountIn(updates.countInEnabled, 1);
-          set({ countInEnabled: updates.countInEnabled });
+        if (updates.countInEnabled !== undefined || updates.countInBars !== undefined) {
+          const countInBars = updates.countInBars ?? (updates.countInEnabled ? 1 : 0);
+          const countInEnabled = updates.countInEnabled ?? countInBars > 0;
+          metronomeAudioEngine.setCountIn(countInEnabled, countInBars, get().countInVoiceEnabled);
+          set({ countInEnabled, countInBars });
         }
         if (updates.tempoRamp !== undefined) {
           get().setTempoRamp(updates.tempoRamp);

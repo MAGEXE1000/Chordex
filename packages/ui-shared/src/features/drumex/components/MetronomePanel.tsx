@@ -924,11 +924,10 @@ export function MetronomePanel({ onBack, onScroll, isAmoled: propIsAmoled }: Met
                     'woodblock',
                     'click',
                     'sidestick',
+                    'drystick',
+                    'studioclick',
+                    'rimclick',
                     'digital',
-                    'soft',
-                    'tick',
-                    'shaker',
-                    'claves',
                   ] as MetronomeSoundId[]
                 ).map((sId) => (
                   <button
@@ -969,9 +968,9 @@ export function MetronomePanel({ onBack, onScroll, isAmoled: propIsAmoled }: Met
               <span className="text-[9px] font-bold text-slate-400 dark:text-zinc-500 leading-none uppercase">
                 Count-In
               </span>
-              <span className="text-[11px] font-extrabold text-[#007aff] leading-none mt-0.5">
+              <span className="text-xs font-bold text-slate-800 dark:text-zinc-200">
                 {countInEnabled && countInBars > 0
-                  ? `${countInBars} Bar${countInBars > 1 ? 's' : ''}${countInVoiceEnabled ? ' • Voice' : ''}`
+                  ? `${countInBars} ${countInBars === 1 ? 'Bar' : 'Bars'}`
                   : 'Off'}
               </span>
             </div>
@@ -980,12 +979,12 @@ export function MetronomePanel({ onBack, onScroll, isAmoled: propIsAmoled }: Met
                 e.stopPropagation();
                 toggleCountIn();
               }}
-              className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ml-0.5 transition-colors cursor-pointer ${
+              className={`w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-bold ml-1 transition cursor-pointer ${
                 countInEnabled && countInBars > 0
-                  ? 'bg-[#007aff] text-white'
+                  ? 'bg-[#007aff] text-white shadow-xs'
                   : isAmoled
-                    ? 'bg-zinc-800 text-transparent'
-                    : 'bg-slate-200 dark:bg-zinc-700 text-transparent'
+                    ? 'bg-zinc-800 text-zinc-500'
+                    : 'bg-slate-200 dark:bg-zinc-700 text-slate-400'
               }`}
               type="button"
               title={countInEnabled && countInBars > 0 ? 'Disable Count-In' : 'Enable Count-In'}
@@ -995,23 +994,23 @@ export function MetronomePanel({ onBack, onScroll, isAmoled: propIsAmoled }: Met
           </div>
         </section>
 
-        {/* 5. TEMPO LOCK / BPM HOLD (Protection during practice) */}
+        {/* 5. TEMPO LOCK / BPM HOLD (Drumex Modernized Presentation) */}
         <section
           className={`${
             isAmoled
               ? 'bg-black border-white/15 shadow-none'
               : 'bg-white dark:bg-zinc-900 border-slate-200/80 dark:border-zinc-800 shadow-xs'
-          } rounded-2xl p-3.5 border flex items-center justify-between`}
+          } rounded-2xl p-3.5 border flex items-center justify-between transition-all duration-200`}
         >
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2.5 min-w-0">
             <div
-              className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
+              className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-colors ${
                 isTempoLocked
                   ? isAmoled
-                    ? 'bg-amber-500/20 text-amber-400'
-                    : 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
+                    ? 'bg-[#007aff]/15 text-[#007aff] border border-[#007aff]/25'
+                    : 'bg-blue-50 dark:bg-blue-950/40 text-[#007aff]'
                   : isAmoled
-                    ? 'bg-[#0a0a0c] text-zinc-400'
+                    ? 'bg-[#0a0a0c] text-zinc-400 border border-white/10'
                     : 'bg-slate-100 dark:bg-zinc-800 text-slate-500 dark:text-zinc-400'
               }`}
             >
@@ -1019,18 +1018,18 @@ export function MetronomePanel({ onBack, onScroll, isAmoled: propIsAmoled }: Met
                 {isTempoLocked ? 'lock' : 'lock_open'}
               </span>
             </div>
-            <div className="flex flex-col">
+            <div className="flex flex-col min-w-0">
               <div className="flex items-center gap-1.5">
                 <span className="text-xs font-bold text-slate-800 dark:text-zinc-100 font-manrope">
                   Tempo Lock
                 </span>
                 {isTempoLocked && (
-                  <span className="px-1.5 py-0.2 rounded text-[9px] font-extrabold bg-amber-500/15 text-amber-600 dark:text-amber-400 uppercase tracking-wider">
+                  <span className="px-1.5 py-0.5 rounded-full text-[9px] font-extrabold bg-[#007aff]/15 text-[#007aff] border border-[#007aff]/30 uppercase tracking-wider font-manrope">
                     Locked
                   </span>
                 )}
               </div>
-              <span className="text-[10px] text-slate-400 dark:text-zinc-500 leading-tight">
+              <span className="text-[10px] text-slate-400 dark:text-zinc-500 leading-tight truncate">
                 Hold BPM to avoid accidental changes while practicing
               </span>
             </div>
@@ -1039,12 +1038,12 @@ export function MetronomePanel({ onBack, onScroll, isAmoled: propIsAmoled }: Met
           <button
             type="button"
             onClick={toggleTempoLock}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold font-manrope transition-all tap-press cursor-pointer flex items-center gap-1.5 ${
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold font-manrope transition-all tap-press cursor-pointer flex items-center gap-1.5 shrink-0 ${
               isTempoLocked
-                ? 'bg-amber-500 text-white shadow-xs hover:bg-amber-600'
+                ? 'bg-[#007aff] text-white shadow-xs hover:bg-blue-600'
                 : isAmoled
                   ? 'bg-[#0a0a0c] text-zinc-300 hover:bg-white/10 border border-white/10'
-                  : 'bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 hover:bg-slate-200 dark:hover:bg-zinc-700'
+                  : 'bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 hover:bg-slate-200 dark:hover:bg-zinc-700 border border-slate-200 dark:border-zinc-700'
             }`}
           >
             <span className="material-symbols-outlined text-[14px]">
@@ -1695,7 +1694,15 @@ export function MetronomePanel({ onBack, onScroll, isAmoled: propIsAmoled }: Met
                   </label>
                   <div className="grid grid-cols-2 gap-1.5">
                     {(
-                      ['woodblock', 'click', 'sidestick', 'digital', 'soft'] as MetronomeSoundId[]
+                      [
+                        'woodblock',
+                        'click',
+                        'sidestick',
+                        'drystick',
+                        'studioclick',
+                        'rimclick',
+                        'digital',
+                      ] as MetronomeSoundId[]
                     ).map((snd) => (
                       <button
                         key={snd}
@@ -2186,9 +2193,7 @@ export function MetronomePanel({ onBack, onScroll, isAmoled: propIsAmoled }: Met
             } shadow-2xl border animate-in zoom-in-95 duration-100 min-w-[200px]`}
           >
             <span className="text-[11px] font-extrabold tracking-widest text-[#007aff] uppercase font-manrope mb-1">
-              {(countInTotalBars ?? 1) > 1
-                ? `BAR ${countInBar ?? 1} OF ${countInTotalBars}`
-                : 'COUNT-IN'}
+              {`BAR ${countInBar ?? 1} OF ${countInTotalBars ?? 1}`}
             </span>
             <span
               key={`${countInBar}-${countInNumber}`}
@@ -2197,7 +2202,8 @@ export function MetronomePanel({ onBack, onScroll, isAmoled: propIsAmoled }: Met
               {countInNumber ?? (activeBeat >= 0 ? activeBeat + 1 : 1)}
             </span>
             <span className="text-xs font-semibold text-slate-400 dark:text-zinc-500 mt-2 font-manrope">
-              {countInVoiceEnabled ? 'Voice Count-In' : 'Get ready...'}
+              {countInVoiceEnabled ? 'Voice Count-In' : 'Count-In'} • Beat {countInNumber ?? 1} of{' '}
+              {getBeatsPerMeasure(timeSignature)}
             </span>
           </div>
         </div>

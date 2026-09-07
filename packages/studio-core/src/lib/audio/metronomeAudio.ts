@@ -7,7 +7,11 @@ export type MetronomeSoundId =
   | 'woodblock'
   | 'click'
   | 'sidestick'
+  | 'drystick'
+  | 'studioclick'
+  | 'rimclick'
   | 'digital'
+  // Legacy aliases retained for backward compatibility with existing user presets
   | 'soft'
   | 'tick'
   | 'shaker'
@@ -210,6 +214,9 @@ export class MetronomeAudioEngine {
       'woodblock',
       'click',
       'sidestick',
+      'drystick',
+      'studioclick',
+      'rimclick',
       'digital',
       'soft',
       'tick',
@@ -236,15 +243,19 @@ export class MetronomeAudioEngine {
         ? 0.055
         : sound === 'sidestick' || sound === 'rimshot'
           ? 0.048
-          : sound === 'claves'
-            ? 0.045
-            : sound === 'click'
-              ? 0.042
-              : sound === 'shaker'
-                ? 0.035
-                : sound === 'tick'
-                  ? 0.024
-                  : 0.04;
+          : sound === 'rimclick'
+            ? 0.04
+            : sound === 'claves'
+              ? 0.045
+              : sound === 'click'
+                ? 0.042
+                : sound === 'studioclick'
+                  ? 0.036
+                  : sound === 'shaker'
+                    ? 0.035
+                    : sound === 'drystick' || sound === 'tick'
+                      ? 0.026
+                      : 0.035;
     const length = Math.floor(sampleRate * duration);
     const buffer = ctx.createBuffer(1, length, sampleRate);
     const data = buffer.getChannelData(0);
@@ -296,10 +307,51 @@ export class MetronomeAudioEngine {
         }
         break;
       }
+      case 'drystick':
+      case 'tick': {
+        // Ultra-dry, close-mic'd high-velocity hickory drumstick tip strike with zero resonance
+        const f1 = isAccent ? 3400 : 2600;
+        const f2 = isAccent ? 5800 : 4500;
+        for (let i = 0; i < length; i++) {
+          const t = i / sampleRate;
+          const env = Math.exp(-t * 220);
+          const snap = (Math.random() * 2 - 1) * Math.exp(-t * 1600) * 0.45;
+          const tone =
+            Math.sin(2 * Math.PI * f1 * t) * 0.55 + Math.sin(2 * Math.PI * f2 * t) * 0.25;
+          data[i] = (tone + snap) * env * gainMult * 0.95;
+        }
+        break;
+      }
+      case 'studioclick': {
+        // Reference studio master click: defined low-mid body punch with sharp attack transient
+        const f1 = isAccent ? 2200 : 1650;
+        const f2 = isAccent ? 4400 : 3300;
+        for (let i = 0; i < length; i++) {
+          const t = i / sampleRate;
+          const env = Math.exp(-t * 140);
+          const click = (Math.random() * 2 - 1) * Math.exp(-t * 1200) * 0.4;
+          const tone = Math.sin(2 * Math.PI * f1 * t) * 0.6 + Math.sin(2 * Math.PI * f2 * t) * 0.25;
+          data[i] = (tone + click) * env * gainMult * 0.94;
+        }
+        break;
+      }
+      case 'rimclick': {
+        // Vintage snare hoop rim click: acoustic wood body + focused metallic rim ping
+        const f1 = isAccent ? 2500 : 1900;
+        const f2 = isAccent ? 5200 : 4100;
+        for (let i = 0; i < length; i++) {
+          const t = i / sampleRate;
+          const env = Math.exp(-t * 120);
+          const ping = Math.sin(2 * Math.PI * f1 * t) * 0.5 + Math.sin(2 * Math.PI * f2 * t) * 0.35;
+          const snap = (Math.random() * 2 - 1) * Math.exp(-t * 1000) * 0.35;
+          data[i] = (ping + snap) * env * gainMult * 0.92;
+        }
+        break;
+      }
       case 'digital': {
-        // Pure studio digital tone with smooth window
+        // Subtle, minimalist electronic click with smooth Hann envelope
         const f = isAccent ? 2200 : 1350;
-        const envDur = 0.028;
+        const envDur = 0.024;
         for (let i = 0; i < length; i++) {
           const t = i / sampleRate;
           if (t > envDur) {
@@ -319,19 +371,6 @@ export class MetronomeAudioEngine {
           const attack = Math.min(1, t / 0.003);
           const decay = Math.exp(-t * 110);
           data[i] = Math.sin(2 * Math.PI * f * t) * attack * decay * gainMult * 0.85;
-        }
-        break;
-      }
-      case 'tick': {
-        // Natural studio mechanical tick: sharp double-escapement transient with rapid decay
-        const f1 = isAccent ? 4200 : 3400;
-        const f2 = isAccent ? 6400 : 5100;
-        for (let i = 0; i < length; i++) {
-          const t = i / sampleRate;
-          const env = Math.exp(-t * 220);
-          const snap = (Math.random() * 2 - 1) * Math.exp(-t * 1400) * 0.45;
-          const tone = Math.sin(2 * Math.PI * f1 * t) * 0.5 + Math.sin(2 * Math.PI * f2 * t) * 0.3;
-          data[i] = (tone + snap) * env * gainMult * 0.95;
         }
         break;
       }
@@ -505,6 +544,12 @@ export class MetronomeAudioEngine {
   public start() {
     this.initAudio();
     if (!this._ctx) return;
+    if (this._voiceGain) {
+      this._voiceGain.gain.setValueAtTime(
+        this._countInVoiceEnabled ? 1.0 : 0.0,
+        this._ctx.currentTime
+      );
+    }
 
     this.stop();
     this._isPlaying = true;
@@ -676,7 +721,7 @@ export class MetronomeAudioEngine {
   }
 
   private scheduleVoicePulse(time: number, countNumber: number) {
-    if (!this._ctx || !this._voiceGain) return;
+    if (!this._countInVoiceEnabled || !this._ctx || !this._voiceGain) return;
     const buf = this._voiceBuffers.get(countNumber);
     if (!buf) return;
 
@@ -696,7 +741,7 @@ export class MetronomeAudioEngine {
 
     const source = this._ctx.createBufferSource();
     source.buffer = buf;
-    source.connect(this._voiceGain || this._masterGain || this._ctx.destination);
+    source.connect(this._masterGain || this._ctx.destination);
     source.start(this._ctx.currentTime);
   }
 
@@ -837,10 +882,14 @@ export class MetronomeAudioEngine {
     }
   }
 
-  public setCountIn(enabled: boolean, bars: number = 1, voiceEnabled: boolean = true) {
+  public setCountIn(
+    enabled: boolean,
+    bars: number = 1,
+    voiceEnabled: boolean = this._countInVoiceEnabled
+  ) {
     this._countInEnabled = enabled && bars > 0;
     this._countInBars = Math.max(0, Math.min(3, bars));
-    this._countInVoiceEnabled = voiceEnabled;
+    this._countInVoiceEnabled = Boolean(voiceEnabled);
     if (this._voiceGain && this._ctx) {
       this._voiceGain.gain.setValueAtTime(
         this._countInVoiceEnabled ? 1.0 : 0.0,
@@ -850,9 +899,12 @@ export class MetronomeAudioEngine {
   }
 
   public setVoiceCountIn(enabled: boolean) {
-    this._countInVoiceEnabled = enabled;
+    this._countInVoiceEnabled = Boolean(enabled);
     if (this._voiceGain && this._ctx) {
-      this._voiceGain.gain.setValueAtTime(enabled ? 1.0 : 0.0, this._ctx.currentTime);
+      this._voiceGain.gain.setValueAtTime(
+        this._countInVoiceEnabled ? 1.0 : 0.0,
+        this._ctx.currentTime
+      );
     }
   }
 
