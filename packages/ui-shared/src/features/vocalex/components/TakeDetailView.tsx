@@ -1,35 +1,28 @@
 import { Dialog } from '../../../shared/design-system/dialogs';
 import {
   useT,
-  createAudioContext,
   useNavigationStore,
   NavigationDispatcher,
   useBackHandler,
-} from '@workspace/studio-core';
-import { useShallow } from 'zustand/react/shallow';
-import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import {
-  extractWaveformPeaks,
+  useSettingsStore,
   blobToAudioBuffer,
   type TakeRecord,
-  vocalexRepository,
 } from '@workspace/studio-core';
-import LoadingLottie from '../../../shared/lottie/LoadingLottie';
+import { useShallow } from 'zustand/react/shallow';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { Loader } from '../../../components/motion/loader';
-import SmartLoading from '../../../shared/loading/SmartLoading';
-import { VocalexTakesSkeleton } from '../../../shared/loading/StudioSkeleton';
-import EmptyStateLottie from '../../../shared/lottie/EmptyStateLottie';
 import { analyzeAudio, type VocalAnalysis, type AnalysisLabels } from '../services/vocalAnalysis';
 import HarmonizerSheet from './HarmonizerSheet';
-import { clearTakeCache } from '../services/harmonyEngine';
 import { Button } from '../../../shared/design-system/StudioDesignSystem';
 import { SharedFloatingHeader } from '../../../shared/layout/StudioLayoutSystem';
+
 function formatDuration(ms: number): string {
   const totalSec = Math.floor(ms / 1000);
   const m = Math.floor(totalSec / 60);
   const s = totalSec % 60;
   return `${m}:${String(s).padStart(2, '0')}`;
 }
+
 function formatDateI18n(
   ts: number,
   t: { today: string; yesterday: string; daysAgo: (n: number) => string }
@@ -48,6 +41,7 @@ function formatDateI18n(
   }
   return d.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
 }
+
 export default function TakeDetailView({
   take,
   onBack,
@@ -60,6 +54,15 @@ export default function TakeDetailView({
   onSaveBounce: (newTake: TakeRecord) => Promise<void>;
 }) {
   const t = useT();
+  const settings = useSettingsStore(useShallow((s) => s.settings));
+  const activeVis = settings.perApp?.vocalex ?? { theme: 'dark', amoledMode: false };
+  const isLight =
+    activeVis.theme === 'light' ||
+    (activeVis.theme === 'system' &&
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-color-scheme: light)').matches);
+  const isAmoled = !!activeVis.amoledMode;
+
   const [playing, setPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [analysis, setAnalysis] = useState<VocalAnalysis | null>(null);
@@ -178,13 +181,23 @@ export default function TakeDetailView({
   const currentTimeSec = audioRef.current?.currentTime ?? 0;
   const totalTimeSec = take.durationMs / 1000;
 
+  const cardBg = isLight
+    ? '#ffffff'
+    : isAmoled
+      ? '#000000'
+      : 'var(--app-surface-low, rgba(255,255,255,0.04))';
+  const cardBorder = '1px solid var(--c-border, rgba(128,128,128,0.18))';
+  const cardShadow = isLight ? '0 1px 4px rgba(0,0,0,0.03)' : 'none';
+
   return (
     <div
       className="relative"
       style={{
-        padding: '16px 20px',
+        padding:
+          '16px 20px calc(var(--bottom-nav-height, 68px) + env(safe-area-inset-bottom, 16px) + 24px)',
         paddingTop: 'calc(env(safe-area-inset-top, 0px) + 78px)',
         minHeight: '100%',
+        boxSizing: 'border-box',
       }}
     >
       <SharedFloatingHeader
@@ -203,17 +216,17 @@ export default function TakeDetailView({
                 setShowHarmonizer(true);
               }}
               style={{
-                background: 'var(--studio-accent-soft)',
-                border: '1px solid var(--studio-accent-border)',
+                background: 'rgba(var(--studio-accent-rgb, 0,122,255), 0.12)',
+                border: '1px solid var(--studio-accent, #007aff)',
                 cursor: 'pointer',
-                color: 'var(--studio-accent)',
+                color: 'var(--studio-accent, #007aff)',
                 display: 'flex',
                 alignItems: 'center',
                 gap: 4,
                 padding: '4px 10px',
                 borderRadius: 9999,
-                fontFamily: 'var(--font-headline)',
-                fontSize: 11,
+                fontFamily: 'var(--studio-font-display)',
+                fontSize: 11.5,
                 fontWeight: 700,
               }}
             >
@@ -250,7 +263,7 @@ export default function TakeDetailView({
       {showHarmonizer && (
         <HarmonizerSheet
           take={take}
-          accent="var(--studio-accent)"
+          accent="var(--studio-accent, #007aff)"
           onClose={() => setShowHarmonizer(false)}
           onBounce={async (newTake) => {
             await onSaveBounce(newTake);
@@ -269,7 +282,7 @@ export default function TakeDetailView({
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <p
             style={{
-              fontFamily: 'var(--font-body)',
+              fontFamily: 'var(--studio-font-body)',
               fontSize: 13,
               color: 'var(--c-text-secondary)',
               margin: 0,
@@ -285,7 +298,7 @@ export default function TakeDetailView({
             <Button
               variant="primary"
               onClick={handleDelete}
-              style={{ flex: 1, background: 'var(--c-error)', color: '#fff' }}
+              style={{ flex: 1, background: 'var(--c-error, #ef4444)', color: '#fff' }}
             >
               {t.vocalex.deleteTake}
             </Button>
@@ -297,13 +310,14 @@ export default function TakeDetailView({
       <div style={{ marginBottom: 20 }}>
         <h2
           style={{
-            fontFamily: 'var(--font-headline)',
+            fontFamily: 'var(--studio-font-display)',
             fontWeight: 800,
             fontSize: 22,
-            color: 'var(--vx-text)',
+            color: 'var(--c-text-primary)',
             margin: '0 0 4px',
             lineHeight: 1.2,
             wordBreak: 'break-word',
+            letterSpacing: '-0.02em',
           }}
         >
           {take.name}
@@ -313,23 +327,33 @@ export default function TakeDetailView({
             display: 'flex',
             alignItems: 'center',
             gap: 8,
-            fontFamily: 'var(--font-body)',
+            fontFamily: 'var(--studio-font-body)',
             fontSize: 12,
-            color: 'var(--vx-text-2)',
+            color: 'var(--c-text-secondary)',
           }}
         >
           <span>{formatDateI18n(take.createdAt, t.vocalex)}</span>
           <span
-            style={{ width: 3, height: 3, borderRadius: '50%', background: 'var(--vx-text-4)' }}
+            style={{
+              width: 3,
+              height: 3,
+              borderRadius: '50%',
+              background: 'var(--c-text-secondary)',
+              opacity: 0.5,
+            }}
           />
-          <span>{formatDuration(take.durationMs)}</span>
+          <span style={{ fontFamily: 'var(--studio-font-mono)', fontWeight: 600 }}>
+            {formatDuration(take.durationMs)}
+          </span>
         </div>
       </div>
 
       {/* Player card */}
       <div
         style={{
-          background: 'var(--vx-card-2)',
+          background: cardBg,
+          border: cardBorder,
+          boxShadow: cardShadow,
           borderRadius: 16,
           padding: 20,
           marginBottom: 24,
@@ -344,7 +368,7 @@ export default function TakeDetailView({
             top: 0,
             bottom: 0,
             width: 3,
-            background: playing ? 'var(--studio-accent)' : 'var(--vx-text-4)',
+            background: playing ? 'var(--studio-accent, #007aff)' : 'transparent',
             transition: 'background 200ms ease',
           }}
         />
@@ -356,13 +380,13 @@ export default function TakeDetailView({
               width: 52,
               height: 52,
               borderRadius: '50%',
-              background: 'var(--studio-accent)',
+              background: 'var(--studio-accent, #007aff)',
               border: 'none',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              boxShadow: 'var(--studio-accent-glow)',
+              boxShadow: '0 4px 14px 0 rgba(0, 122, 255, 0.25)',
               flexShrink: 0,
             }}
           >
@@ -380,10 +404,10 @@ export default function TakeDetailView({
           <div>
             <p
               style={{
-                fontFamily: 'var(--font-headline)',
+                fontFamily: 'var(--studio-font-display)',
                 fontWeight: 700,
                 fontSize: 14,
-                color: playing ? 'var(--studio-accent)' : 'var(--vx-text-2)',
+                color: playing ? 'var(--studio-accent, #007aff)' : 'var(--c-text-secondary)',
                 margin: 0,
                 transition: 'color 200ms ease',
               }}
@@ -398,7 +422,7 @@ export default function TakeDetailView({
           onClick={seekTo}
           style={{
             height: 72,
-            background: 'var(--c-surface-lowest)',
+            background: isLight ? '#f1f5f9' : 'rgba(0,0,0,0.2)',
             borderRadius: 10,
             display: 'flex',
             alignItems: 'center',
@@ -416,8 +440,8 @@ export default function TakeDetailView({
               top: 0,
               bottom: 0,
               width: `${progress}%`,
-              background: 'rgba(var(--studio-accent-rgb), 0.08)',
-              borderRight: '2px solid var(--studio-accent)',
+              background: 'rgba(var(--studio-accent-rgb, 0,122,255), 0.08)',
+              borderRight: '2px solid var(--studio-accent, #007aff)',
               transition: playing ? 'none' : 'width 100ms ease',
             }}
           />
@@ -431,8 +455,10 @@ export default function TakeDetailView({
                   height: `${Math.max(8, h)}%`,
                   borderRadius: 9999,
                   background: isPlayed
-                    ? 'rgba(var(--studio-accent-rgb), 0.6)'
-                    : 'rgba(172,171,170,0.2)',
+                    ? 'var(--studio-accent, #007aff)'
+                    : isLight
+                      ? '#cbd5e1'
+                      : 'rgba(255,255,255,0.2)',
                   position: 'relative',
                   zIndex: 1,
                   minWidth: 1.5,
@@ -447,10 +473,10 @@ export default function TakeDetailView({
             display: 'flex',
             justifyContent: 'space-between',
             padding: '6px 2px 0',
-            fontFamily: 'var(--font-body)',
+            fontFamily: 'var(--studio-font-mono)',
             fontSize: 11,
             fontWeight: 700,
-            color: 'var(--vx-text-2)',
+            color: 'var(--c-text-secondary)',
             fontVariantNumeric: 'tabular-nums',
           }}
         >
@@ -464,17 +490,18 @@ export default function TakeDetailView({
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
           <span
             className="material-symbols-outlined"
-            style={{ fontSize: 20, color: 'var(--studio-accent)' }}
+            style={{ fontSize: 20, color: 'var(--studio-accent, #007aff)' }}
           >
             insights
           </span>
           <h3
             style={{
-              fontFamily: 'var(--font-headline)',
+              fontFamily: 'var(--studio-font-display)',
               fontWeight: 800,
               fontSize: 18,
-              color: 'var(--vx-text)',
+              color: 'var(--c-text-primary)',
               margin: 0,
+              letterSpacing: '-0.02em',
             }}
           >
             {t.vocalex.vocalAnalysis}
@@ -486,7 +513,9 @@ export default function TakeDetailView({
             style={{
               padding: 32,
               textAlign: 'center',
-              background: 'var(--vx-card-2)',
+              background: cardBg,
+              border: cardBorder,
+              boxShadow: cardShadow,
               borderRadius: 14,
               display: 'flex',
               flexDirection: 'column',
@@ -497,9 +526,9 @@ export default function TakeDetailView({
             <Loader variant="metaballs" size={32} />
             <p
               style={{
-                fontFamily: 'var(--font-body)',
+                fontFamily: 'var(--studio-font-body)',
                 fontSize: 13,
-                color: 'var(--vx-text-2)',
+                color: 'var(--c-text-secondary)',
                 margin: 0,
               }}
             >
@@ -515,10 +544,16 @@ export default function TakeDetailView({
               <StatCard
                 label={t.vocalex.avgFrequency}
                 value={analysis.avgFrequency > 0 ? `${analysis.avgFrequency.toFixed(0)} Hz` : '—'}
+                cardBg={cardBg}
+                cardBorder={cardBorder}
+                cardShadow={cardShadow}
               />
               <StatCard
                 label={t.vocalex.stability}
                 value={`${analysis.stabilityPercent}%`}
+                cardBg={cardBg}
+                cardBorder={cardBorder}
+                cardShadow={cardShadow}
                 color={
                   analysis.stabilityPercent >= 80
                     ? '#34d399'
@@ -527,15 +562,29 @@ export default function TakeDetailView({
                       : '#ef4444'
                 }
               />
-              <StatCard label={t.vocalex.lowest} value={analysis.lowestNote} />
-              <StatCard label={t.vocalex.highest} value={analysis.highestNote} />
+              <StatCard
+                label={t.vocalex.lowest}
+                value={analysis.lowestNote}
+                cardBg={cardBg}
+                cardBorder={cardBorder}
+                cardShadow={cardShadow}
+              />
+              <StatCard
+                label={t.vocalex.highest}
+                value={analysis.highestNote}
+                cardBg={cardBg}
+                cardBorder={cardBorder}
+                cardShadow={cardShadow}
+              />
             </div>
 
             {/* Pitch timeline */}
             {analysis.pitchTimeline.length > 0 && (
               <div
                 style={{
-                  background: 'var(--vx-card-2)',
+                  background: cardBg,
+                  border: cardBorder,
+                  boxShadow: cardShadow,
                   borderRadius: 14,
                   padding: 16,
                   marginBottom: 16,
@@ -546,10 +595,10 @@ export default function TakeDetailView({
               >
                 <p
                   style={{
-                    fontFamily: 'var(--font-body)',
+                    fontFamily: 'var(--studio-font-body)',
                     fontSize: 10,
                     fontWeight: 700,
-                    color: 'var(--vx-text-2)',
+                    color: 'var(--c-text-secondary)',
                     letterSpacing: '0.12em',
                     textTransform: 'uppercase',
                     margin: '0 0 8px',
@@ -584,7 +633,7 @@ export default function TakeDetailView({
                         <path
                           d={path}
                           fill="none"
-                          stroke="var(--studio-accent)"
+                          stroke="var(--studio-accent, #007aff)"
                           strokeWidth="1.5"
                           vectorEffect="non-scaling-stroke"
                         />
@@ -595,8 +644,12 @@ export default function TakeDetailView({
                         />
                         <defs>
                           <linearGradient id="pitchGrad" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor="var(--studio-accent)" />
-                            <stop offset="100%" stopColor="var(--studio-accent)" stopOpacity="0" />
+                            <stop offset="0%" stopColor="var(--studio-accent, #007aff)" />
+                            <stop
+                              offset="100%"
+                              stopColor="var(--studio-accent, #007aff)"
+                              stopOpacity="0"
+                            />
                           </linearGradient>
                         </defs>
                       </>
@@ -612,7 +665,9 @@ export default function TakeDetailView({
                 <div
                   key={i}
                   style={{
-                    background: 'var(--vx-card-2)',
+                    background: cardBg,
+                    border: cardBorder,
+                    boxShadow: cardShadow,
                     borderRadius: 14,
                     padding: '16px 18px',
                     borderLeft: `3px solid ${insight.color}`,
@@ -639,10 +694,10 @@ export default function TakeDetailView({
                     >
                       <span
                         style={{
-                          fontFamily: 'var(--font-headline)',
+                          fontFamily: 'var(--studio-font-display)',
                           fontWeight: 700,
                           fontSize: 14,
-                          color: 'var(--vx-text)',
+                          color: 'var(--c-text-primary)',
                         }}
                       >
                         {insight.title}
@@ -650,7 +705,7 @@ export default function TakeDetailView({
                       {insight.value && (
                         <span
                           style={{
-                            fontFamily: 'var(--font-headline)',
+                            fontFamily: 'var(--studio-font-mono)',
                             fontWeight: 800,
                             fontSize: 14,
                             color: insight.color,
@@ -663,9 +718,9 @@ export default function TakeDetailView({
                   </div>
                   <p
                     style={{
-                      fontFamily: 'var(--font-body)',
+                      fontFamily: 'var(--studio-font-body)',
                       fontSize: 12.5,
-                      color: 'var(--vx-text-2)',
+                      color: 'var(--c-text-secondary)',
                       margin: 0,
                       lineHeight: 1.6,
                     }}
@@ -681,15 +736,17 @@ export default function TakeDetailView({
             style={{
               padding: 24,
               textAlign: 'center',
-              background: 'var(--vx-card-2)',
+              background: cardBg,
+              border: cardBorder,
+              boxShadow: cardShadow,
               borderRadius: 14,
             }}
           >
             <p
               style={{
-                fontFamily: 'var(--font-body)',
+                fontFamily: 'var(--studio-font-body)',
                 fontSize: 13,
-                color: 'var(--vx-text-2)',
+                color: 'var(--c-text-secondary)',
                 margin: 0,
               }}
             >
@@ -701,15 +758,38 @@ export default function TakeDetailView({
     </div>
   );
 }
-function StatCard({ label, value, color }: { label: string; value: string; color?: string }) {
+
+function StatCard({
+  label,
+  value,
+  color,
+  cardBg,
+  cardBorder,
+  cardShadow,
+}: {
+  label: string;
+  value: string;
+  color?: string;
+  cardBg: string;
+  cardBorder: string;
+  cardShadow: string;
+}) {
   return (
-    <div style={{ background: 'var(--vx-card-2)', borderRadius: 12, padding: '14px 16px' }}>
+    <div
+      style={{
+        background: cardBg,
+        border: cardBorder,
+        boxShadow: cardShadow,
+        borderRadius: 12,
+        padding: '14px 16px',
+      }}
+    >
       <p
         style={{
-          fontFamily: 'var(--font-body)',
+          fontFamily: 'var(--studio-font-body)',
           fontSize: 10,
           fontWeight: 700,
-          color: 'var(--vx-text-2)',
+          color: 'var(--c-text-secondary)',
           letterSpacing: '0.12em',
           textTransform: 'uppercase',
           margin: '0 0 4px',
@@ -719,10 +799,10 @@ function StatCard({ label, value, color }: { label: string; value: string; color
       </p>
       <p
         style={{
-          fontFamily: 'var(--font-headline)',
+          fontFamily: 'var(--studio-font-mono)',
           fontSize: 20,
           fontWeight: 700,
-          color: color ?? 'var(--vx-text)',
+          color: color ?? 'var(--c-text-primary)',
           margin: 0,
         }}
       >

@@ -1,24 +1,16 @@
 import { Dialog } from '../../../shared/design-system/dialogs';
 import {
   useT,
-  createAudioContext,
   useNavigationStore,
   NavigationDispatcher,
-} from '@workspace/studio-core';
-import { useShallow } from 'zustand/react/shallow';
-import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import {
-  extractWaveformPeaks,
-  blobToAudioBuffer,
+  useSettingsStore,
   type TakeRecord,
   vocalexRepository,
 } from '@workspace/studio-core';
-import LoadingLottie from '../../../shared/lottie/LoadingLottie';
+import { useShallow } from 'zustand/react/shallow';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import SmartLoading from '../../../shared/loading/SmartLoading';
 import { VocalexTakesSkeleton } from '../../../shared/loading/StudioSkeleton';
-import EmptyStateLottie from '../../../shared/lottie/EmptyStateLottie';
-import { analyzeAudio, type VocalAnalysis, type AnalysisLabels } from '../services/vocalAnalysis';
-import HarmonizerSheet from './HarmonizerSheet';
 import { clearTakeCache } from '../services/harmonyEngine';
 import { Button } from '../../../shared/design-system/StudioDesignSystem';
 import { StudioHeader } from '../../../shared/layout/StudioHeader';
@@ -51,14 +43,60 @@ function formatDateI18n(
   }
   return d.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
 }
+
 type ViewState = { mode: 'list' } | { mode: 'recording' } | { mode: 'detail'; takeId: string };
 
+const ANIM_CSS = `
+@keyframes tp-fade-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes tp-bar-pulse {
+  0%, 100% { transform: scaleY(0.7); }
+  50% { transform: scaleY(1.15); }
+}
+`;
+
+function useAnimStyle() {
+  const injected = useRef(false);
+  useEffect(() => {
+    if (injected.current) return;
+    injected.current = true;
+    const s = document.createElement('style');
+    s.textContent = ANIM_CSS;
+    document.head.appendChild(s);
+    return () => {
+      s.remove();
+      injected.current = false;
+    };
+  }, []);
+}
+
 export default function TakesPanel() {
+  useAnimStyle();
   const t = useT();
+  const settings = useSettingsStore(useShallow((s) => s.settings));
+  const language = settings.language;
+  const activeVis = settings.perApp?.vocalex ?? { theme: 'dark', amoledMode: false };
+  const isLight =
+    activeVis.theme === 'light' ||
+    (activeVis.theme === 'system' &&
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-color-scheme: light)').matches);
+  const isAmoled = !!activeVis.amoledMode;
+
   const [takes, setTakes] = useState<TakeRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Playback state
+  const [playingTakeId, setPlayingTakeId] = useState<string | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const currentUrlRef = useRef<string | null>(null);
+
   const currentRoute = useNavigationStore(useShallow((s) => s.history[s.history.length - 1])) || {
     app: 'hub',
   };
+
   const view = useMemo<ViewState>(() => {
     if (currentRoute.app === 'vocalex' && currentRoute.page === 'takes') {
       if (currentRoute.subView === 'recording') {
@@ -70,7 +108,25 @@ export default function TakesPanel() {
     }
     return { mode: 'list' };
   }, [currentRoute]);
-  const [loading, setLoading] = useState(true);
+
+  const stopPlayback = useCallback(() => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
+    if (currentUrlRef.current) {
+      URL.revokeObjectURL(currentUrlRef.current);
+      currentUrlRef.current = null;
+    }
+    setPlayingTakeId(null);
+  }, []);
+
+  // Cleanup audio when switching view or unmounting
+  useEffect(() => {
+    return () => {
+      stopPlayback();
+    };
+  }, [stopPlayback]);
 
   const loadTakes = useCallback(async () => {
     try {
@@ -86,6 +142,54 @@ export default function TakesPanel() {
     loadTakes();
   }, [loadTakes]);
 
+  const togglePlay = useCallback(
+    (take: TakeRecord, e: React.MouseEvent) => {
+      e.stopPropagation();
+      if (playingTakeId === take.id) {
+        stopPlayback();
+        return;
+      }
+      stopPlayback();
+
+      try {
+        const url = URL.createObjectURL(take.audioBlob);
+        currentUrlRef.current = url;
+        const audio = new Audio(url);
+        audioRef.current = audio;
+        setPlayingTakeId(take.id);
+
+        audio.onended = () => {
+          stopPlayback();
+        };
+        audio.onerror = () => {
+          stopPlayback();
+        };
+        audio.play().catch(() => {
+          stopPlayback();
+        });
+      } catch {
+        stopPlayback();
+      }
+    },
+    [playingTakeId, stopPlayback]
+  );
+
+  const handleExport = useCallback((take: TakeRecord, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      const url = URL.createObjectURL(take.audioBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${take.name || 'take'}.wav`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch {
+      /* empty */
+    }
+  }, []);
+
   const handleRecordingComplete = useCallback(
     async (take: TakeRecord) => {
       await vocalexRepository.saveTake(take);
@@ -97,6 +201,9 @@ export default function TakesPanel() {
 
   const handleDelete = useCallback(
     async (id: string) => {
+      if (playingTakeId === id) {
+        stopPlayback();
+      }
       await vocalexRepository.deleteTake(id);
       clearTakeCache(id);
       setTakes((prev) => prev.filter((t) => t.id !== id));
@@ -104,7 +211,7 @@ export default function TakesPanel() {
         NavigationDispatcher.pop();
       }
     },
-    [view]
+    [view, playingTakeId, stopPlayback]
   );
 
   const handleSaveBounce = useCallback(
@@ -113,6 +220,19 @@ export default function TakesPanel() {
       await loadTakes();
     },
     [loadTakes]
+  );
+
+  const handleOpenDetail = useCallback(
+    (takeId: string) => {
+      stopPlayback();
+      NavigationDispatcher.push({
+        app: 'vocalex',
+        page: 'takes',
+        subView: 'detail',
+        id: takeId,
+      });
+    },
+    [stopPlayback]
   );
 
   if (view.mode === 'recording') {
@@ -126,8 +246,13 @@ export default function TakesPanel() {
 
   if (view.mode === 'detail') {
     const take = takes.find((t) => t.id === view.takeId);
-    if (!take)
-      return <div style={{ padding: 24, color: 'var(--vx-text-2)' }}>{t.vocalex.takeNotFound}</div>;
+    if (!take) {
+      return (
+        <div style={{ padding: 24, color: 'var(--c-text-secondary)' }}>
+          {t.vocalex.takeNotFound}
+        </div>
+      );
+    }
     return (
       <TakeDetailView
         take={take}
@@ -138,115 +263,489 @@ export default function TakesPanel() {
     );
   }
 
+  const isEs = language === 'es';
+
   return (
     <div
       style={{
-        padding: '0 var(--page-header-inset-h, var(--page-inset-h, 24px)) 24px',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        padding:
+          '0 20px calc(var(--bottom-nav-height, 68px) + env(safe-area-inset-bottom, 16px) + 24px)',
         minHeight: '100%',
+        boxSizing: 'border-box',
       }}
     >
-      <StudioHeader
-        title={t.vocalex.takesTitle}
-        subtitle={t.vocalex.takesSubtitle}
-        disableHorizontalPadding={true}
-        containerStyle={{ marginBottom: '12px' }}
-      />
+      <div style={{ width: '100%', maxWidth: 440 }}>
+        {/* Canonical Vocalex Page Header */}
+        <StudioHeader
+          title={t.vocalex.takesTitle}
+          subtitle={t.vocalex.takesSubtitle}
+          disableHorizontalPadding={true}
+          containerStyle={{ marginBottom: '14px' }}
+        />
 
-      <div style={{ display: 'flex', gap: 10, marginBottom: 24 }}>
-        <Button
-          variant="secondary"
+        {/* Action and Filter Row */}
+        <section
+          data-purpose="actions-and-filter-bar"
           style={{
-            background: 'var(--vx-edge)',
-            color: 'var(--vx-text)',
-            borderRadius: 9999,
-          }}
-          icon="sort"
-        >
-          {t.vocalex.recent}
-        </Button>
-        <Button
-          variant="primary"
-          onClick={() => NavigationDispatcher.push({ app: 'vocalex', page: 'recorder' })}
-          style={{
-            background: 'var(--studio-accent)',
-            color: '#fff',
-            borderRadius: 9999,
-            boxShadow: 'var(--studio-accent-glow)',
-          }}
-          icon="mic"
-        >
-          {t.vocalex.newTake}
-        </Button>
-      </div>
-
-      {loading ? (
-        <SmartLoading fallbackSkeleton={<VocalexTakesSkeleton />} />
-      ) : takes.length === 0 ? (
-        <div
-          style={{
-            padding: '48px 24px',
-            textAlign: 'center',
-            background: 'var(--vx-card-2)',
-            borderRadius: 16,
             display: 'flex',
-            flexDirection: 'column',
             alignItems: 'center',
+            justifyContent: 'space-between',
             gap: 10,
+            marginBottom: 18,
           }}
         >
-          <EmptyStateLottie app="vocalex" size={56} style={{ marginBottom: 2 }} />
-          <p
+          {/* Segmented Filter Chip */}
+          <div
             style={{
-              fontFamily: 'var(--font-headline)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              background: isLight
+                ? '#ffffff'
+                : isAmoled
+                  ? '#000000'
+                  : 'var(--app-surface-low, rgba(255,255,255,0.05))',
+              padding: '4px 10px',
+              borderRadius: 14,
+              border: '1px solid var(--c-border, rgba(128,128,128,0.18))',
+              boxShadow: isLight ? '0 1px 3px rgba(0,0,0,0.03)' : 'none',
+            }}
+          >
+            <span
+              className="material-symbols-outlined"
+              style={{
+                fontSize: 16,
+                color: 'var(--studio-accent, #007aff)',
+              }}
+            >
+              mic
+            </span>
+            <span
+              style={{
+                fontFamily: 'var(--studio-font-display)',
+                fontWeight: 700,
+                fontSize: 12.5,
+                color: 'var(--c-text-primary)',
+              }}
+            >
+              {t.vocalex.recent}
+            </span>
+            <span
+              style={{
+                fontFamily: 'var(--studio-font-mono)',
+                fontWeight: 700,
+                fontSize: 11,
+                color: 'var(--studio-accent, #007aff)',
+                background: 'rgba(var(--studio-accent-rgb, 0,122,255), 0.12)',
+                padding: '1px 6px',
+                borderRadius: 9999,
+              }}
+            >
+              {takes.length}
+            </span>
+          </div>
+
+          {/* Primary Action: New Take Button */}
+          <Button
+            variant="primary"
+            onClick={() => NavigationDispatcher.push({ app: 'vocalex', page: 'recorder' })}
+            style={{
+              background: 'var(--studio-accent, #007aff)',
+              color: '#ffffff',
+              borderRadius: 14,
+              padding: '8px 14px',
               fontWeight: 700,
-              fontSize: 16,
-              color: 'var(--vx-text)',
-              margin: 0,
+              fontSize: 12.5,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              boxShadow: '0 4px 14px 0 rgba(0, 122, 255, 0.25)',
+              border: 'none',
+              cursor: 'pointer',
+              flexShrink: 0,
             }}
+            icon="mic"
           >
-            {t.vocalex.noTakesYet}
-          </p>
-          <p
-            style={{
-              fontFamily: 'var(--font-body)',
-              fontSize: 13,
-              color: 'var(--vx-text-2)',
-              margin: 0,
-            }}
+            {t.vocalex.newTake}
+          </Button>
+        </section>
+
+        {/* Content Area */}
+        {loading ? (
+          <SmartLoading fallbackSkeleton={<VocalexTakesSkeleton />} />
+        ) : takes.length === 0 ? (
+          /* Empty State Section */
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+            <section
+              data-purpose="takes-empty-state"
+              style={{
+                background: isLight
+                  ? '#ffffff'
+                  : isAmoled
+                    ? '#000000'
+                    : 'var(--app-surface-low, rgba(255,255,255,0.04))',
+                borderRadius: 24,
+                border: '1px solid var(--c-border, rgba(128,128,128,0.18))',
+                padding: '36px 20px 28px',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                textAlign: 'center',
+                boxShadow: isLight ? '0 2px 10px rgba(0,0,0,0.03)' : 'none',
+                animation: 'tp-fade-up 350ms cubic-bezier(0.22,1,0.36,1) both',
+              }}
+            >
+              {/* Clean Waveform Bars */}
+              <div
+                aria-hidden="true"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 5,
+                  height: 48,
+                  marginBottom: 16,
+                }}
+              >
+                <div
+                  style={{
+                    width: 5,
+                    height: 20,
+                    borderRadius: 9999,
+                    background: 'var(--c-text-secondary)',
+                    opacity: 0.35,
+                  }}
+                />
+                <div
+                  style={{
+                    width: 5,
+                    height: 36,
+                    borderRadius: 9999,
+                    background: 'var(--studio-accent, #007aff)',
+                    opacity: 0.7,
+                  }}
+                />
+                <div
+                  style={{
+                    width: 5,
+                    height: 48,
+                    borderRadius: 9999,
+                    background: 'var(--studio-accent, #007aff)',
+                  }}
+                />
+                <div
+                  style={{
+                    width: 5,
+                    height: 28,
+                    borderRadius: 9999,
+                    background: 'var(--studio-accent, #007aff)',
+                    opacity: 0.8,
+                  }}
+                />
+                <div
+                  style={{
+                    width: 5,
+                    height: 16,
+                    borderRadius: 9999,
+                    background: 'var(--c-text-secondary)',
+                    opacity: 0.35,
+                  }}
+                />
+              </div>
+
+              {/* Heading and Instruction */}
+              <h2
+                style={{
+                  fontFamily: 'var(--studio-font-display)',
+                  fontWeight: 800,
+                  fontSize: 18,
+                  color: 'var(--c-text-primary)',
+                  margin: '0 0 6px',
+                  letterSpacing: '-0.02em',
+                }}
+              >
+                {t.vocalex.noTakesYet}
+              </h2>
+              <p
+                style={{
+                  fontFamily: 'var(--studio-font-body)',
+                  fontSize: 13,
+                  color: 'var(--c-text-secondary)',
+                  margin: 0,
+                  maxWidth: 240,
+                  lineHeight: 1.5,
+                }}
+              >
+                {t.vocalex.noTakesHint}
+              </p>
+
+              {/* Lossless & Pitch Badges */}
+              <div
+                style={{
+                  marginTop: 24,
+                  paddingTop: 18,
+                  borderTop: '1px solid var(--c-border, rgba(128,128,128,0.12))',
+                  width: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-around',
+                }}
+              >
+                <div
+                  style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}
+                >
+                  <span
+                    style={{
+                      fontFamily: 'var(--studio-font-display)',
+                      fontWeight: 700,
+                      fontSize: 13,
+                      color: 'var(--c-text-primary)',
+                    }}
+                  >
+                    48 kHz
+                  </span>
+                  <span
+                    style={{
+                      fontFamily: 'var(--studio-font-body)',
+                      fontSize: 11,
+                      color: 'var(--c-text-secondary)',
+                      opacity: 0.8,
+                    }}
+                  >
+                    {isEs ? 'Audio sin pérdida' : 'Lossless Audio'}
+                  </span>
+                </div>
+                <div
+                  style={{
+                    height: 24,
+                    width: 1,
+                    background: 'var(--c-border, rgba(128,128,128,0.15))',
+                  }}
+                />
+                <div
+                  style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}
+                >
+                  <span
+                    style={{
+                      fontFamily: 'var(--studio-font-display)',
+                      fontWeight: 700,
+                      fontSize: 13,
+                      color: 'var(--c-text-primary)',
+                    }}
+                  >
+                    {isEs ? 'En vivo' : 'Real-time'}
+                  </span>
+                  <span
+                    style={{
+                      fontFamily: 'var(--studio-font-body)',
+                      fontSize: 11,
+                      color: 'var(--c-text-secondary)',
+                      opacity: 0.8,
+                    }}
+                  >
+                    {isEs ? 'Detección de tono' : 'Pitch Tracking'}
+                  </span>
+                </div>
+              </div>
+            </section>
+
+            {/* Quick Tips Section */}
+            <section
+              data-purpose="quick-guide-section"
+              style={{ display: 'flex', flexDirection: 'column', gap: 8 }}
+            >
+              <h3
+                style={{
+                  fontFamily: 'var(--studio-font-body)',
+                  fontWeight: 700,
+                  fontSize: 11,
+                  color: 'var(--c-text-secondary)',
+                  letterSpacing: '0.08em',
+                  textTransform: 'uppercase',
+                  margin: '4px 0 2px 4px',
+                }}
+              >
+                {isEs ? 'Consejos Rápidos' : 'Quick Tips'}
+              </h3>
+
+              {/* Tip 1 */}
+              <div
+                style={{
+                  background: isLight
+                    ? '#ffffff'
+                    : isAmoled
+                      ? '#000000'
+                      : 'var(--app-surface-low, rgba(255,255,255,0.04))',
+                  borderRadius: 16,
+                  border: '1px solid var(--c-border, rgba(128,128,128,0.15))',
+                  padding: '12px 14px',
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: 12,
+                }}
+              >
+                <div
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: 10,
+                    background: 'rgba(var(--studio-accent-rgb, 0,122,255), 0.12)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                    marginTop: 1,
+                  }}
+                >
+                  <span
+                    className="material-symbols-outlined"
+                    style={{ fontSize: 18, color: 'var(--studio-accent, #007aff)' }}
+                  >
+                    headphones
+                  </span>
+                </div>
+                <div>
+                  <h4
+                    style={{
+                      fontFamily: 'var(--studio-font-display)',
+                      fontWeight: 700,
+                      fontSize: 13,
+                      color: 'var(--c-text-primary)',
+                      margin: '0 0 2px',
+                    }}
+                  >
+                    {isEs ? 'Monitoreo con Auriculares' : 'Headphone Monitoring'}
+                  </h4>
+                  <p
+                    style={{
+                      fontFamily: 'var(--studio-font-body)',
+                      fontSize: 12,
+                      color: 'var(--c-text-secondary)',
+                      margin: 0,
+                      lineHeight: 1.45,
+                    }}
+                  >
+                    {isEs
+                      ? 'Conecta auriculares con cable para escuchar tu afinación sin latencia.'
+                      : 'Connect wired headphones for latency-free pitch feedback.'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Tip 2 */}
+              <div
+                style={{
+                  background: isLight
+                    ? '#ffffff'
+                    : isAmoled
+                      ? '#000000'
+                      : 'var(--app-surface-low, rgba(255,255,255,0.04))',
+                  borderRadius: 16,
+                  border: '1px solid var(--c-border, rgba(128,128,128,0.15))',
+                  padding: '12px 14px',
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: 12,
+                }}
+              >
+                <div
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: 10,
+                    background: 'rgba(16, 185, 129, 0.12)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                    marginTop: 1,
+                  }}
+                >
+                  <span
+                    className="material-symbols-outlined"
+                    style={{ fontSize: 18, color: '#10b981' }}
+                  >
+                    graphic_eq
+                  </span>
+                </div>
+                <div>
+                  <h4
+                    style={{
+                      fontFamily: 'var(--studio-font-display)',
+                      fontWeight: 700,
+                      fontSize: 13,
+                      color: 'var(--c-text-primary)',
+                      margin: '0 0 2px',
+                    }}
+                  >
+                    {isEs ? 'Armonías y Mezcla' : 'Harmonies & Mixing'}
+                  </h4>
+                  <p
+                    style={{
+                      fontFamily: 'var(--studio-font-body)',
+                      fontSize: 12,
+                      color: 'var(--c-text-secondary)',
+                      margin: 0,
+                      lineHeight: 1.45,
+                    }}
+                  >
+                    {isEs
+                      ? 'Abre cualquier toma para generar armonías vocales inteligentes y exportar pistas.'
+                      : 'Open any take to generate intelligent vocal harmonies and export stems.'}
+                  </p>
+                </div>
+              </div>
+            </section>
+          </div>
+        ) : (
+          /* Takes List Section */
+          <div
+            data-purpose="takes-list"
+            style={{ display: 'flex', flexDirection: 'column', gap: 10 }}
           >
-            {t.vocalex.noTakesHint}
-          </p>
-        </div>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {takes.map((take) => (
-            <TakeListItem
-              key={take.id}
-              take={take}
-              onOpen={() =>
-                NavigationDispatcher.push({
-                  app: 'vocalex',
-                  page: 'takes',
-                  subView: 'detail',
-                  id: take.id,
-                })
-              }
-              onDelete={() => handleDelete(take.id)}
-            />
-          ))}
-        </div>
-      )}
+            {takes.map((take, index) => (
+              <TakeListItem
+                key={take.id}
+                take={take}
+                index={index}
+                isPlaying={playingTakeId === take.id}
+                isLight={isLight}
+                isAmoled={isAmoled}
+                onOpen={() => handleOpenDetail(take.id)}
+                onTogglePlay={(e) => togglePlay(take, e)}
+                onExport={(e) => handleExport(take, e)}
+                onDelete={() => handleDelete(take.id)}
+              />
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
 
 function TakeListItem({
   take,
+  index,
+  isPlaying,
+  isLight,
+  isAmoled,
   onOpen,
+  onTogglePlay,
+  onExport,
   onDelete,
 }: {
   take: TakeRecord;
+  index: number;
+  isPlaying: boolean;
+  isLight: boolean;
+  isAmoled: boolean;
   onOpen: () => void;
+  onTogglePlay: (e: React.MouseEvent) => void;
+  onExport: (e: React.MouseEvent) => void;
   onDelete: () => void;
 }) {
   const t = useT();
@@ -254,100 +753,229 @@ function TakeListItem({
 
   return (
     <div
+      role="button"
+      tabIndex={0}
+      onClick={onOpen}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onOpen();
+        }
+      }}
       style={{
-        background: 'var(--vx-edge)',
-        borderRadius: 14,
-        padding: '14px 16px',
+        background: isLight
+          ? '#ffffff'
+          : isAmoled
+            ? '#000000'
+            : 'var(--app-surface-low, rgba(255,255,255,0.04))',
+        borderRadius: 16,
+        padding: '12px 14px',
         display: 'flex',
         alignItems: 'center',
         gap: 12,
+        border: `1px solid ${
+          isPlaying ? 'var(--studio-accent, #007aff)' : 'var(--c-border, rgba(128,128,128,0.18))'
+        }`,
+        cursor: 'pointer',
+        boxShadow: isPlaying
+          ? '0 4px 16px rgba(0,122,255,0.15)'
+          : isLight
+            ? '0 1px 4px rgba(0,0,0,0.03)'
+            : 'none',
+        transition: 'all 180ms ease',
+        animation: `tp-fade-up 350ms cubic-bezier(0.22,1,0.36,1) ${index * 35}ms both`,
       }}
     >
-      <div
-        onClick={onOpen}
+      {/* Play / Pause Touch Button */}
+      <button
+        type="button"
+        aria-label={isPlaying ? 'Pause take' : 'Play take'}
+        onClick={onTogglePlay}
         style={{
+          width: 40,
+          height: 40,
+          borderRadius: '50%',
+          background: isPlaying
+            ? 'var(--studio-accent, #007aff)'
+            : 'rgba(var(--studio-accent-rgb, 0,122,255), 0.10)',
+          color: isPlaying ? '#ffffff' : 'var(--studio-accent, #007aff)',
+          border: 'none',
+          cursor: 'pointer',
+          flexShrink: 0,
           display: 'flex',
           alignItems: 'center',
-          gap: 12,
-          flex: 1,
-          minWidth: 0,
-          cursor: 'pointer',
+          justifyContent: 'center',
+          transition: 'all 150ms ease',
         }}
       >
+        <span
+          className="material-symbols-outlined"
+          style={{
+            fontSize: 22,
+            fontVariationSettings: "'FILL' 1",
+            marginLeft: isPlaying ? 0 : 2,
+          }}
+        >
+          {isPlaying ? 'pause' : 'play_arrow'}
+        </span>
+      </button>
+
+      {/* Take Titles & Metadata */}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <h4
+          style={{
+            fontFamily: 'var(--studio-font-display)',
+            fontWeight: 700,
+            fontSize: 14.5,
+            color: 'var(--c-text-primary)',
+            margin: '0 0 3px',
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            letterSpacing: '-0.01em',
+          }}
+        >
+          {take.name}
+        </h4>
         <div
           style={{
-            width: 40,
-            height: 40,
-            borderRadius: '50%',
-            background: 'var(--vx-card-2)',
-            flexShrink: 0,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            fontFamily: 'var(--studio-font-body)',
+            fontSize: 11.5,
+            color: 'var(--c-text-secondary)',
+          }}
+        >
+          <span>{formatDateI18n(take.createdAt, t.vocalex)}</span>
+          <span
+            style={{
+              width: 3,
+              height: 3,
+              borderRadius: '50%',
+              background: 'var(--c-text-secondary)',
+              opacity: 0.5,
+            }}
+          />
+          <span style={{ fontFamily: 'var(--studio-font-mono)', fontWeight: 600 }}>
+            {formatDuration(take.durationMs)}
+          </span>
+          {take.sampleRate ? (
+            <>
+              <span
+                style={{
+                  width: 3,
+                  height: 3,
+                  borderRadius: '50%',
+                  background: 'var(--c-text-secondary)',
+                  opacity: 0.5,
+                }}
+              />
+              <span
+                style={{
+                  fontFamily: 'var(--studio-font-mono)',
+                  fontSize: 10.5,
+                  fontWeight: 600,
+                  opacity: 0.8,
+                }}
+              >
+                {Math.round(take.sampleRate / 1000)}k
+              </span>
+            </>
+          ) : null}
+        </div>
+      </div>
+
+      {/* Mini Waveform Visualization */}
+      <MiniWaveform peaks={take.waveformPeaks} isPlaying={isPlaying} />
+
+      {/* Action Buttons: Export & Delete */}
+      <div
+        style={{ display: 'flex', alignItems: 'center', gap: 2, flexShrink: 0 }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Export .wav */}
+        <button
+          type="button"
+          aria-label="Export take"
+          onClick={onExport}
+          style={{
+            width: 32,
+            height: 32,
+            borderRadius: 8,
+            background: 'transparent',
+            border: 'none',
+            color: 'var(--c-text-secondary)',
+            opacity: 0.7,
+            cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
+            transition: 'opacity 150ms ease',
           }}
+          title="Export audio (.wav)"
         >
-          <span
-            className="material-symbols-outlined"
-            style={{ fontSize: 20, color: 'var(--vx-text)' }}
-          >
-            play_arrow
+          <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+            download
           </span>
-        </div>
-        <div style={{ minWidth: 0, flex: 1 }}>
-          <h4
-            style={{
-              fontFamily: 'var(--font-headline)',
-              fontWeight: 600,
-              fontSize: 14,
-              color: 'var(--vx-text)',
-              margin: 0,
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-            }}
-          >
-            {take.name}
-          </h4>
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              marginTop: 3,
-              fontFamily: 'var(--font-body)',
-              fontSize: 11,
-              color: 'var(--vx-text-2)',
-            }}
-          >
-            <span>{formatDateI18n(take.createdAt, t.vocalex)}</span>
-            <span
-              style={{ width: 3, height: 3, borderRadius: '50%', background: 'var(--vx-text-4)' }}
-            />
-            <span>{formatDuration(take.durationMs)}</span>
-          </div>
-        </div>
-        <MiniWaveform peaks={take.waveformPeaks} />
+        </button>
+
+        {/* Delete */}
+        <button
+          type="button"
+          aria-label="Delete take"
+          onClick={() => setConfirming(true)}
+          style={{
+            width: 32,
+            height: 32,
+            borderRadius: 8,
+            background: 'transparent',
+            border: 'none',
+            color: 'var(--c-text-secondary)',
+            opacity: 0.7,
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: 'opacity 150ms ease',
+          }}
+          title={t.vocalex.deleteTake}
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+            delete
+          </span>
+        </button>
       </div>
 
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={() => setConfirming(true)}
+      {/* Chevron Navigation Indicator */}
+      <span
+        className="material-symbols-outlined"
         style={{
-          color: 'var(--vx-text-4)',
-          minWidth: 30,
-          height: 30,
+          fontSize: 18,
+          color: 'var(--c-text-secondary)',
+          opacity: 0.35,
+          flexShrink: 0,
         }}
-        icon="delete"
-      />
+      >
+        chevron_right
+      </span>
 
+      {/* Confirmation Dialog */}
       <Dialog
         open={confirming}
         onClose={() => setConfirming(false)}
         title={t.vocalex.deleteConfirmTitle}
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <p style={{ margin: 0, fontSize: 13, color: 'var(--c-text-secondary)' }}>
+          <p
+            style={{
+              margin: 0,
+              fontFamily: 'var(--studio-font-body)',
+              fontSize: 13,
+              color: 'var(--c-text-secondary)',
+              lineHeight: 1.5,
+            }}
+          >
             {t.vocalex.deleteConfirmBody}
           </p>
           <div style={{ display: 'flex', gap: 10 }}>
@@ -360,7 +988,7 @@ function TakeListItem({
                 onDelete();
                 setConfirming(false);
               }}
-              style={{ flex: 1, background: 'var(--c-error, #ef4444)', color: '#fff' }}
+              style={{ flex: 1, background: 'var(--c-error, #ef4444)', color: '#ffffff' }}
             >
               {t.vocalex.deleteTake}
             </Button>
@@ -371,30 +999,41 @@ function TakeListItem({
   );
 }
 
-function MiniWaveform({ peaks }: { peaks: number[] }) {
-  const display =
-    peaks.length > 8
-      ? peaks.filter((_, i) => i % Math.ceil(peaks.length / 8) === 0).slice(0, 8)
-      : peaks;
+function MiniWaveform({ peaks, isPlaying }: { peaks: number[]; isPlaying: boolean }) {
+  const display = useMemo(() => {
+    if (!peaks || peaks.length === 0) {
+      return [20, 35, 60, 45, 25, 40, 70, 50, 30, 20];
+    }
+    const targetCount = 10;
+    if (peaks.length > targetCount) {
+      const step = Math.ceil(peaks.length / targetCount);
+      return peaks.filter((_, i) => i % step === 0).slice(0, targetCount);
+    }
+    return peaks;
+  }, [peaks]);
+
   return (
     <div
       style={{
         display: 'flex',
         alignItems: 'center',
-        gap: 1.5,
+        gap: 2,
         height: 24,
-        opacity: 0.4,
         flexShrink: 0,
+        opacity: isPlaying ? 1 : 0.45,
+        transition: 'opacity 180ms ease',
       }}
     >
       {display.map((h, i) => (
         <div
           key={i}
           style={{
-            width: 2,
-            height: `${Math.max(15, h)}%`,
-            background: 'var(--vx-text)',
+            width: 2.5,
+            height: `${Math.max(14, Math.min(100, h))}%`,
+            background: isPlaying ? 'var(--studio-accent, #007aff)' : 'var(--c-text-secondary)',
             borderRadius: 9999,
+            transition: 'background 200ms ease, height 180ms ease',
+            animation: isPlaying ? `tp-bar-pulse 800ms ease-in-out ${i * 80}ms infinite` : 'none',
           }}
         />
       ))}
