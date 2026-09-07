@@ -1,5 +1,21 @@
 # Studio Changelog
 
+## 4.5.71
+
+Release Date: 2026-09-06
+
+### Added
+
+- Drumex Metronome Direct BPM Entry: Tapping the giant BPM hero display transitions into an inline editable numeric input state with the native Android keyboard (`inputMode="numeric"`, `pattern="[0-9]*"`), automatic text selection, integer validation clamped strictly to 40-280 BPM, commit on Enter / "Set BPM", and clean cancellation on Escape / "Cancel" / empty input / Android Back gesture.
+- Multi-Accent & Multi-Tier Beat Pattern System: Full support for multiple accented beats across any time signature (4/4, 3/4, 5/4, 7/8, 9/8, 12/8) with three distinct accent tiers: strong, accent, and normal. Tapping any beat in the visual Beat Tracker strip cycles normal -> accent -> strong -> normal.
+- Physical AudioBuffer Waveform Synthesis for All Accent Tiers: Synthesized distinct acoustic and electronic waveforms for all 4 sound buffers (strong, accent, normal, sub) across all 13 metronome sounds, featuring tuned resonant cavity frequencies, transient noise bursts, and distinct velocity gains.
+- Robust Rapid Tap Tempo Engine: Eliminated the 4-tap requirement. Two taps immediately calculate an authoritative tempo, with subsequent taps refining the estimate via a recency-weighted rolling average of up to 6 intervals. Includes a 70ms touch-noise debounce (< 857 BPM) removing any artificial tempo ceiling up to canonical 280 BPM, and automatic sequence reset after a > 2000ms pause.
+
+### Fixed & Improved
+
+- Beat Tracker Summary Badge: Real-time dynamic accent summary in the tracker strip header (e.g. 1 Strong • 2 Accent) with visual accent indicators.
+- Tap Tempo Helper Label: Updated helper text from (Tap 4 times) to (Tap to set tempo).
+
 ## 4.5.70
 
 Release Date: 2026-09-06

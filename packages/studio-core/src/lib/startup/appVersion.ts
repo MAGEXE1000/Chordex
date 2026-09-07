@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.5.70';
-export const NATIVE_VERSION_CODE = 40570;
-export const WEB_VERSION = '4.5.70';
+export const NATIVE_VERSION = '4.5.71';
+export const NATIVE_VERSION_CODE = 40571;
+export const WEB_VERSION = '4.5.71';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -73,13 +73,13 @@ export const APP_VERSION_DATE = '8/12/2026';
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = 'c3ac7fd1';
+export const APP_COMMIT_SHA = '2448bb9f';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '9/6/2026, 4:42:33 PM CST';
+export const APP_BUILD_TIMESTAMP = '9/6/2026, 6:48:13 PM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -96,13 +96,19 @@ export interface ChangelogSection {
 
 export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
+    heading: 'Added',
+    items: [
+      'Drumex Metronome Direct BPM Entry: Tapping the giant BPM hero display transitions into an inline editable numeric input state with the native Android keyboard (`inputMode="numeric"`, `pattern="[0-9]*"`), automatic text selection, integer validation clamped strictly to 40-280 BPM, commit on Enter / "Set BPM", and clean cancellation on Escape / "Cancel" / empty input / Android Back gesture.',
+      'Multi-Accent & Multi-Tier Beat Pattern System: Full support for multiple accented beats across any time signature (4/4, 3/4, 5/4, 7/8, 9/8, 12/8) with three distinct accent tiers: strong, accent, and normal. Tapping any beat in the visual Beat Tracker strip cycles normal -> accent -> strong -> normal.',
+      'Physical AudioBuffer Waveform Synthesis for All Accent Tiers: Synthesized distinct acoustic and electronic waveforms for all 4 sound buffers (strong, accent, normal, sub) across all 13 metronome sounds, featuring tuned resonant cavity frequencies, transient noise bursts, and distinct velocity gains.',
+      'Robust Rapid Tap Tempo Engine: Eliminated the 4-tap requirement. Two taps immediately calculate an authoritative tempo, with subsequent taps refining the estimate via a recency-weighted rolling average of up to 6 intervals. Includes a 70ms touch-noise debounce (< 857 BPM) removing any artificial tempo ceiling up to canonical 280 BPM, and automatic sequence reset after a > 2000ms pause.',
+    ],
+  },
+  {
     heading: 'Fixed',
     items: [
-      'Drumex Metronome True AMOLED Mode: Pure black (#000000) and elevated (#0a0a0c) surfaces across Beat Tracker, BPM Hero card, rhythm metrics, audio controls, floating dock, preset drawer, and all configuration modals.',
-      'Dynamic Preset Identity Tracking: Active preset selection immediately clears (activePresetId: null) when any defining parameter (BPM, time signature, subdivision, sound, accent, count-in, tempo ramp) is modified, and automatically restores when parameters match the saved preset definition.',
-      'Startup Preset Isolation: Clean default startup state on application restart with activePresetId: null while keeping saved presets library fully persistent.',
-      'Android Media Player Notification Metadata: Track title displays active preset name when a preset is active, or "Drumex Metronome" as fallback, with secondary metadata displaying BPM and time signature.',
-      'Android Media Notification Artwork Scaling: Reduced badge content scale to a compact 220x220 inner card centered on 512x512 canvas with generous black margins, preventing SystemUI notification shade crowding and control clipping.',
+      'Beat Tracker Summary Badge: Real-time dynamic accent summary in the tracker strip header (e.g. 1 Strong • 2 Accent) with visual accent indicators.',
+      'Tap Tempo Helper Label: Updated helper text from (Tap 4 times) to (Tap to set tempo).',
     ],
   },
 ];
@@ -114,6 +120,18 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.5.71',
+    date: '2026-09-06',
+    highlights: [
+      'Drumex Metronome Direct BPM Entry: Tapping the giant BPM hero display transitions into an inline editable numeric input state with the native Android keyboard (`inputMode="numeric"`, `pattern="[0-9]*"`), automatic text selection, integer validation clamped strictly to 40-280 BPM, commit on Enter / "Set BPM", and clean cancellation on Escape / "Cancel" / empty input / Android Back gesture.',
+      'Multi-Accent & Multi-Tier Beat Pattern System: Full support for multiple accented beats across any time signature (4/4, 3/4, 5/4, 7/8, 9/8, 12/8) with three distinct accent tiers: strong, accent, and normal. Tapping any beat in the visual Beat Tracker strip cycles normal -> accent -> strong -> normal.',
+      'Physical AudioBuffer Waveform Synthesis for All Accent Tiers: Synthesized distinct acoustic and electronic waveforms for all 4 sound buffers (strong, accent, normal, sub) across all 13 metronome sounds, featuring tuned resonant cavity frequencies, transient noise bursts, and distinct velocity gains.',
+      'Robust Rapid Tap Tempo Engine: Eliminated the 4-tap requirement. Two taps immediately calculate an authoritative tempo, with subsequent taps refining the estimate via a recency-weighted rolling average of up to 6 intervals. Includes a 70ms touch-noise debounce (< 857 BPM) removing any artificial tempo ceiling up to canonical 280 BPM, and automatic sequence reset after a > 2000ms pause.',
+      'Beat Tracker Summary Badge: Real-time dynamic accent summary in the tracker strip header (e.g. 1 Strong • 2 Accent) with visual accent indicators.',
+      'Tap Tempo Helper Label: Updated helper text from (Tap 4 times) to (Tap to set tempo).',
+    ],
+  },
   {
     version: '4.5.70',
     date: '2026-09-06',
@@ -213,18 +231,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'Studio Floating Header Song Lockup: Added subtitle support to SharedFloatingHeader housing the song title and artist strictly in the top floating pill, eliminating duplicate page body headers.',
       'Transposition Audio Engine Architecture: Eliminated digital buzzing and clicking in SoundTouch AudioWorklet processor by adding a 1024-sample pre-buffer threshold that guarantees full 128-sample render quantums.',
       'Bit-Exact Master Audio Bypass: Added bit-exact passthrough path at 0 semitones bypassing WSOLA processing entirely for 100% studio master clarity with zero latency or phase coloration.',
-    ],
-  },
-  {
-    version: '4.5.61',
-    date: '2026-09-05',
-    highlights: [
-      'Drumex Beat Editor Studio Redesign: Redesigned the mobile Beat Editor into the canonical studio visual language with high-density layout and tactile production controls.',
-      'Floating Pill Top Bar: Compact capsule header displaying pattern metadata, interactive BPM tempo pill, 4/4 time signature, kit subtitle, undo/redo buttons, and burger menu.',
-      'Fixed Left Track Column with Real-Time Mute & Solo: Added persistent 104px track column with bold titles, mini M (Mute) buttons, mini S (Solo) buttons, and clean dot-separated articulation subtitles.',
-      'Real-Time Audio Mute/Solo Synchronization: Integrated dynamic volume zeroing directly into DrumScheduler audio context without pausing playback or interrupting scheduling.',
-      '4-Button Floating Action Controls (FAB Stack): Replaced legacy floating buttons with canonical vertical FAB stack for Reset/Erase, Loop, Metronome/Tempo, and primary Play/Pause.',
-      'Musical Subdivision Ruler: Monospace subdivision labels with subtle downbeat background tint, bar line boundaries, and semantic measure menu icon.',
     ],
   },
 ];
