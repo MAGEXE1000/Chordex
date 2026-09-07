@@ -27,34 +27,23 @@ export default function CoachPanel({ active = true }: { active?: boolean }) {
         boxSizing: 'border-box',
       }}
     >
-      {/* ── Canonical Vocalex Coach Page Header ── */}
+      {/* ── Vocalex Coach Top Navigation & Header ── */}
       <div
         style={{
           width: '100%',
           maxWidth: 440,
           margin: '0 auto',
-          padding: '0 var(--page-header-inset-h, var(--page-inset-h, 20px))',
+          padding:
+            'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 8px) var(--page-header-inset-h, var(--page-inset-h, 20px)) 0',
           boxSizing: 'border-box',
         }}
       >
-        <StudioHeader
-          title={vt.coachTitle || (settings.language === 'es' ? 'Entrenador' : 'Coach')}
-          subtitle={
-            vt.coachSubtitle ||
-            (settings.language === 'es'
-              ? 'Monitor de afinación y entrenamiento vocal.'
-              : 'Real-time pitch monitor and vocal training.')
-          }
-          disableHorizontalPadding={true}
-          containerStyle={{ marginBottom: '12px' }}
-        />
-
-        {/* Sub-tab segment selector */}
+        {/* 1. Compact Vocalex Sub-Tab Switcher */}
         <div
           style={{
             display: 'flex',
             justifyContent: 'center',
-            marginBottom: '16px',
+            marginBottom: '6px',
           }}
         >
           <div
@@ -62,9 +51,9 @@ export default function CoachPanel({ active = true }: { active?: boolean }) {
               position: 'relative',
               display: 'flex',
               width: '100%',
-              maxWidth: 360,
+              maxWidth: 340,
               background: isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.06)',
-              padding: 4,
+              padding: 3,
               borderRadius: 9999,
               border: '1px solid var(--c-border, rgba(128,128,128,0.15))',
               userSelect: 'none',
@@ -75,10 +64,10 @@ export default function CoachPanel({ active = true }: { active?: boolean }) {
             <div
               style={{
                 position: 'absolute',
-                left: 4,
-                top: 4,
-                bottom: 4,
-                width: 'calc(50% - 4px)',
+                left: 3,
+                top: 3,
+                bottom: 3,
+                width: 'calc(50% - 3px)',
                 transform: subView === 'pitch' ? 'translateX(0)' : 'translateX(100%)',
                 background: isLight
                   ? '#ffffff'
@@ -99,10 +88,10 @@ export default function CoachPanel({ active = true }: { active?: boolean }) {
                 position: 'relative',
                 zIndex: 1,
                 flex: 1,
-                height: 38,
+                height: 34,
                 borderRadius: 9999,
                 fontWeight: 700,
-                fontSize: 13.5,
+                fontSize: 13,
                 fontFamily: 'var(--studio-font-display)',
                 display: 'flex',
                 alignItems: 'center',
@@ -118,7 +107,7 @@ export default function CoachPanel({ active = true }: { active?: boolean }) {
               <span
                 className="material-symbols-outlined"
                 style={{
-                  fontSize: 18,
+                  fontSize: 17,
                   color: subView === 'pitch' ? acc.from : 'inherit',
                   transition: 'color 200ms ease',
                 }}
@@ -137,10 +126,10 @@ export default function CoachPanel({ active = true }: { active?: boolean }) {
                 position: 'relative',
                 zIndex: 1,
                 flex: 1,
-                height: 38,
+                height: 34,
                 borderRadius: 9999,
                 fontWeight: 700,
-                fontSize: 13.5,
+                fontSize: 13,
                 fontFamily: 'var(--studio-font-display)',
                 display: 'flex',
                 alignItems: 'center',
@@ -156,7 +145,7 @@ export default function CoachPanel({ active = true }: { active?: boolean }) {
               <span
                 className="material-symbols-outlined"
                 style={{
-                  fontSize: 18,
+                  fontSize: 17,
                   color: subView === 'practice' ? acc.from : 'inherit',
                   transition: 'color 200ms ease',
                 }}
@@ -170,6 +159,34 @@ export default function CoachPanel({ active = true }: { active?: boolean }) {
             </button>
           </div>
         </div>
+
+        {/* 2. Page title and short description (canonical StudioHeader) */}
+        <StudioHeader
+          title={
+            subView === 'pitch'
+              ? vt.tabMonitor || (settings.language === 'es' ? 'Monitor de Voz' : 'Vocal Monitor')
+              : vt.tabExercises ||
+                (settings.language === 'es' ? 'Ejercicios Vocales' : 'Vocal Exercises')
+          }
+          subtitle={
+            subView === 'pitch'
+              ? vt.coachSubtitle ||
+                (settings.language === 'es'
+                  ? 'Detección y afinación vocal en tiempo real.'
+                  : 'Real-time pitch detection and tuning.')
+              : vt.tipsSubtitle ||
+                (settings.language === 'es'
+                  ? 'Técnicas vocales para mejorar tu voz.'
+                  : 'Vocal techniques to improve your voice.')
+          }
+          disableTopInset={true}
+          disableHorizontalPadding={true}
+          containerStyle={{
+            paddingTop: '0px',
+            paddingBottom: '4px',
+            marginBottom: '8px',
+          }}
+        />
       </div>
 
       {/* View Content */}

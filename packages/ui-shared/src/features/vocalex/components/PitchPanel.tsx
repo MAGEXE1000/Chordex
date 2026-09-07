@@ -281,7 +281,7 @@ export default function PitchPanel({ active: panelActive = true }: { active?: bo
         flexDirection: 'column',
         alignItems: 'center',
         padding:
-          '0 20px calc(var(--bottom-nav-height, 68px) + env(safe-area-inset-bottom, 16px) + 24px)',
+          '0 16px calc(var(--bottom-nav-height, 68px) + env(safe-area-inset-bottom, 16px) + 16px)',
         gap: 0,
         minHeight: '100%',
         boxSizing: 'border-box',
@@ -298,9 +298,9 @@ export default function PitchPanel({ active: panelActive = true }: { active?: bo
               ? '#000000'
               : 'var(--app-surface-low, rgba(255,255,255,0.04))',
           border: '1px solid var(--c-border, rgba(128,128,128,0.15))',
-          borderRadius: 24,
-          padding: '24px 20px 20px',
-          boxShadow: isLight ? '0 10px 30px -5px rgba(0,0,0,0.05)' : 'none',
+          borderRadius: 20,
+          padding: '16px 18px 14px',
+          boxShadow: isLight ? '0 8px 24px -4px rgba(0,0,0,0.05)' : 'none',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
@@ -312,8 +312,8 @@ export default function PitchPanel({ active: panelActive = true }: { active?: bo
         <div
           style={{
             position: 'relative',
-            width: 270,
-            height: 270,
+            width: 230,
+            height: 230,
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
@@ -362,9 +362,9 @@ export default function PitchPanel({ active: panelActive = true }: { active?: bo
           <div
             style={{
               position: 'absolute',
-              top: 20,
-              left: 20,
-              right: 20,
+              top: 14,
+              left: 16,
+              right: 16,
               display: 'flex',
               justifyContent: 'space-between',
               fontSize: 11,
@@ -449,13 +449,13 @@ export default function PitchPanel({ active: panelActive = true }: { active?: bo
               flexDirection: 'column',
               alignItems: 'center',
               textAlign: 'center',
-              marginTop: 18,
+              marginTop: 10,
             }}
           >
             <span
               style={{
                 fontFamily: 'var(--studio-font-mono)',
-                fontSize: 11,
+                fontSize: 10.5,
                 fontWeight: 700,
                 letterSpacing: '0.12em',
                 textTransform: 'uppercase',
@@ -470,7 +470,7 @@ export default function PitchPanel({ active: panelActive = true }: { active?: bo
               <span
                 style={{
                   fontFamily: 'var(--studio-font-display)',
-                  fontSize: 72,
+                  fontSize: 62,
                   fontWeight: 800,
                   lineHeight: 1,
                   letterSpacing: '-0.04em',
@@ -485,7 +485,7 @@ export default function PitchPanel({ active: panelActive = true }: { active?: bo
                 <span
                   style={{
                     fontFamily: 'var(--studio-font-mono)',
-                    fontSize: 34,
+                    fontSize: 30,
                     fontWeight: 700,
                     color: accent.from,
                     marginLeft: 3,
@@ -498,7 +498,7 @@ export default function PitchPanel({ active: panelActive = true }: { active?: bo
             </div>
 
             {/* Status Pill */}
-            <div style={{ marginTop: 10, display: 'flex', justifyContent: 'center' }}>
+            <div style={{ marginTop: 6, display: 'flex', justifyContent: 'center' }}>
               {active ? (
                 <div
                   style={{
@@ -586,10 +586,10 @@ export default function PitchPanel({ active: panelActive = true }: { active?: bo
           style={{
             display: 'grid',
             gridTemplateColumns: '1fr 1fr',
-            gap: 12,
+            gap: 10,
             width: '100%',
-            marginTop: 14,
-            paddingTop: 16,
+            marginTop: 10,
+            paddingTop: 12,
             borderTop: '1px solid var(--c-border, rgba(128,128,128,0.12))',
           }}
         >
@@ -597,8 +597,8 @@ export default function PitchPanel({ active: panelActive = true }: { active?: bo
             style={{
               background: 'var(--app-surface-low, rgba(128,128,128,0.04))',
               border: '1px solid var(--c-border, rgba(128,128,128,0.12))',
-              borderRadius: 16,
-              padding: '12px 14px',
+              borderRadius: 14,
+              padding: '10px 12px',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
@@ -609,7 +609,7 @@ export default function PitchPanel({ active: panelActive = true }: { active?: bo
             <span
               style={{
                 fontFamily: 'var(--studio-font-mono)',
-                fontSize: 11,
+                fontSize: 10.5,
                 fontWeight: 700,
                 color: 'var(--c-text-secondary)',
                 letterSpacing: '0.08em',
@@ -618,26 +618,26 @@ export default function PitchPanel({ active: panelActive = true }: { active?: bo
             >
               {t.vocalex.frequency || (language === 'es' ? 'Frecuencia' : 'Frequency')}
             </span>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: 2, marginTop: 4 }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 2, marginTop: 3 }}>
               <span
                 style={{
                   fontFamily: 'var(--studio-font-mono)',
-                  fontSize: 20,
+                  fontSize: 19,
                   fontWeight: 700,
                   color: active ? 'var(--c-text-primary)' : 'var(--c-text-secondary)',
                   opacity: active ? 1 : 0.4,
                 }}
               >
-                {active ? result!.frequency.toFixed(2) : '—'}
+                {active ? result!.frequency.toFixed(1) : '—'}
               </span>
               <span
                 style={{
                   fontFamily: 'var(--studio-font-mono)',
-                  fontSize: 12,
+                  fontSize: 11,
                   fontWeight: 500,
                   color: 'var(--c-text-secondary)',
-                  opacity: active ? 0.8 : 0.4,
-                  marginLeft: 2,
+                  opacity: active ? 0.75 : 0.4,
+                  marginLeft: 1,
                 }}
               >
                 Hz
@@ -649,8 +649,8 @@ export default function PitchPanel({ active: panelActive = true }: { active?: bo
             style={{
               background: 'var(--app-surface-low, rgba(128,128,128,0.04))',
               border: '1px solid var(--c-border, rgba(128,128,128,0.12))',
-              borderRadius: 16,
-              padding: '12px 14px',
+              borderRadius: 14,
+              padding: '10px 12px',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
@@ -661,7 +661,7 @@ export default function PitchPanel({ active: panelActive = true }: { active?: bo
             <span
               style={{
                 fontFamily: 'var(--studio-font-mono)',
-                fontSize: 11,
+                fontSize: 10.5,
                 fontWeight: 700,
                 color: 'var(--c-text-secondary)',
                 letterSpacing: '0.08em',
@@ -670,11 +670,11 @@ export default function PitchPanel({ active: panelActive = true }: { active?: bo
             >
               {t.vocalex.precision || (language === 'es' ? 'Precisión' : 'Accuracy')}
             </span>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: 2, marginTop: 4 }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 2, marginTop: 3 }}>
               <span
                 style={{
                   fontFamily: 'var(--studio-font-mono)',
-                  fontSize: 20,
+                  fontSize: 19,
                   fontWeight: 700,
                   color: active ? statusColor : 'var(--c-text-secondary)',
                   opacity: active ? 1 : 0.4,
@@ -687,11 +687,11 @@ export default function PitchPanel({ active: panelActive = true }: { active?: bo
               <span
                 style={{
                   fontFamily: 'var(--studio-font-mono)',
-                  fontSize: 12,
+                  fontSize: 11,
                   fontWeight: 500,
                   color: active ? statusColor : 'var(--c-text-secondary)',
                   opacity: active ? 0.8 : 0.4,
-                  marginLeft: 2,
+                  marginLeft: 1,
                 }}
               >
                 %
@@ -704,10 +704,10 @@ export default function PitchPanel({ active: panelActive = true }: { active?: bo
         <div
           style={{
             width: '100%',
-            marginTop: 14,
+            marginTop: 10,
             display: 'flex',
             flexDirection: 'column',
-            gap: 6,
+            gap: 5,
           }}
         >
           <div
@@ -720,7 +720,7 @@ export default function PitchPanel({ active: panelActive = true }: { active?: bo
             <span
               style={{
                 fontFamily: 'var(--studio-font-mono)',
-                fontSize: 10,
+                fontSize: 9.5,
                 fontWeight: 700,
                 color: 'var(--c-text-secondary)',
                 letterSpacing: '0.1em',
@@ -732,7 +732,7 @@ export default function PitchPanel({ active: panelActive = true }: { active?: bo
             <span
               style={{
                 fontFamily: 'var(--studio-font-mono)',
-                fontSize: 10,
+                fontSize: 9.5,
                 fontWeight: 600,
                 color: 'var(--c-text-secondary)',
                 opacity: 0.6,
@@ -747,7 +747,7 @@ export default function PitchPanel({ active: panelActive = true }: { active?: bo
               display: 'flex',
               alignItems: 'flex-end',
               justifyContent: 'space-between',
-              height: 28,
+              height: 22,
               gap: 4,
             }}
           >
@@ -784,10 +784,10 @@ export default function PitchPanel({ active: panelActive = true }: { active?: bo
         style={{
           display: 'grid',
           gridTemplateColumns: '4fr 8fr',
-          gap: 12,
+          gap: 10,
           width: '100%',
           maxWidth: 360,
-          marginTop: 16,
+          marginTop: 12,
         }}
       >
         {/* Reset Button */}
@@ -796,8 +796,8 @@ export default function PitchPanel({ active: panelActive = true }: { active?: bo
           onClick={handleReset}
           disabled={history.length === 0 && !result}
           style={{
-            height: 54,
-            borderRadius: 16,
+            height: 46,
+            borderRadius: 14,
             background: isLight
               ? '#ffffff'
               : activeVis.amoledMode
@@ -807,7 +807,7 @@ export default function PitchPanel({ active: panelActive = true }: { active?: bo
             color: 'var(--c-text-primary)',
             fontFamily: 'var(--studio-font-display)',
             fontWeight: 600,
-            fontSize: 14,
+            fontSize: 13.5,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -820,7 +820,7 @@ export default function PitchPanel({ active: panelActive = true }: { active?: bo
         >
           <span
             className="material-symbols-outlined"
-            style={{ fontSize: 20, color: 'var(--c-text-secondary)' }}
+            style={{ fontSize: 19, color: 'var(--c-text-secondary)' }}
           >
             restart_alt
           </span>
@@ -832,14 +832,14 @@ export default function PitchPanel({ active: panelActive = true }: { active?: bo
           type="button"
           onClick={listening ? stopListening : startListening}
           style={{
-            height: 54,
-            borderRadius: 16,
+            height: 46,
+            borderRadius: 14,
             background: listening ? '#ef4444' : accent.from,
             border: 'none',
             color: '#ffffff',
             fontFamily: 'var(--studio-font-display)',
             fontWeight: 700,
-            fontSize: 15,
+            fontSize: 14.5,
             letterSpacing: '-0.01em',
             display: 'flex',
             alignItems: 'center',
@@ -852,7 +852,7 @@ export default function PitchPanel({ active: panelActive = true }: { active?: bo
             transition: 'all 180ms ease',
           }}
         >
-          <span className="material-symbols-outlined" style={{ fontSize: 22 }}>
+          <span className="material-symbols-outlined" style={{ fontSize: 20 }}>
             {listening ? 'mic_off' : 'mic'}
           </span>
           <span>

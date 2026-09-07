@@ -551,13 +551,18 @@ export function SettingSection({
   title,
   children,
   className = '',
+  style,
 }: {
   title: string;
   children: React.ReactNode;
   className?: string;
+  style?: React.CSSProperties;
 }) {
   return (
-    <div className={`flex flex-col ${className}`} style={{ gap: '8px', marginBottom: '20px' }}>
+    <div
+      className={`flex flex-col ${className}`}
+      style={{ gap: '8px', marginBottom: '16px', ...style }}
+    >
       <span
         className="px-1"
         style={{

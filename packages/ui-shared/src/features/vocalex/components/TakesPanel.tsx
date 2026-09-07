@@ -275,7 +275,7 @@ export default function TakesPanel() {
         flexDirection: 'column',
         alignItems: 'center',
         padding:
-          '0 20px calc(var(--bottom-nav-height, 68px) + env(safe-area-inset-bottom, 16px) + 24px)',
+          '0 16px calc(var(--bottom-nav-height, 68px) + env(safe-area-inset-bottom, 16px) + 16px)',
         minHeight: '100%',
         boxSizing: 'border-box',
       }}
@@ -286,7 +286,7 @@ export default function TakesPanel() {
           title={t.vocalex.takesTitle}
           subtitle={t.vocalex.takesSubtitle}
           disableHorizontalPadding={true}
-          containerStyle={{ marginBottom: '14px' }}
+          containerStyle={{ marginBottom: '8px' }}
         />
 
         {/* Action and Filter Row */}
@@ -297,7 +297,7 @@ export default function TakesPanel() {
             alignItems: 'center',
             justifyContent: 'space-between',
             gap: 10,
-            marginBottom: 18,
+            marginBottom: 12,
           }}
         >
           {/* Segmented Filter Chip */}

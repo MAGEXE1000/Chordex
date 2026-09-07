@@ -200,7 +200,7 @@ export default function VocalexApp() {
                     pointerEvents: activeTab === viewId ? 'auto' : 'none',
                     overflowY: 'auto',
                     WebkitOverflowScrolling: 'touch',
-                    paddingBottom: 'var(--content-bottom-pad)',
+                    paddingBottom: '0px',
                   }}
                 >
                   {viewId === 'coach' && (

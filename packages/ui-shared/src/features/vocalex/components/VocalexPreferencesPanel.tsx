@@ -1,10 +1,4 @@
-import {
-  useT,
-  resolveAccent,
-  useScrollHide,
-  useSettingsStore,
-  vocalexRepository,
-} from '@workspace/studio-core';
+import { useT, resolveAccent, useSettingsStore, vocalexRepository } from '@workspace/studio-core';
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import {
   SettingSection,
@@ -21,9 +15,6 @@ export default function VocalexPreferencesPanel() {
   const t = useT();
   const vt = t.vocalex as any;
   const isSpanish = (settings.language ?? 'en') === 'es';
-
-  const scrollRef = useRef<HTMLDivElement>(null);
-  useScrollHide(scrollRef, 'preferences');
 
   const [takeCount, setTakeCount] = useState<number>(0);
   const [feedbackMsg, setFeedbackMsg] = useState<string | null>(null);
@@ -100,16 +91,12 @@ export default function VocalexPreferencesPanel() {
 
   return (
     <div
-      ref={scrollRef}
       className="w-full no-scrollbar"
       style={{
-        height: '100%',
-        overflowY: 'auto',
-        overflowX: 'hidden',
         boxSizing: 'border-box',
-        padding: '0 var(--page-header-inset-h, var(--page-inset-h, 24px))',
+        padding: '0 var(--page-header-inset-h, var(--page-inset-h, 20px))',
         paddingBottom:
-          'calc(var(--bottom-nav-height, 68px) + env(safe-area-inset-bottom, 16px) + 36px)',
+          'calc(var(--bottom-nav-height, 68px) + env(safe-area-inset-bottom, 16px) + 16px)',
       }}
     >
       <div style={{ maxWidth: 640, margin: '0 auto', width: '100%' }}>
@@ -122,20 +109,21 @@ export default function VocalexPreferencesPanel() {
               : 'Configure pitch detection, audio DSP, and recording behaviors.'
           }
           disableHorizontalPadding={true}
+          containerStyle={{ marginBottom: '8px' }}
         />
 
         {/* Transient Feedback Banner */}
         {feedbackMsg && (
           <div
             style={{
-              marginBottom: 16,
-              padding: '10px 16px',
+              marginBottom: 12,
+              padding: '8px 14px',
               borderRadius: 12,
               background: 'rgba(16, 185, 129, 0.14)',
               border: '1px solid rgba(16, 185, 129, 0.35)',
               color: '#10b981',
               fontFamily: 'var(--studio-font-body)',
-              fontSize: 13,
+              fontSize: 12.5,
               fontWeight: 600,
               display: 'flex',
               alignItems: 'center',
