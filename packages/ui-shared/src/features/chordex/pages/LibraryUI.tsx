@@ -1726,9 +1726,13 @@ export function LibraryMainView({ state }: { state: any }) {
               {recentChordList.length > 0 && (
                 <section className="mb-2" data-purpose="recently-practiced">
                   <h3
-                    className="text-sm font-bold tracking-tight mb-3 px-0.5"
+                    className="studio-section-heading mb-3 px-0.5"
                     style={{
-                      fontFamily: 'var(--font-headline)',
+                      fontFamily: 'var(--type-section-font, var(--studio-font-display))',
+                      fontWeight: 'var(--type-section-weight, 700)' as any,
+                      fontSize: 'var(--type-section-size, 19px)',
+                      lineHeight: 'var(--type-section-lh, 24px)',
+                      letterSpacing: 'var(--type-section-tracking, 0.6px)',
                       color: 'var(--c-text-primary, #111827)',
                     }}
                   >
@@ -1790,9 +1794,13 @@ export function LibraryMainView({ state }: { state: any }) {
                 {/* Section Title & Meta Header */}
                 <div className="flex items-center justify-between mb-3 px-0.5">
                   <h3
-                    className="text-sm font-bold tracking-tight"
+                    className="studio-section-heading"
                     style={{
-                      fontFamily: 'var(--font-headline)',
+                      fontFamily: 'var(--type-section-font, var(--studio-font-display))',
+                      fontWeight: 'var(--type-section-weight, 700)' as any,
+                      fontSize: 'var(--type-section-size, 19px)',
+                      lineHeight: 'var(--type-section-lh, 24px)',
+                      letterSpacing: 'var(--type-section-tracking, 0.6px)',
                       color: 'var(--c-text-primary, #111827)',
                     }}
                   >

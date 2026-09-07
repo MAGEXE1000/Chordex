@@ -1,6 +1,5 @@
 import { useT, useBackHandler, useSettingsStore } from '@workspace/studio-core';
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { StudioHeader } from '../../../shared/layout/StudioHeader';
 
 interface Tip {
   title: string;
@@ -488,18 +487,6 @@ export default function PracticePanel() {
       }}
     >
       <div style={{ width: '100%', maxWidth: 440 }}>
-        {/* Canonical Vocalex Page Header */}
-        <StudioHeader
-          title={
-            language === 'es'
-              ? 'Ejercicios Vocales'
-              : (t.vocalex as any).tipsTitle || 'Vocal Exercises'
-          }
-          subtitle={t.vocalex.tipsSubtitle}
-          disableHorizontalPadding={true}
-          containerStyle={{ marginBottom: '16px' }}
-        />
-
         {/* Categories List */}
         <div
           data-purpose="exercise-categories"

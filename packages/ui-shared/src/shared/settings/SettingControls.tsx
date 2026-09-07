@@ -26,7 +26,7 @@ export const SectionHeader = memo(function SectionHeader({
             color: 'var(--c-text-primary, var(--text, #ffffff))',
             fontFamily:
               'var(--type-section-font, var(--studio-font-display, "Inter Tight", sans-serif))',
-            fontWeight: 'var(--type-section-weight, 600)' as any,
+            fontWeight: 'var(--type-section-weight, 700)' as any,
             fontSize: 'var(--type-section-size, 19px)',
             lineHeight: 'var(--type-section-lh, 24px)',
             letterSpacing: 'var(--type-section-tracking, 0.6px)',
@@ -81,7 +81,7 @@ export function SettingRow({
           style={{
             fontSize: indent ? 'var(--type-meta-size, 12px)' : 'var(--type-body-size, 14.5px)',
             lineHeight: indent ? 'var(--type-meta-lh, 16px)' : 'var(--type-body-lh, 18px)',
-            fontWeight: indent ? 500 : 600,
+            fontWeight: indent ? 400 : 500,
             color: indent
               ? 'var(--c-text-secondary, var(--muted))'
               : 'var(--c-text-primary, var(--text))',
@@ -563,7 +563,7 @@ export function SettingSection({
         style={{
           fontSize: 'var(--type-section-size, 19px)',
           lineHeight: 'var(--type-section-lh, 24px)',
-          fontWeight: 'var(--type-section-weight, 600)' as any,
+          fontWeight: 'var(--type-section-weight, 700)' as any,
           letterSpacing: 'var(--type-section-tracking, 0.6px)',
           color: 'var(--c-text-primary, var(--text))',
           fontFamily:

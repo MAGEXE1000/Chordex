@@ -315,18 +315,18 @@
   --font-title: var(--studio-font-display);
   --font-body: var(--studio-font-body);
 
-  /* Titles: Inter Tight, 22px, line-height 28px, Semi Bold, letter-spacing: -0.7px */
+  /* Titles: Inter Tight, 22px, line-height 28px, Bold, letter-spacing: -0.7px */
   --type-title-font: var(--studio-font-display);
   --type-title-size: 22px;
   --type-title-lh: 28px;
-  --type-title-weight: 600;
+  --type-title-weight: 700;
   --type-title-tracking: -0.7px;
 
-  /* Section headers: Inter Tight, 19px, line-height 24px, Semi Bold, letter-spacing: 0.6px */
+  /* Section headers: Inter Tight, 19px, line-height 24px, Bold, letter-spacing: 0.6px */
   --type-section-font: var(--studio-font-display);
   --type-section-size: 19px;
   --type-section-lh: 24px;
-  --type-section-weight: 600;
+  --type-section-weight: 700;
   --type-section-tracking: 0.6px;
 
   /* Body / day labels: Inter, 14.5px, line-height 18px, Regular, letter-spacing: 0.3px */
@@ -413,6 +413,49 @@
   --btn-surface-bg: var(--c-surface-high);
   --btn-surface-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   --btn-surface-inset: inset 0 1px 1px rgba(255, 255, 255, 0.16);
+}
+
+/* ── Canonical Studio Base Heading Styles ──
+   Ensures headings render with correct typography hierarchy even after Tailwind v4 preflight reset. */
+h1,
+.studio-h1 {
+  font-family: var(--type-title-font, var(--studio-font-display));
+  font-weight: var(--type-title-weight, 700);
+  font-size: 26px;
+  line-height: 32px;
+  letter-spacing: -0.025em;
+  color: var(--c-text-primary);
+}
+
+h2,
+.studio-h2,
+[data-testid='studio-header-title'] {
+  font-family: var(--type-title-font, var(--studio-font-display));
+  font-weight: var(--type-title-weight, 700);
+  font-size: var(--type-title-size, 22px);
+  line-height: var(--type-title-lh, 28px);
+  letter-spacing: var(--type-title-tracking, -0.7px);
+  color: var(--c-text-primary);
+}
+
+h3,
+.studio-h3,
+.studio-section-heading {
+  font-family: var(--type-section-font, var(--studio-font-display));
+  font-weight: var(--type-section-weight, 700);
+  font-size: var(--type-section-size, 19px);
+  line-height: var(--type-section-lh, 24px);
+  letter-spacing: var(--type-section-tracking, 0.6px);
+  color: var(--c-text-primary);
+}
+
+h4,
+.studio-h4 {
+  font-family: var(--type-section-font, var(--studio-font-display));
+  font-weight: 600;
+  font-size: 16px;
+  line-height: 22px;
+  color: var(--c-text-primary);
 }
 
 /* ── Dedicated App Identity Brand Colors (Hub cards, logos, branding only) ──

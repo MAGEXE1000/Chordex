@@ -767,6 +767,8 @@
     "startOnDesc": "Qué vista se abre al iniciar Stagex"
   },
   "vocalex": {
+    "coachTitle": "Entrenador",
+    "coachSubtitle": "Monitor de afinación y entrenamiento vocal.",
     "navTips": "Consejos",
     "navPitch": "Afinación",
     "navLab": "Lab",

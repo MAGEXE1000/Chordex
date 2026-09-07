@@ -767,6 +767,8 @@
     "startOnDesc": "Which view opens when you launch Stagex"
   },
   "vocalex": {
+    "coachTitle": "Coach",
+    "coachSubtitle": "Real-time pitch monitor and vocal training.",
     "navTips": "Tips",
     "navPitch": "Pitch",
     "navLab": "Lab",

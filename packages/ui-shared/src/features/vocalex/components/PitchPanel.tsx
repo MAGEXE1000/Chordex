@@ -1,7 +1,6 @@
 import { useT, createAudioContext, useSettingsStore, resolveAccent } from '@workspace/studio-core';
 import { Capacitor } from '@capacitor/core';
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { StudioHeader } from '../../../shared/layout/StudioHeader';
 import { detectPitch, type PitchResult } from '../services/pitchYin';
 
 const HISTORY_LEN = 24;
@@ -275,8 +274,6 @@ export default function PitchPanel({ active: panelActive = true }: { active?: bo
     return result.noteName;
   })();
 
-  const vt = t.vocalex as any;
-
   return (
     <div
       style={{
@@ -290,18 +287,6 @@ export default function PitchPanel({ active: panelActive = true }: { active?: bo
         boxSizing: 'border-box',
       }}
     >
-      {/* ── Canonical Vocalex Page Header ── */}
-      <StudioHeader
-        title={vt.tabMonitor || (language === 'es' ? 'Monitor de Voz' : 'Vocal Monitor')}
-        subtitle={
-          language === 'es'
-            ? 'Detección y afinación vocal en tiempo real'
-            : 'Real-time vocal pitch detection and tuning'
-        }
-        disableHorizontalPadding={true}
-        containerStyle={{ marginBottom: '14px', width: '100%', maxWidth: 360 }}
-      />
-
       {/* ── Main Tuner Card ── */}
       <div
         style={{

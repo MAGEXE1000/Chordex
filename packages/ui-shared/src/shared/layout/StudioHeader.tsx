@@ -34,7 +34,7 @@ export function StudioHeader({
     color: 'var(--c-text-primary)',
     lineHeight: 'var(--type-title-lh, 28px)',
     fontSize: 'var(--type-title-size, 22px)',
-    fontWeight: 600,
+    fontWeight: 'var(--type-title-weight, 700)' as any,
     letterSpacing: 'var(--type-title-tracking, -0.7px)',
     textAlign: 'left',
     marginTop: 0,
