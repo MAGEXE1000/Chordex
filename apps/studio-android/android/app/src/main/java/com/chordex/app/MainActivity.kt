@@ -103,6 +103,17 @@ class MainActivity : BridgeActivity() {
     private var floatHeight by mutableFloatStateOf(0f)
     private var floatVisible by mutableStateOf(false)
 
+    @Volatile
+    private var isExclusiveVolumeMode = false
+
+    inner class ExclusiveVolumeBridge {
+        @JavascriptInterface
+        fun setExclusiveVolumeMode(enabled: Boolean) {
+            isExclusiveVolumeMode = enabled
+            android.util.Log.i("ExclusiveVolume", "setExclusiveVolumeMode: $enabled")
+        }
+    }
+
     inner class ThemeTransitionBridge {
         @JavascriptInterface
         fun triggerTransition(nextTheme: String, amoled: Boolean, x: Float, y: Float) {
@@ -171,6 +182,7 @@ class MainActivity : BridgeActivity() {
         }
 
         window.clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
+        window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING)
         scheduleUpdateBackgroundCheck()
 
         if (this.bridge != null && this.bridge.webView != null) {
@@ -181,6 +193,7 @@ class MainActivity : BridgeActivity() {
             
             webView.addJavascriptInterface(ThemeTransitionBridge(), "ThemeTransitionBridge")
             webView.addJavascriptInterface(LiquidGlassBridge(), "LiquidGlassBridge")
+            webView.addJavascriptInterface(ExclusiveVolumeBridge(), "ExclusiveVolumeBridge")
 
             val parentGroup = (webView.parent as? ViewGroup) ?: findViewById<ViewGroup>(android.R.id.content)
             android.util.Log.i("LiquidGlass", "onCreate: parentGroup=$parentGroup, webViewParent=${webView.parent}")
@@ -679,16 +692,49 @@ class MainActivity : BridgeActivity() {
 
     override fun onPause() {
         super.onPause()
+        isExclusiveVolumeMode = false
         AppInstallerPlugin.logNativeInstrumentation(this, "MainActivity", -1, "onPause", "MainActivity entered onPause")
     }
 
     override fun onStop() {
         super.onStop()
+        isExclusiveVolumeMode = false
         AppInstallerPlugin.logNativeInstrumentation(this, "MainActivity", -1, "onStop", "MainActivity entered onStop")
     }
 
     override fun onDestroy() {
         super.onDestroy()
+        isExclusiveVolumeMode = false
         AppInstallerPlugin.logNativeInstrumentation(this, "MainActivity", -1, "onDestroy", "MainActivity entered onDestroy")
+    }
+
+    override fun onKeyDown(keyCode: Int, event: android.view.KeyEvent?): Boolean {
+        if (isExclusiveVolumeMode) {
+            if (keyCode == android.view.KeyEvent.KEYCODE_VOLUME_UP) {
+                runOnUiThread {
+                    this.bridge?.webView?.evaluateJavascript(
+                        "window.dispatchEvent(new CustomEvent('metronome-volume-key', { detail: { direction: 'up' } }));",
+                        null
+                    )
+                }
+                return true
+            } else if (keyCode == android.view.KeyEvent.KEYCODE_VOLUME_DOWN) {
+                runOnUiThread {
+                    this.bridge?.webView?.evaluateJavascript(
+                        "window.dispatchEvent(new CustomEvent('metronome-volume-key', { detail: { direction: 'down' } }));",
+                        null
+                    )
+                }
+                return true
+            }
+        }
+        return super.onKeyDown(keyCode, event)
+    }
+
+    override fun onKeyUp(keyCode: Int, event: android.view.KeyEvent?): Boolean {
+        if (isExclusiveVolumeMode && (keyCode == android.view.KeyEvent.KEYCODE_VOLUME_UP || keyCode == android.view.KeyEvent.KEYCODE_VOLUME_DOWN)) {
+            return true
+        }
+        return super.onKeyUp(keyCode, event)
     }
 }

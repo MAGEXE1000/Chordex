@@ -113,6 +113,11 @@ export function MetronomePanel({ onBack, onScroll, isAmoled: propIsAmoled }: Met
   const [activePresetMenuId, setActivePresetMenuId] = useState<string | null>(null);
   const [deletingPresetId, setDeletingPresetId] = useState<string | null>(null);
 
+  // Reference to main scroll container to preserve exact scroll offset across keyboard opening/closing
+  const mainScrollRef = useRef<HTMLElement>(null);
+  const savedScrollTopRef = useRef<number>(0);
+  const isEditingBpmRef = useRef<boolean>(false);
+
   // Direct BPM numeric keyboard entry state
   const [isEditingBpm, setIsEditingBpm] = useState(false);
   const [bpmInputValue, setBpmInputValue] = useState('');
@@ -120,31 +125,124 @@ export function MetronomePanel({ onBack, onScroll, isAmoled: propIsAmoled }: Met
 
   const handleStartBpmEdit = () => {
     if (isTempoLocked) return;
+    savedScrollTopRef.current = mainScrollRef.current?.scrollTop ?? 0;
+    isEditingBpmRef.current = true;
     setBpmInputValue(String(bpm));
     setIsEditingBpm(true);
   };
 
   const handleCancelBpmEdit = () => {
+    isEditingBpmRef.current = false;
     setIsEditingBpm(false);
     setBpmInputValue('');
+    bpmInputRef.current?.blur();
+    if (mainScrollRef.current) {
+      mainScrollRef.current.scrollTop = savedScrollTopRef.current;
+    }
   };
 
   const handleSaveBpmEdit = () => {
-    const parsed = parseInt(bpmInputValue.replace(/[^0-9]/g, ''), 10);
-    if (!isNaN(parsed)) {
-      const clamped = Math.max(40, Math.min(280, parsed));
-      setBpm(clamped);
+    const raw = bpmInputValue.replace(/[^0-9]/g, '');
+    if (raw.length > 0) {
+      const parsed = parseInt(raw, 10);
+      if (!isNaN(parsed) && parsed >= 40 && parsed <= 280) {
+        setBpm(parsed);
+      }
     }
+    isEditingBpmRef.current = false;
     setIsEditingBpm(false);
     setBpmInputValue('');
+    bpmInputRef.current?.blur();
+    if (mainScrollRef.current) {
+      mainScrollRef.current.scrollTop = savedScrollTopRef.current;
+    }
   };
 
   useEffect(() => {
     if (isEditingBpm && bpmInputRef.current) {
-      bpmInputRef.current.focus();
+      bpmInputRef.current.focus({ preventScroll: true });
       bpmInputRef.current.select();
     }
   }, [isEditingBpm]);
+
+  // Session-scoped volume mode: 'normal' | 'exclusive' | 'mute'
+  const [isExclusiveVolume, setIsExclusiveVolume] = useState(false);
+  const rememberedVolumeRef = useRef<number>(volume > 0 ? volume : 80);
+
+  useEffect(() => {
+    if (!isMuted && volume > 0) {
+      rememberedVolumeRef.current = volume;
+    }
+  }, [volume, isMuted]);
+
+  const volumeControlMode: 'normal' | 'exclusive' | 'mute' = isMuted
+    ? 'mute'
+    : isExclusiveVolume
+      ? 'exclusive'
+      : 'normal';
+
+  const handleCycleVolumeMode = () => {
+    if (volumeControlMode === 'normal') {
+      // Normal -> Exclusive
+      setIsExclusiveVolume(true);
+      if (isMuted) {
+        toggleMute();
+      }
+      try {
+        (window as any).ExclusiveVolumeBridge?.setExclusiveVolumeMode(true);
+      } catch {}
+    } else if (volumeControlMode === 'exclusive') {
+      // Exclusive -> Mute
+      setIsExclusiveVolume(false);
+      try {
+        (window as any).ExclusiveVolumeBridge?.setExclusiveVolumeMode(false);
+      } catch {}
+      if (!isMuted) {
+        toggleMute();
+      }
+    } else {
+      // Mute -> Normal
+      setIsExclusiveVolume(false);
+      try {
+        (window as any).ExclusiveVolumeBridge?.setExclusiveVolumeMode(false);
+      } catch {}
+      if (isMuted) {
+        toggleMute();
+      }
+      if (volume === 0) {
+        setVolume(rememberedVolumeRef.current > 0 ? rememberedVolumeRef.current : 80);
+      }
+    }
+  };
+
+  // Hardware volume buttons in Exclusive Mode forwarded from Android MainActivity
+  useEffect(() => {
+    const handleVolumeKey = (e: Event) => {
+      const customEvent = e as CustomEvent<{ direction: 'up' | 'down' }>;
+      const dir = customEvent.detail?.direction;
+      if (!dir) return;
+
+      if (isMuted) {
+        if (dir === 'up') {
+          toggleMute();
+          setVolume(Math.min(100, Math.max(5, rememberedVolumeRef.current || 80)));
+        }
+        return;
+      }
+
+      const step = 5;
+      const next = dir === 'up' ? Math.min(100, volume + step) : Math.max(0, volume - step);
+      setVolume(next);
+    };
+
+    window.addEventListener('metronome-volume-key', handleVolumeKey);
+    return () => {
+      window.removeEventListener('metronome-volume-key', handleVolumeKey);
+      try {
+        (window as any).ExclusiveVolumeBridge?.setExclusiveVolumeMode(false);
+      } catch {}
+    };
+  }, [isMuted, volume, toggleMute, setVolume]);
 
   // In-modal Create/Edit Preset Form state transformation
   const [presetFormMode, setPresetFormMode] = useState<'create' | 'edit' | null>(null);
@@ -488,7 +586,15 @@ export function MetronomePanel({ onBack, onScroll, isAmoled: propIsAmoled }: Met
 
       {/* ── Main Live Performance Scroll Area ────────────────────────────── */}
       <main
-        onScroll={onScroll}
+        ref={mainScrollRef}
+        onScroll={(e) => {
+          if (isEditingBpmRef.current && mainScrollRef.current) {
+            if (mainScrollRef.current.scrollTop !== savedScrollTopRef.current) {
+              mainScrollRef.current.scrollTop = savedScrollTopRef.current;
+            }
+          }
+          onScroll?.(e as unknown as React.UIEvent<HTMLDivElement>);
+        }}
         className="flex-1 px-4 flex flex-col gap-3.5 overflow-y-auto no-scrollbar"
         style={{
           paddingTop: 'calc(env(safe-area-inset-top, 0px) + 78px)',
@@ -710,56 +816,42 @@ export function MetronomePanel({ onBack, onScroll, isAmoled: propIsAmoled }: Met
             </div>
 
             {isEditingBpm ? (
-              <div className="flex flex-col items-center justify-center min-h-[90px] py-0.5">
-                <div className="flex items-center gap-2">
-                  <input
-                    ref={bpmInputRef}
-                    type="text"
-                    inputMode="numeric"
-                    pattern="[0-9]*"
-                    value={bpmInputValue}
-                    onChange={(e) => setBpmInputValue(e.target.value.replace(/[^0-9]/g, ''))}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        handleSaveBpmEdit();
-                      } else if (e.key === 'Escape') {
-                        e.preventDefault();
-                        handleCancelBpmEdit();
-                      }
-                    }}
-                    className={`w-28 text-center text-5xl font-black font-manrope rounded-xl py-1 px-2 border-2 border-[#007aff] outline-none ${
-                      isAmoled
-                        ? 'bg-[#111] text-white'
-                        : 'bg-white dark:bg-zinc-800 text-[#0e0e0e] dark:text-zinc-100 shadow-inner'
-                    }`}
-                    placeholder="BPM"
-                    maxLength={3}
-                  />
-                  <span className="text-[11px] font-extrabold tracking-widest text-[#007aff] uppercase font-manrope">
-                    BPM
-                  </span>
-                </div>
-                <div className="flex items-center gap-1.5 mt-2">
-                  <button
-                    type="button"
-                    onClick={handleCancelBpmEdit}
-                    className={`px-3 py-1 text-xs font-bold rounded-lg border ${
-                      isAmoled
-                        ? 'bg-[#18181b] border-white/15 text-zinc-400 hover:bg-white/10'
-                        : 'bg-slate-100 dark:bg-zinc-800 border-slate-200 dark:border-zinc-700 text-slate-600 dark:text-zinc-400 hover:bg-slate-200'
-                    } transition cursor-pointer`}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleSaveBpmEdit}
-                    className="px-3.5 py-1 text-xs font-bold rounded-lg bg-[#007aff] text-white shadow-xs hover:bg-[#0066d6] transition cursor-pointer"
-                  >
-                    Set BPM
-                  </button>
-                </div>
+              <div className="flex flex-col items-center select-none">
+                <input
+                  ref={bpmInputRef}
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  enterKeyHint="done"
+                  value={bpmInputValue}
+                  onChange={(e) => {
+                    const clean = e.target.value.replace(/[^0-9]/g, '').slice(0, 3);
+                    setBpmInputValue(clean);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleSaveBpmEdit();
+                    } else if (e.key === 'Escape') {
+                      e.preventDefault();
+                      handleCancelBpmEdit();
+                    }
+                  }}
+                  onBlur={() => {
+                    handleCancelBpmEdit();
+                  }}
+                  className="w-36 sm:w-44 text-center text-7xl sm:text-8xl font-black font-manrope tracking-tighter leading-none font-tabular-nums bg-transparent border-b-2 border-[#007aff] outline-none p-0 m-0 text-[#007aff]"
+                  placeholder={String(bpm)}
+                  maxLength={3}
+                  autoComplete="off"
+                  autoCorrect="off"
+                  spellCheck="false"
+                  aria-label="Direct BPM input"
+                />
+                <span className="text-[11px] font-extrabold tracking-widest text-[#007aff] uppercase font-manrope mt-1 flex items-center gap-1">
+                  BPM
+                  <span className="material-symbols-outlined text-[13px] opacity-80">check_circle</span>
+                </span>
               </div>
             ) : (
               <div
@@ -1237,34 +1329,65 @@ export function MetronomePanel({ onBack, onScroll, isAmoled: propIsAmoled }: Met
             <div className="flex items-center gap-1.5 px-1 animate-in fade-in zoom-in-95 duration-150">
               <button
                 type="button"
-                aria-label="Toggle mute"
-                onClick={toggleMute}
-                className={`w-[36px] h-[36px] rounded-full flex items-center justify-center transition tap-press cursor-pointer shrink-0 ${
-                  isMuted
+                aria-label={`Volume mode: ${volumeControlMode}. Tap to cycle.`}
+                onClick={handleCycleVolumeMode}
+                className={`h-[36px] px-2.5 rounded-full flex items-center gap-1.5 transition tap-press cursor-pointer shrink-0 border ${
+                  volumeControlMode === 'mute'
                     ? isAmoled
-                      ? 'bg-rose-950/40 text-rose-400'
-                      : 'bg-rose-50 dark:bg-rose-950/40 text-rose-500'
-                    : isAmoled
-                      ? 'bg-[#0a0a0c] text-zinc-200 hover:bg-white/10'
-                      : 'bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-200 hover:bg-slate-200 dark:hover:bg-zinc-700'
+                      ? 'bg-rose-950/40 text-rose-400 border-rose-500/40'
+                      : 'bg-rose-50 dark:bg-rose-950/40 text-rose-500 border-rose-400/40'
+                    : volumeControlMode === 'exclusive'
+                      ? isAmoled
+                        ? 'bg-amber-950/50 text-amber-400 border-amber-500/60 shadow-[0_0_12px_rgba(245,158,11,0.2)]'
+                        : 'bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 border-amber-400/60 shadow-[0_0_12px_rgba(245,158,11,0.15)]'
+                      : isAmoled
+                        ? 'bg-[#0a0a0c] text-zinc-200 border-white/10 hover:bg-white/10'
+                        : 'bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-200 border-slate-200 dark:border-zinc-700 hover:bg-slate-200'
                 }`}
-                title={isMuted ? 'Unmute' : 'Mute'}
+                title={
+                  volumeControlMode === 'mute'
+                    ? 'State: MUTED (Tap for Normal)'
+                    : volumeControlMode === 'exclusive'
+                      ? 'State: APP-ONLY / EXCLUSIVE (Tap for Mute)'
+                      : 'State: NORMAL (Tap for Exclusive)'
+                }
               >
-                <span className="material-symbols-outlined text-[19px]">
-                  {isMuted ? 'volume_off' : volume === 0 ? 'volume_mute' : 'volume_up'}
+                <span className="material-symbols-outlined text-[18px]">
+                  {volumeControlMode === 'mute'
+                    ? 'volume_off'
+                    : volumeControlMode === 'exclusive'
+                      ? 'tune'
+                      : volume === 0
+                        ? 'volume_mute'
+                        : 'volume_up'}
+                </span>
+                <span className="text-[10px] font-black font-manrope uppercase tracking-wider">
+                  {volumeControlMode === 'mute'
+                    ? 'Mute'
+                    : volumeControlMode === 'exclusive'
+                      ? 'Exclusive'
+                      : 'Normal'}
                 </span>
               </button>
-              <div className="flex items-center gap-2 w-[160px] sm:w-[200px] px-1">
+              <div className="flex items-center gap-2 w-[140px] sm:w-[180px] px-1">
                 <input
                   type="range"
                   min={0}
                   max={100}
                   value={isMuted ? 0 : volume}
-                  onChange={(e) => setVolume(Number(e.target.value))}
-                  className="metronome-range w-full h-2 rounded-lg appearance-none cursor-pointer"
+                  disabled={volumeControlMode === 'mute'}
+                  onChange={(e) => {
+                    const val = Number(e.target.value);
+                    if (isMuted) toggleMute();
+                    setVolume(val);
+                  }}
+                  className={`metronome-range w-full h-2 rounded-lg appearance-none cursor-pointer ${
+                    volumeControlMode === 'mute' ? 'opacity-40 cursor-not-allowed' : ''
+                  }`}
+                  aria-label="Metronome volume slider"
                 />
-                <span className="text-xs font-mono font-bold text-slate-700 dark:text-zinc-300 w-8 text-right shrink-0">
-                  {isMuted ? 0 : volume}%
+                <span className="text-xs font-mono font-bold text-slate-700 dark:text-zinc-300 w-9 text-right shrink-0">
+                  {isMuted ? '0%' : `${volume}%`}
                 </span>
               </div>
               <button
@@ -1384,20 +1507,39 @@ export function MetronomePanel({ onBack, onScroll, isAmoled: propIsAmoled }: Met
                 aria-label="Volume & Sound"
                 onClick={() => setBottomBarMode('volume')}
                 className={`w-[38px] h-[38px] rounded-full flex items-center justify-center transition tap-press focus:outline-none cursor-pointer relative ${
-                  isMuted
+                  volumeControlMode === 'mute'
                     ? isAmoled
-                      ? 'bg-rose-950/40 text-rose-400'
-                      : 'bg-rose-50 dark:bg-rose-950/40 text-rose-500'
-                    : isAmoled
-                      ? 'bg-[#0a0a0c] hover:bg-white/10 text-zinc-200'
-                      : 'bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-200'
+                      ? 'bg-rose-950/40 text-rose-400 border border-rose-500/40'
+                      : 'bg-rose-50 dark:bg-rose-950/40 text-rose-500 border border-rose-400/40'
+                    : volumeControlMode === 'exclusive'
+                      ? isAmoled
+                        ? 'bg-amber-950/50 text-amber-400 border border-amber-500/60 shadow-[0_0_10px_rgba(245,158,11,0.25)]'
+                        : 'bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 border border-amber-400/60 shadow-[0_0_10px_rgba(245,158,11,0.2)]'
+                      : isAmoled
+                        ? 'bg-[#0a0a0c] hover:bg-white/10 text-zinc-200'
+                        : 'bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-200'
                 }`}
-                title={`Volume: ${isMuted ? 'Muted' : `${volume}%`}`}
+                title={`Volume: ${
+                  volumeControlMode === 'mute'
+                    ? 'Muted'
+                    : volumeControlMode === 'exclusive'
+                      ? `${volume}% [Exclusive / App-Only]`
+                      : `${volume}% [Normal]`
+                }`}
                 type="button"
               >
                 <span className="material-symbols-outlined text-[19px]">
-                  {isMuted ? 'volume_off' : 'volume_up'}
+                  {volumeControlMode === 'mute'
+                    ? 'volume_off'
+                    : volumeControlMode === 'exclusive'
+                      ? 'tune'
+                      : volume === 0
+                        ? 'volume_mute'
+                        : 'volume_up'}
                 </span>
+                {volumeControlMode === 'exclusive' && (
+                  <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-amber-500 ring-2 ring-black" />
+                )}
               </button>
 
               {/* Stopwatch / Practice Timer */}
