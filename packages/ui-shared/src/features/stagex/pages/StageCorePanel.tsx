@@ -20,7 +20,7 @@ import { StageCanvasView } from '../components/StageCanvasView';
 import { StageSetupContainer } from '../components/setup/StageSetupContainer';
 import { StagePreferencesView } from '../components/preferences/StagePreferencesView';
 import { StageExportPdfView } from '../components/export/StageExportPdfView';
-import { useStagexStore } from '../state/useStagexStore';
+import { useStagexStore, type StagexSubView } from '../state/useStagexStore';
 
 export type StagexPrimaryView = 'Editor' | 'Setup' | 'Preferences' | 'Export';
 const VIEW_ORDER: readonly StagexPrimaryView[] = ['Editor', 'Setup', 'Preferences', 'Export'];
@@ -55,9 +55,30 @@ export default function StagexPanel() {
   const curView: StagexPrimaryView = (() => {
     const page = currentRoute.page as StagexPrimaryView;
     if (page && VIEW_ORDER.includes(page)) return page;
+    const pageLower = page?.toLowerCase();
+    if (
+      pageLower === 'rider' ||
+      pageLower === 'setlist' ||
+      pageLower === 'gear' ||
+      pageLower === 'members'
+    ) {
+      return 'Setup';
+    }
+    const subLower = currentRoute.subView?.toLowerCase();
+    if (subLower && ['rider', 'setlist', 'gear', 'members'].includes(subLower)) {
+      return 'Setup';
+    }
     if (currentRoute.app === 'stagex') return initialStageView;
     return 'Editor';
   })();
+
+  // Synchronize route subView into Stagex setup store for direct deep-links
+  useEffect(() => {
+    const candidate = (currentRoute.subView || currentRoute.page || '').toLowerCase();
+    if (['rider', 'setlist', 'gear', 'members'].includes(candidate)) {
+      useStagexStore.getState().setSetupSubView(candidate as StagexSubView);
+    }
+  }, [currentRoute.subView, currentRoute.page]);
 
   // Persist the active tab so cold-start resumes where the user left off
   useEffect(() => {
@@ -167,6 +188,17 @@ export default function StagexPanel() {
                   {viewId === 'Setup' && (
                     <div className="w-full h-full">
                       <StageSetupContainer
+                        initialSubView={
+                          ['rider', 'setlist', 'gear', 'members'].includes(
+                            (currentRoute.subView || currentRoute.page || '').toLowerCase()
+                          )
+                            ? ((
+                                currentRoute.subView ||
+                                currentRoute.page ||
+                                ''
+                              ).toLowerCase() as StagexSubView)
+                            : undefined
+                        }
                         onBackToStage={() => navigate('Editor')}
                         isLight={isLight}
                         isAmoled={isAmoled}

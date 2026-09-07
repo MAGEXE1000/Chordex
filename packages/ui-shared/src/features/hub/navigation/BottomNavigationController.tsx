@@ -450,6 +450,7 @@ export function BottomNavigationController() {
       (currentRoute as any)?.tab === 'metronome' ||
       (currentRoute as any)?.subView === 'metronome');
   const visible =
+    !hidden &&
     !isKeyboardFocused &&
     !hasDOMHiddenIndicator &&
     storeVisible &&

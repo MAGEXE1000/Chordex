@@ -104,6 +104,8 @@ import { StudioHeader } from '../../../shared/layout/StudioHeader';
 import { SharedNavigationBar } from '../navigation/SharedNavigationBar';
 import { SharedNavigationContainer } from '../../../navigation/SharedNavigationContainer';
 import PremiumThemeSwitcher from '../settings/PremiumThemeSwitcher';
+import { activeOverlaysRegistry } from '../../../shared/design-system/dialogs';
+import { useStagexStore } from '../../stagex/state/useStagexStore';
 
 const isHoverable = typeof window !== 'undefined' && window.matchMedia('(hover: hover)').matches;
 const GOOEY_SPRING = { type: 'spring', stiffness: 550, damping: 33, mass: 0.45 } as const;
@@ -145,218 +147,273 @@ import {
   type BouncyAccordionItem,
 } from '../../../components/motion/bouncy-accordion';
 
-const ALL_SHORTCUT_OPTIONS = [
+export interface ShortcutOption {
+  id: string;
+  icon: string;
+  titleEn: string;
+  titleEs: string;
+  descEn: string;
+  descEs: string;
+  app: 'hub' | 'chordex' | 'drumex' | 'stagex' | 'groovex' | 'vocalex';
+}
+
+const ALL_SHORTCUT_OPTIONS: ShortcutOption[] = [
+  // ── Global / Hub ──────────────────────────────────
   {
-    id: 'chords-songs',
-    icon: 'music_note',
-    titleEn: 'Songs Library',
-    titleEs: 'Biblioteca de Canciones',
-    descEn: 'Rehearse your repertoire',
-    descEs: 'Ensaya tu repertorio',
-  },
-  {
-    id: 'chords-practice',
-    icon: 'menu_book',
-    titleEn: 'Song Practice',
-    titleEs: 'Práctica de Canciones',
-    descEn: 'Practice chords and progressions',
-    descEs: 'Practica acordes y progresiones',
-  },
-  {
-    id: 'drumex',
-    icon: 'grid_on',
-    titleEn: 'Drum Sequencer',
-    titleEs: 'Secuenciador de Batería',
-    descEn: 'Create custom drum loops',
-    descEs: 'Crea bucles de batería',
-  },
-  {
-    id: 'stagex',
-    icon: 'speaker',
-    titleEn: 'Stagex Console',
-    titleEs: 'Consola Stagex',
-    descEn: 'Manage live audio routing',
-    descEs: 'Gestiona audio en vivo',
-  },
-  {
-    id: 'groovex',
-    icon: 'album',
-    titleEn: 'Groovex Player',
-    titleEs: 'Reproductor Groovex',
-    descEn: 'Backing tracks controller',
-    descEs: 'Controlador de pistas de fondo',
-  },
-  {
-    id: 'vocalex-coach',
-    icon: 'mic',
-    titleEn: 'Vocal Coach',
-    titleEs: 'Entrenador Vocal',
-    descEn: 'Voice warmups & training',
-    descEs: 'Calentamiento y práctica vocal',
-  },
-  {
-    id: 'vocalex-pitch',
-    icon: 'equalizer',
-    titleEn: 'Pitch Tracker',
-    titleEs: 'Seguimiento de Tono',
-    descEn: 'Real-time pitch estimation',
-    descEs: 'Visualizador de tono en tiempo real',
-  },
-  {
-    id: 'developer',
-    icon: 'terminal',
-    titleEn: 'Dev Options',
-    titleEs: 'Opc. de Desarrollador',
-    descEn: 'Debugger & playground utilities',
-    descEs: 'Utilidades de depuración',
+    id: 'settings',
+    icon: 'settings',
+    titleEn: 'Settings',
+    titleEs: 'Ajustes',
+    descEn: 'App preferences & visual theme',
+    descEs: 'Preferencias y temas visuales',
+    app: 'hub',
   },
   {
     id: 'notifications',
     icon: 'notifications',
     titleEn: 'Notifications',
     titleEs: 'Notificaciones',
-    descEn: 'Check system alerts and logs',
-    descEs: 'Alertas del sistema y registros',
-  },
-  {
-    id: 'help',
-    icon: 'help',
-    titleEn: 'Help & FAQ',
-    titleEs: 'Centro de Ayuda',
-    descEn: 'User guide and documentation',
-    descEs: 'Guía de usuario y soporte',
-  },
-  {
-    id: 'settings',
-    icon: 'settings',
-    titleEn: 'Settings',
-    titleEs: 'Ajustes',
-    descEn: 'App preferences and themes',
-    descEs: 'Preferencias y temas visuales',
+    descEn: 'System alerts and update logs',
+    descEs: 'Alertas del sistema y avisos',
+    app: 'hub',
   },
   {
     id: 'updater',
     icon: 'system_update',
     titleEn: 'Check Updates',
     titleEs: 'Buscar Actualizaciones',
-    descEn: 'Update system components',
-    descEs: 'Actualizar componentes del sistema',
+    descEn: 'Check and install app updates',
+    descEs: 'Buscar e instalar actualizaciones',
+    app: 'hub',
+  },
+
+  // ── Chordex ───────────────────────────────────────
+  {
+    id: 'chordex-library',
+    icon: 'menu_book',
+    titleEn: 'Chordex Library',
+    titleEs: 'Biblioteca Chordex',
+    descEn: 'Chord voicings, shapes & scales',
+    descEs: 'Acordes, digitaciones y escalas',
+    app: 'chordex',
   },
   {
-    id: 'sync',
-    icon: 'sync',
-    titleEn: 'Cloud Sync',
-    titleEs: 'Sincronizar Nube',
-    descEn: 'Synchronize profiles & catalog',
-    descEs: 'Sincronizar perfiles y catálogo',
+    id: 'chordex-songs',
+    icon: 'music_note',
+    titleEn: 'Chordex Songs',
+    titleEs: 'Canciones Chordex',
+    descEn: 'Song chord charts & repertoire',
+    descEs: 'Cifrados de canciones y repertorio',
+    app: 'chordex',
   },
   {
-    id: 'backup',
-    icon: 'cloud_upload',
-    titleEn: 'Data Backup',
-    titleEs: 'Respaldo de Datos',
-    descEn: 'Create local and cloud backups',
-    descEs: 'Crear respaldos locales y en nube',
+    id: 'chordex-practice',
+    icon: 'fitness_center',
+    titleEn: 'Chordex Practice',
+    titleEs: 'Práctica de Acordes',
+    descEn: 'Train chord changes & drills',
+    descEs: 'Entrena cambios y progresiones',
+    app: 'chordex',
+  },
+
+  // ── Drumex ────────────────────────────────────────
+  {
+    id: 'drumex-metronome',
+    icon: 'timer',
+    titleEn: 'Drumex Metronome',
+    titleEs: 'Metrónomo Drumex',
+    descEn: 'Precision tempo & click trainer',
+    descEs: 'Entrenador de tempo y claqueta',
+    app: 'drumex',
   },
   {
-    id: 'appearance',
-    icon: 'palette',
-    titleEn: 'Appearance',
-    titleEs: 'Apariencia',
-    descEn: 'Customize theme & layout',
-    descEs: 'Temas y densidad visual',
+    id: 'drumex-beats',
+    icon: 'grid_on',
+    titleEn: 'Drumex Beats',
+    titleEs: 'Beats de Batería',
+    descEn: 'Step sequencer drum patterns',
+    descEs: 'Secuenciador por pasos y ritmos',
+    app: 'drumex',
   },
   {
-    id: 'language',
-    icon: 'language',
-    titleEn: 'Language',
-    titleEs: 'Idioma',
-    descEn: 'Change app language',
-    descEs: 'Cambiar idioma de la aplicación',
+    id: 'drumex-grooves',
+    icon: 'album',
+    titleEn: 'Drumex Grooves',
+    titleEs: 'Grooves de Batería',
+    descEn: 'Preset rhythm library & styles',
+    descEs: 'Catálogo de ritmos y estilos',
+    app: 'drumex',
+  },
+
+  // ── Stagex ────────────────────────────────────────
+  {
+    id: 'stagex-rider',
+    icon: 'receipt_long',
+    titleEn: 'Stage Setup: Rider',
+    titleEs: 'Stagex: Rider Técnico',
+    descEn: 'Input channel list & technical patch',
+    descEs: 'Lista de canales y patch técnico',
+    app: 'stagex',
   },
   {
-    id: 'faq',
-    icon: 'quiz',
-    titleEn: 'Common Questions',
-    titleEs: 'Preguntas Frecuentes',
-    descEn: 'Frequently asked questions',
-    descEs: 'Respuestas a dudas comunes',
+    id: 'stagex-setlist',
+    icon: 'format_list_bulleted',
+    titleEn: 'Stage Setup: Setlist',
+    titleEs: 'Stagex: Setlist en Vivo',
+    descEn: 'Live show order & song durations',
+    descEs: 'Orden del show y duraciones',
+    app: 'stagex',
   },
   {
-    id: 'keyboard-shortcuts',
-    icon: 'keyboard',
-    titleEn: 'Keyboard Rules',
-    titleEs: 'Teclas Rápidas',
-    descEn: 'View keybindings maps',
-    descEs: 'Mapa de atajos de teclado',
+    id: 'stagex-gear',
+    icon: 'construction',
+    titleEn: 'Stage Setup: Gear',
+    titleEs: 'Stagex: Inventario de Equipos',
+    descEn: 'Stage instruments & hardware gear',
+    descEs: 'Equipamiento físico y accesorios',
+    app: 'stagex',
+  },
+  {
+    id: 'stagex-crew',
+    icon: 'group',
+    titleEn: 'Stage Setup: Crew',
+    titleEs: 'Stagex: Banda y Crew',
+    descEn: 'Musicians, techs & stage roster',
+    descEs: 'Músicos, técnicos y personal',
+    app: 'stagex',
+  },
+  {
+    id: 'stagex-preferences',
+    icon: 'tune',
+    titleEn: 'Stagex Preferences',
+    titleEs: 'Preferencias Stagex',
+    descEn: 'Stage canvas & display options',
+    descEs: 'Opciones de plano y visualización',
+    app: 'stagex',
+  },
+  {
+    id: 'stagex-stage',
+    icon: 'speaker',
+    titleEn: 'Stage Plot',
+    titleEs: 'Plano de Escenario',
+    descEn: 'Interactive stage placement canvas',
+    descEs: 'Distribución espacial del escenario',
+    app: 'stagex',
+  },
+
+  // ── GrooveX ───────────────────────────────────────
+  {
+    id: 'groovex-library',
+    icon: 'queue_music',
+    titleEn: 'GrooveX Library',
+    titleEs: 'Biblioteca GrooveX',
+    descEn: 'Backing tracks & audio catalog',
+    descEs: 'Pistas de fondo y catálogo de audio',
+    app: 'groovex',
+  },
+  {
+    id: 'groovex-player',
+    icon: 'play_circle',
+    titleEn: 'GrooveX Player',
+    titleEs: 'Reproductor GrooveX',
+    descEn: 'Turntable vinyl deck player',
+    descEs: 'Reproductor de vinilo y pistas',
+    app: 'groovex',
+  },
+
+  // ── Vocalex ───────────────────────────────────────
+  {
+    id: 'vocalex-coach',
+    icon: 'mic',
+    titleEn: 'Vocalex Coach',
+    titleEs: 'Entrenador Vocalex',
+    descEn: 'Vocal warmups & pitch training',
+    descEs: 'Calentamiento vocal y ejercicios',
+    app: 'vocalex',
   },
   {
     id: 'vocalex-takes',
     icon: 'history',
-    titleEn: 'Voice Takes',
-    titleEs: 'Tomas Vocales',
-    descEn: 'Browse recorded vocal takes',
-    descEs: 'Ver grabaciones de voz',
-  },
-  {
-    id: 'stage-setlist',
-    icon: 'format_list_bulleted',
-    titleEn: 'Live Setlist',
-    titleEs: 'Lista de Temas',
-    descEn: 'Manage performance setlist',
-    descEs: 'Organizar repertorio en vivo',
-  },
-  {
-    id: 'stage-gear',
-    icon: 'construction',
-    titleEn: 'Gear Inventory',
-    titleEs: 'Inventario de Equipos',
-    descEn: 'Track stage hardware gear',
-    descEs: 'Gestión de equipos físicos',
-  },
-  {
-    id: 'stage-members',
-    icon: 'group',
-    titleEn: 'Crew & Band',
-    titleEs: 'Banda y Crew',
-    descEn: 'Manage band line-up',
-    descEs: 'Personal de escenario',
-  },
-  {
-    id: 'diagnostics',
-    icon: 'analytics',
-    titleEn: 'System Diagnosis',
-    titleEs: 'Diagnóstico',
-    descEn: 'Troubleshoot app performance',
-    descEs: 'Estado y depuración del sistema',
+    titleEn: 'Vocalex Takes',
+    titleEs: 'Tomas Vocalex',
+    descEn: 'Recorded vocal takes & analysis',
+    descEs: 'Tomas grabadas y estabilidad',
+    app: 'vocalex',
   },
 ];
 
 const SHORTCUT_LABEL_MAP: Record<string, { en: string; es: string }> = {
+  // Global / Hub
+  settings: { en: 'Settings', es: 'Ajustes' },
+  notifications: { en: 'Alerts', es: 'Alertas' },
+  updater: { en: 'Updates', es: 'Actualiz.' },
+
+  // Chordex
+  'chordex-library': { en: 'Library', es: 'Biblioteca' },
+  'chordex-songs': { en: 'Songs', es: 'Canciones' },
+  'chordex-practice': { en: 'Practice', es: 'Práctica' },
+
+  // Drumex
+  'drumex-metronome': { en: 'Metronome', es: 'Metrónomo' },
+  'drumex-beats': { en: 'Beats', es: 'Beats' },
+  'drumex-grooves': { en: 'Grooves', es: 'Grooves' },
+
+  // Stagex
+  'stagex-rider': { en: 'Rider', es: 'Rider' },
+  'stagex-setlist': { en: 'Setlist', es: 'Setlist' },
+  'stagex-gear': { en: 'Gear', es: 'Equipos' },
+  'stagex-crew': { en: 'Crew', es: 'Banda' },
+  'stagex-preferences': { en: 'Stage Prefs', es: 'Pref. Esc.' },
+  'stagex-stage': { en: 'Stage Plot', es: 'Escenario' },
+
+  // GrooveX
+  'groovex-library': { en: 'Library', es: 'Biblioteca' },
+  'groovex-player': { en: 'Groovex', es: 'Groovex' },
+
+  // Vocalex
+  'vocalex-coach': { en: 'Coach', es: 'Entrenador' },
+  'vocalex-takes': { en: 'Takes', es: 'Tomas' },
+
+  // Legacy mappings for backward compatibility
   'chords-songs': { en: 'Songs', es: 'Canciones' },
   'chords-practice': { en: 'Practice', es: 'Práctica' },
-  drumex: { en: 'Drums', es: 'Batería' },
-  stagex: { en: 'Console', es: 'Consola' },
+  drumex: { en: 'Beats', es: 'Beats' },
+  stagex: { en: 'Stage Plot', es: 'Escenario' },
   groovex: { en: 'Groovex', es: 'Groovex' },
-  'vocalex-coach': { en: 'Coach', es: 'Entrenador' },
-  'vocalex-pitch': { en: 'Pitch', es: 'Tono' },
-  developer: { en: 'Dev', es: 'Desarrollador' },
-  notifications: { en: 'Alerts', es: 'Alertas' },
-  help: { en: 'Help', es: 'Ayuda' },
-  settings: { en: 'Settings', es: 'Ajustes' },
-  updater: { en: 'Updates', es: 'Actualiz.' },
-  sync: { en: 'Sync', es: 'Sincro' },
-  backup: { en: 'Backup', es: 'Copia' },
-  appearance: { en: 'Style', es: 'Estilo' },
-  language: { en: 'Lang', es: 'Idioma' },
-  faq: { en: 'FAQ', es: 'FAQ' },
-  'keyboard-shortcuts': { en: 'Keys', es: 'Teclas' },
-  'vocalex-takes': { en: 'Takes', es: 'Tomas' },
   'stage-setlist': { en: 'Setlist', es: 'Setlist' },
   'stage-gear': { en: 'Gear', es: 'Equipos' },
   'stage-members': { en: 'Crew', es: 'Banda' },
-  diagnostics: { en: 'Diag', es: 'Diag' },
 };
+
+const LEGACY_SHORTCUT_MAP: Record<string, string> = {
+  'chords-songs': 'chordex-songs',
+  'chords-practice': 'chordex-practice',
+  drumex: 'drumex-beats',
+  stagex: 'stagex-stage',
+  groovex: 'groovex-player',
+  'vocalex-pitch': 'vocalex-coach',
+  'stage-setlist': 'stagex-setlist',
+  'stage-gear': 'stagex-gear',
+  'stage-members': 'stagex-crew',
+  developer: 'settings',
+  help: 'settings',
+  faq: 'settings',
+  sync: 'settings',
+  backup: 'settings',
+  appearance: 'settings',
+  language: 'settings',
+  diagnostics: 'settings',
+  'keyboard-shortcuts': 'settings',
+  'bug-report': 'settings',
+};
+
+const DEFAULT_SHORTCUTS = [
+  'chordex-practice',
+  'chordex-songs',
+  'drumex-metronome',
+  'stagex-setlist',
+  'settings',
+];
 
 function getGreetingPair(name?: string, idx?: number, lang: string = 'en'): GreetingPair {
   const h = new Date().getHours();
@@ -500,9 +557,12 @@ export default function StudioHub() {
   };
 
   useEffect(() => {
-    const shouldHide = !!(shortcutPickerOpen || isEditMode);
-    setNavHidden(shouldHide);
+    if (!shortcutPickerOpen && !isEditMode) return;
+    const id = shortcutPickerOpen ? 'quick-actions-sheet' : 'quick-actions-reorder';
+    activeOverlaysRegistry.register('sheet', id);
+    setNavHidden(true);
     return () => {
+      activeOverlaysRegistry.unregister('sheet', id);
       setNavHidden(false);
     };
   }, [shortcutPickerOpen, isEditMode]);
@@ -513,130 +573,111 @@ export default function StudioHub() {
     try {
       const stored = localStorage.getItem('studio:quick-shortcuts');
       if (stored) {
-        setShortcuts(JSON.parse(stored));
+        const parsed: string[] = JSON.parse(stored);
+        const normalized = Array.from(
+          new Set(
+            parsed
+              .map((id) => LEGACY_SHORTCUT_MAP[id] || id)
+              .filter((id) => ALL_SHORTCUT_OPTIONS.some((opt) => opt.id === id))
+          )
+        ).slice(0, 5);
+
+        if (normalized.length === 0) {
+          setShortcuts(DEFAULT_SHORTCUTS);
+          localStorage.setItem('studio:quick-shortcuts', JSON.stringify(DEFAULT_SHORTCUTS));
+        } else {
+          setShortcuts(normalized);
+          if (JSON.stringify(normalized) !== stored) {
+            localStorage.setItem('studio:quick-shortcuts', JSON.stringify(normalized));
+          }
+        }
       } else {
-        const defaultShortcuts = ['chords-practice', 'chords-songs', 'notifications', 'settings'];
-        setShortcuts(defaultShortcuts);
-        localStorage.setItem('studio:quick-shortcuts', JSON.stringify(defaultShortcuts));
+        setShortcuts(DEFAULT_SHORTCUTS);
+        localStorage.setItem('studio:quick-shortcuts', JSON.stringify(DEFAULT_SHORTCUTS));
       }
     } catch {
-      setShortcuts(['chords-practice', 'chords-songs', 'notifications', 'settings']);
+      setShortcuts(DEFAULT_SHORTCUTS);
     }
   }, []);
 
-  const handleShortcutClick = (id: string) => {
+  const handleShortcutClick = (rawId: string) => {
+    const id = LEGACY_SHORTCUT_MAP[rawId] || rawId;
     switch (id) {
-      case 'chords-songs':
-        launchApp('chordex');
-        setTimeout(() => {
-          NavigationDispatcher.push({ app: 'chordex', page: 'songs' });
-        }, 150);
+      // ── Global / Hub ──────────────────────────────────
+      case 'settings':
+        NavigationDispatcher.push({ app: 'hub', tab: 'settings' });
         break;
-      case 'chords-practice':
-        launchApp('chordex');
-        setTimeout(() => {
-          NavigationDispatcher.push({ app: 'chordex', page: 'songs' });
-        }, 150);
-        break;
-      case 'drumex':
-        launchApp('drumex');
-        break;
-      case 'stagex':
-        launchApp('stagex');
-        break;
-      case 'groovex':
-        launchApp('groovex');
-        break;
-      case 'vocalex-coach':
-        launchApp('vocalex');
-        break;
-      case 'vocalex-pitch':
-        launchApp('vocalex');
-        break;
-      case 'developer':
-        setTab('settings');
-        setTimeout(() => {
-          NavigationDispatcher.push({ app: 'hub', tab: 'settings', page: 'developer' });
-        }, 150);
+      case 'notifications':
+        NavigationDispatcher.push({ app: 'hub', tab: 'settings', page: 'notifications' });
         break;
       case 'updater':
-        setTab('settings');
-        setTimeout(() => {
-          NavigationDispatcher.push({ app: 'hub', tab: 'settings', page: 'updater' });
-        }, 150);
-        break;
-      case 'settings':
-        setTab('settings');
-        break;
-      case 'sync':
-        setTab('settings');
-        setTimeout(() => {
-          NavigationDispatcher.push({ app: 'hub', tab: 'settings', page: 'sync' });
-        }, 150);
-        break;
-      case 'backup':
-        setTab('settings');
-        setTimeout(() => {
-          NavigationDispatcher.push({ app: 'hub', tab: 'settings', page: 'backup' });
-        }, 150);
-        break;
-      case 'appearance':
-        setTab('settings');
-        setTimeout(() => {
-          NavigationDispatcher.push({ app: 'hub', tab: 'settings', page: 'appearance' });
-        }, 150);
+        NavigationDispatcher.push({ app: 'hub', tab: 'settings', page: 'updater' });
         break;
 
-      case 'faq':
-        setTab('settings');
-        setTimeout(() => {
-          NavigationDispatcher.push({ app: 'hub', tab: 'settings', page: 'faq' });
-        }, 150);
+      // ── Chordex ───────────────────────────────────────
+      case 'chordex-library':
+        NavigationDispatcher.push({ app: 'chordex', page: 'library' });
         break;
-      case 'bug-report':
-        setTab('settings');
-        setTimeout(() => {
-          NavigationDispatcher.push({ app: 'hub', tab: 'settings', page: 'help-center' });
-        }, 150);
+      case 'chordex-songs':
+        NavigationDispatcher.push({ app: 'chordex', page: 'songs' });
         break;
-      case 'keyboard-shortcuts':
-        setTab('help');
-        setTimeout(() => {
-          NavigationDispatcher.push({ app: 'hub', tab: 'help', page: 'keyboard-shortcuts' });
-        }, 150);
+      case 'chordex-practice':
+        NavigationDispatcher.push({ app: 'chordex', page: 'practice' });
+        break;
+
+      // ── Drumex ────────────────────────────────────────
+      case 'drumex-metronome':
+        NavigationDispatcher.push({ app: 'drumex', page: 'metronome' });
+        break;
+      case 'drumex-beats':
+        NavigationDispatcher.push({ app: 'drumex', page: 'beats' });
+        break;
+      case 'drumex-grooves':
+        NavigationDispatcher.push({ app: 'drumex', page: 'patterns' });
+        break;
+
+      // ── Stagex ────────────────────────────────────────
+      case 'stagex-rider':
+        useStagexStore.getState().setSetupSubView('rider');
+        NavigationDispatcher.push({ app: 'stagex', page: 'Setup', subView: 'rider' });
+        break;
+      case 'stagex-setlist':
+        useStagexStore.getState().setSetupSubView('setlist');
+        NavigationDispatcher.push({ app: 'stagex', page: 'Setup', subView: 'setlist' });
+        break;
+      case 'stagex-gear':
+        useStagexStore.getState().setSetupSubView('gear');
+        NavigationDispatcher.push({ app: 'stagex', page: 'Setup', subView: 'gear' });
+        break;
+      case 'stagex-crew':
+        useStagexStore.getState().setSetupSubView('members');
+        NavigationDispatcher.push({ app: 'stagex', page: 'Setup', subView: 'members' });
+        break;
+      case 'stagex-preferences':
+        NavigationDispatcher.push({ app: 'stagex', page: 'Preferences' });
+        break;
+      case 'stagex-stage':
+        NavigationDispatcher.push({ app: 'stagex', page: 'Editor' });
+        break;
+
+      // ── GrooveX ───────────────────────────────────────
+      case 'groovex-library':
+        NavigationDispatcher.push({ app: 'groovex', page: 'library' });
+        break;
+      case 'groovex-player':
+        NavigationDispatcher.push({ app: 'groovex', page: 'player' });
+        break;
+
+      // ── Vocalex ───────────────────────────────────────
+      case 'vocalex-coach':
+        NavigationDispatcher.push({ app: 'vocalex', page: 'coach' });
         break;
       case 'vocalex-takes':
-        launchApp('vocalex');
-        setTimeout(() => {
-          NavigationDispatcher.push({ app: 'vocalex', page: 'takes' as any, tab: 'takes' as any });
-        }, 150);
+        NavigationDispatcher.push({ app: 'vocalex', page: 'takes' });
         break;
-      case 'stage-setlist':
-        launchApp('stagex');
-        setTimeout(() => {
-          NavigationDispatcher.push({ app: 'stagex', page: 'Setlist' as any, tab: 'Setup' as any });
-        }, 150);
-        break;
-      case 'stage-gear':
-        launchApp('stagex');
-        setTimeout(() => {
-          NavigationDispatcher.push({ app: 'stagex', page: 'Gear' as any, tab: 'Setup' as any });
-        }, 150);
-        break;
-      case 'stage-members':
-        launchApp('stagex');
-        setTimeout(() => {
-          NavigationDispatcher.push({ app: 'stagex', page: 'Members' as any, tab: 'Setup' as any });
-        }, 150);
-        break;
-      case 'diagnostics':
-        setTab('settings');
-        setTimeout(() => {
-          NavigationDispatcher.push({ app: 'hub', tab: 'settings', page: 'debug' });
-        }, 150);
-        break;
-      case 'help':
-        setTab('help');
+
+      default:
+        console.warn(`[QuickActions] Unhandled shortcut id: ${rawId} (resolved to ${id})`);
         break;
     }
   };
@@ -1905,8 +1946,11 @@ export default function StudioHub() {
       {/* 🛠️ Customizable Quick Actions Picker Modal */}
       {shortcutPickerOpen && (
         <div
+          className="studio-modal hide-bottom-nav"
+          role="dialog"
+          aria-modal="true"
           style={{
-            position: 'absolute',
+            position: 'fixed',
             inset: 0,
             zIndex: 10000,
             background: 'rgba(10, 10, 12, 0.65)',
@@ -2157,16 +2201,39 @@ export default function StudioHub() {
                                   {opt.icon}
                                 </span>
                               </div>
-                              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                              <div
+                                style={{
+                                  display: 'flex',
+                                  flexDirection: 'column',
+                                  minWidth: 0,
+                                  flex: 1,
+                                }}
+                              >
                                 <span
                                   style={{
                                     fontSize: 12.5,
                                     color: 'var(--c-text-primary)',
                                     fontWeight: 600,
                                     lineHeight: 1.2,
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    whiteSpace: 'nowrap',
                                   }}
                                 >
                                   {lang === 'es' ? opt.titleEs : opt.titleEn}
+                                </span>
+                                <span
+                                  style={{
+                                    fontSize: 10.5,
+                                    color: 'var(--c-text-secondary)',
+                                    opacity: 0.75,
+                                    marginTop: 1,
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    whiteSpace: 'nowrap',
+                                  }}
+                                >
+                                  {lang === 'es' ? opt.descEs : opt.descEn}
                                 </span>
                               </div>
                             </div>
@@ -2288,16 +2355,39 @@ export default function StudioHub() {
                               {opt.icon}
                             </span>
                           </div>
-                          <div style={{ display: 'flex', flexDirection: 'column' }}>
+                          <div
+                            style={{
+                              display: 'flex',
+                              flexDirection: 'column',
+                              minWidth: 0,
+                              flex: 1,
+                            }}
+                          >
                             <span
                               style={{
                                 fontSize: 12.5,
                                 color: 'var(--c-text-primary)',
                                 fontWeight: 550,
                                 lineHeight: 1.2,
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
                               }}
                             >
                               {lang === 'es' ? opt.titleEs : opt.titleEn}
+                            </span>
+                            <span
+                              style={{
+                                fontSize: 10.5,
+                                color: 'var(--c-text-secondary)',
+                                opacity: 0.75,
+                                marginTop: 1,
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                              }}
+                            >
+                              {lang === 'es' ? opt.descEs : opt.descEn}
                             </span>
                           </div>
                         </div>
@@ -2355,26 +2445,29 @@ export default function StudioHub() {
             {/* Done Button */}
             <button
               onClick={() => setShortcutPickerOpen(false)}
+              className="w-full active:scale-[0.98] transition-transform"
               style={{
                 width: '100%',
-                height: 40,
-                borderRadius: 12,
+                height: 52,
+                minHeight: 52,
+                borderRadius: 16,
                 background: accent.from,
                 color: '#ffffff',
                 border: 'none',
                 fontFamily: 'var(--type-button-font, var(--studio-font-body))',
                 fontWeight: 700,
-                fontSize: 13.5,
+                fontSize: 15,
                 cursor: 'pointer',
-                marginTop: 12,
+                marginTop: 14,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: 6,
-                boxShadow: `0 4px 12px ${accent.from}25`,
+                gap: 8,
+                boxShadow: `0 4px 16px ${accent.from}33`,
+                letterSpacing: '-0.01em',
               }}
             >
-              <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
+              <span className="material-symbols-outlined" style={{ fontSize: 20, fontWeight: 700 }}>
                 check
               </span>
               {lang === 'es' ? 'Listo' : 'Done'}
