@@ -33,6 +33,14 @@ export function resumeAudioContext(): void {
   }
 }
 
+export const VINYL_STOP_DURATION = 0.65; // 650ms turntable platter deceleration
+export const VINYL_STOP_MIN_RATE = 0.04; // Lowest playback rate before full stop
+export const VINYL_START_DURATION = 0.45; // 450ms direct-drive motor spin-up acceleration
+export const VINYL_START_MIN_RATE = 0.15; // Initial rate when needle cues into spinning platter
+
+export const DELTA_STOP = ((1.0 + VINYL_STOP_MIN_RATE) / 2) * VINYL_STOP_DURATION;
+export const DELTA_START = ((VINYL_START_MIN_RATE + 1.0) / 2) * VINYL_START_DURATION;
+
 export interface AudioEngine {
   ctx: AudioContext;
   sumBus: GainNode;
@@ -59,6 +67,10 @@ export interface AudioEngine {
   vinylStopBuffer: AudioBuffer | null;
   vinylStartBuffer: AudioBuffer | null;
   turntableSource: AudioBufferSourceNode | null;
+  vinylTransitionState: 'idle' | 'stopping' | 'starting';
+  transitionStartTime: number;
+  transitionStartOffset: number;
+  transitionDuration: number;
 }
 
 /**
@@ -280,7 +292,8 @@ export function createEngine(): AudioEngine {
 
   const turntableBus = ctx.createGain();
   turntableBus.gain.setValueAtTime(0.8, ctx.currentTime);
-  turntableBus.connect(masterGain);
+  // Route turntable feedback directly to scrubFilter so masterGain fade during pause doesn't mute brake SFX
+  turntableBus.connect(scrubFilter);
 
   let vinylStopBuffer: AudioBuffer | null = null;
   let vinylStartBuffer: AudioBuffer | null = null;
@@ -322,6 +335,10 @@ export function createEngine(): AudioEngine {
     vinylStopBuffer,
     vinylStartBuffer,
     turntableSource: null,
+    vinylTransitionState: 'idle',
+    transitionStartTime: 0,
+    transitionStartOffset: 0,
+    transitionDuration: 0,
   };
 }
 
@@ -442,38 +459,175 @@ export function setTrackBuffer(engine: AudioEngine, trackIndex: number, buffer: 
   }
 }
 
-export function play(engine: AudioEngine): void {
-  if (engine.isPlaying) return;
+export function play(engine: AudioEngine, onTransitionComplete?: () => void): void {
+  if (engine.isPlaying && engine.vinylTransitionState === 'idle') return;
+
   if (engine._rampTimer) {
     clearTimeout(engine._rampTimer);
     engine._rampTimer = null;
   }
-  stopSources(engine);
+
   const ctx = engine.ctx;
   if (ctx.state === 'suspended') ctx.resume();
+  const ct = ctx.currentTime;
+
+  // Case A: Play called while decelerating (user re-engages platter before full stop)
+  if (engine.isPlaying && engine.vinylTransitionState === 'stopping') {
+    const elapsed = Math.min(VINYL_STOP_DURATION, Math.max(0, ct - engine.transitionStartTime));
+    const curRate = Math.max(
+      VINYL_STOP_MIN_RATE,
+      1.0 - (1.0 - VINYL_STOP_MIN_RATE) * (elapsed / VINYL_STOP_DURATION)
+    );
+    const curOffset = getCurrentTime(engine);
+    const rampDur = Math.max(0.15, VINYL_START_DURATION * (1.0 - curRate));
+
+    engine.tracks.forEach((track) => {
+      if (track.source) {
+        try {
+          track.source.playbackRate.cancelScheduledValues(ct);
+          track.source.playbackRate.setValueAtTime(curRate, ct);
+          track.source.playbackRate.linearRampToValueAtTime(1.0, ct + rampDur);
+        } catch {}
+      }
+    });
+
+    try {
+      engine.masterGain.gain.cancelScheduledValues(ct);
+      engine.masterGain.gain.setValueAtTime(engine.masterGain.gain.value, ct);
+      engine.masterGain.gain.linearRampToValueAtTime(1.0, ct + rampDur);
+    } catch {}
+
+    const deltaSpin = ((curRate + 1.0) / 2) * rampDur;
+    engine.startTime = ct + rampDur - (curOffset + deltaSpin);
+    engine.vinylTransitionState = 'starting';
+    engine.transitionStartTime = ct;
+    engine.transitionStartOffset = curOffset;
+    engine.transitionDuration = rampDur;
+
+    playTurntableFeedback(engine, 'start');
+
+    engine._rampTimer = setTimeout(() => {
+      engine._rampTimer = null;
+      engine.vinylTransitionState = 'idle';
+      onTransitionComplete?.();
+    }, rampDur * 1000);
+    return;
+  }
+
+  // Case B: Normal play from stopped/paused state
+  stopSources(engine);
 
   const offset = engine.pauseOffset;
-  engine.startTime = ctx.currentTime - offset;
-  engine.isPlaying = true;
+  const startDur = VINYL_START_DURATION;
+  const startRate = VINYL_START_MIN_RATE;
+  const deltaStart = DELTA_START;
 
-  startSourcesAtOffset(engine, offset);
+  // Exact mathematical timeline alignment:
+  // At t = ct + startDur, song position will be (offset + deltaStart), and rate will be 1.0.
+  // Therefore: startTime = (ct + startDur) - (offset + deltaStart)
+  engine.startTime = ct + startDur - (offset + deltaStart);
+  engine.isPlaying = true;
+  engine.vinylTransitionState = 'starting';
+  engine.transitionStartTime = ct;
+  engine.transitionStartOffset = offset;
+  engine.transitionDuration = startDur;
+
+  // Master gain ramps up to eliminate initial transient clicks
+  try {
+    engine.masterGain.gain.cancelScheduledValues(ct);
+    engine.masterGain.gain.setValueAtTime(0.0, ct);
+    engine.masterGain.gain.linearRampToValueAtTime(1.0, ct + Math.min(0.12, startDur));
+  } catch {}
+
+  startSourcesAtOffset(engine, offset, startRate, startDur);
   playTurntableFeedback(engine, 'start');
 
   if (engine.stretchNode && typeof engine.stretchNode.schedule === 'function') {
     engine.stretchNode.schedule({ active: true, semitones: engine.pitchSemitones });
   }
+
+  console.log(
+    `[GrooveX Vinyl] RESUME Transition started: duration=${(startDur * 1000).toFixed(0)}ms, ` +
+      `rate: ${startRate.toFixed(2)}x -> 1.00x, offset=${offset.toFixed(3)}s`
+  );
+
+  engine._rampTimer = setTimeout(() => {
+    engine._rampTimer = null;
+    engine.vinylTransitionState = 'idle';
+    console.log(
+      `[GrooveX Vinyl] RESUME Transition stabilized: rate=1.00x, position=${getCurrentTime(engine).toFixed(3)}s`
+    );
+    onTransitionComplete?.();
+  }, startDur * 1000);
 }
 
-export function pause(engine: AudioEngine): void {
+export function pause(engine: AudioEngine, onComplete?: () => void): void {
   if (!engine.isPlaying) return;
+  if (engine.vinylTransitionState === 'stopping') return;
+
   if (engine._rampTimer) {
     clearTimeout(engine._rampTimer);
     engine._rampTimer = null;
   }
-  engine.pauseOffset = getCurrentTime(engine);
-  stopSources(engine);
-  engine.isPlaying = false;
+
+  const ctx = engine.ctx;
+  const ct = ctx.currentTime;
+  const currentPos = getCurrentTime(engine);
+  const stopDur = VINYL_STOP_DURATION;
+  const minRate = VINYL_STOP_MIN_RATE;
+
+  engine.vinylTransitionState = 'stopping';
+  engine.transitionStartTime = ct;
+  engine.transitionStartOffset = currentPos;
+  engine.transitionDuration = stopDur;
+
+  // Decelerate all active stem sources (physical turntable losing speed & pitching down)
+  engine.tracks.forEach((track) => {
+    if (track.source) {
+      try {
+        track.source.playbackRate.cancelScheduledValues(ct);
+        track.source.playbackRate.setValueAtTime(track.source.playbackRate.value, ct);
+        track.source.playbackRate.linearRampToValueAtTime(minRate, ct + stopDur);
+      } catch {}
+    }
+  });
+
+  // Fade masterGain smoothly to 0.0 (emulating phono cartridge output loss + zero pop)
+  try {
+    engine.masterGain.gain.cancelScheduledValues(ct);
+    engine.masterGain.gain.setValueAtTime(engine.masterGain.gain.value, ct);
+    engine.masterGain.gain.linearRampToValueAtTime(0.0, ct + stopDur);
+  } catch {}
+
   playTurntableFeedback(engine, 'stop');
+
+  const deltaStop = DELTA_STOP;
+  const finalOffset = Math.min(engine.duration, currentPos + deltaStop);
+
+  console.log(
+    `[GrooveX Vinyl] PAUSE Transition started: duration=${(stopDur * 1000).toFixed(0)}ms, ` +
+      `rate: 1.00x -> ${minRate.toFixed(2)}x, posBefore=${currentPos.toFixed(3)}s`
+  );
+
+  engine._rampTimer = setTimeout(() => {
+    engine._rampTimer = null;
+    engine.pauseOffset = finalOffset;
+    stopSources(engine);
+    engine.isPlaying = false;
+    engine.vinylTransitionState = 'idle';
+
+    // Restore masterGain for subsequent playback
+    try {
+      engine.masterGain.gain.cancelScheduledValues(engine.ctx.currentTime);
+      engine.masterGain.gain.setValueAtTime(1.0, engine.ctx.currentTime);
+    } catch {}
+
+    console.log(
+      `[GrooveX Vinyl] PAUSE Transition completed: stopped at position=${finalOffset.toFixed(3)}s`
+    );
+
+    onComplete?.();
+  }, stopDur * 1000);
 }
 
 export function stop(engine: AudioEngine): void {
@@ -481,6 +635,11 @@ export function stop(engine: AudioEngine): void {
     clearTimeout(engine._rampTimer);
     engine._rampTimer = null;
   }
+  engine.vinylTransitionState = 'idle';
+  try {
+    engine.masterGain.gain.cancelScheduledValues(engine.ctx.currentTime);
+    engine.masterGain.gain.setValueAtTime(1.0, engine.ctx.currentTime);
+  } catch {}
   if (engine.turntableSource) {
     try {
       engine.turntableSource.stop();
@@ -512,8 +671,14 @@ function stopSources(engine: AudioEngine): void {
   });
 }
 
-function startSourcesAtOffset(engine: AudioEngine, offset: number): void {
+function startSourcesAtOffset(
+  engine: AudioEngine,
+  offset: number,
+  initialRate: number = 1.0,
+  rampDuration: number = 0
+): void {
   const ctx = engine.ctx;
+  const ct = ctx.currentTime;
   engine.tracks.forEach((track) => {
     if (!track.buffer || !track.gainNode) return;
     // Prevent starting sources if offset is past buffer duration
@@ -522,13 +687,19 @@ function startSourcesAtOffset(engine: AudioEngine, offset: number): void {
     source.buffer = track.buffer;
     source.loop = engine.looping;
     source.connect(track.gainNode);
-    // Playback rate is ALWAYS strictly 1.0000x - timeline and tempo are 100% invariant
-    source.playbackRate.setValueAtTime(1.0, ctx.currentTime);
+
+    if (rampDuration > 0 && initialRate < 1.0) {
+      source.playbackRate.setValueAtTime(initialRate, ct);
+      source.playbackRate.linearRampToValueAtTime(1.0, ct + rampDuration);
+    } else {
+      source.playbackRate.setValueAtTime(1.0, ct);
+    }
+
     source.start(0, offset);
     track.source = source;
     if (!engine.looping) {
       source.onended = () => {
-        if (engine.isPlaying) {
+        if (engine.isPlaying && engine.vinylTransitionState === 'idle') {
           const songPos = getCurrentTime(engine);
           if (songPos >= engine.duration - 0.1) {
             stop(engine);
@@ -546,9 +717,16 @@ export function seek(engine: AudioEngine, time: number): void {
     clearTimeout(engine._rampTimer);
     engine._rampTimer = null;
   }
+  engine.vinylTransitionState = 'idle';
   if (wasPlaying) stopSources(engine);
   const clamped = Math.max(0, Math.min(time, engine.duration));
   engine.pauseOffset = clamped;
+
+  // Restore masterGain if interrupted during fade
+  try {
+    engine.masterGain.gain.cancelScheduledValues(engine.ctx.currentTime);
+    engine.masterGain.gain.setValueAtTime(1.0, engine.ctx.currentTime);
+  } catch {}
 
   // Flush and reset DSP worklet buffer state to eliminate stale audio frames
   if (engine.stretchNode) {
@@ -567,7 +745,7 @@ export function seek(engine: AudioEngine, time: number): void {
     if (ctx.state === 'suspended') ctx.resume();
     engine.startTime = ctx.currentTime - clamped;
     engine.isPlaying = true;
-    startSourcesAtOffset(engine, clamped);
+    startSourcesAtOffset(engine, clamped, 1.0, 0);
   } else {
     engine.isPlaying = false;
   }
@@ -636,7 +814,36 @@ function applyMutesSolos(engine: AudioEngine): void {
 
 export function getCurrentTime(engine: AudioEngine): number {
   if (!engine.isPlaying) return engine.pauseOffset;
-  const songPos = engine.ctx.currentTime - engine.startTime;
+
+  const ct = engine.ctx.currentTime;
+
+  // During vinyl stopping transition: integrate decelerating rate curve
+  if (engine.vinylTransitionState === 'stopping') {
+    const elapsed = Math.min(
+      engine.transitionDuration,
+      Math.max(0, ct - engine.transitionStartTime)
+    );
+    const currentRate = 1.0 - (1.0 - VINYL_STOP_MIN_RATE) * (elapsed / engine.transitionDuration);
+    const progress = ((1.0 + currentRate) / 2) * elapsed;
+    const pos = engine.transitionStartOffset + progress;
+    return Math.min(engine.duration, Math.max(0, pos));
+  }
+
+  // During vinyl starting transition: integrate accelerating rate curve
+  if (engine.vinylTransitionState === 'starting') {
+    const elapsed = Math.min(
+      engine.transitionDuration,
+      Math.max(0, ct - engine.transitionStartTime)
+    );
+    const currentRate =
+      VINYL_START_MIN_RATE + (1.0 - VINYL_START_MIN_RATE) * (elapsed / engine.transitionDuration);
+    const progress = ((VINYL_START_MIN_RATE + currentRate) / 2) * elapsed;
+    const pos = engine.transitionStartOffset + progress;
+    return Math.min(engine.duration, Math.max(0, pos));
+  }
+
+  // Normal playback at exact 1.0000x rate
+  const songPos = ct - engine.startTime;
   if (engine.looping && engine.duration > 0) {
     return songPos % engine.duration;
   }

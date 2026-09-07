@@ -139,6 +139,7 @@ export default function GroovexPlayer() {
 
   const [phase, setPhase] = useState<PlayerPhase>('loading');
   const [isPlaying, setIsPlaying] = useState(false);
+  const [tonearmState, setTonearmState] = useState<'parked' | 'playing' | 'disengaged'>('parked');
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [overallProgress, setOverallProgress] = useState(0);
@@ -251,6 +252,7 @@ export default function GroovexPlayer() {
     setDuration(0);
     setPhase('loading');
     setIsPlaying(false);
+    setTonearmState('parked');
     setOverallProgress(0);
     setCurrentStemLabel('');
     setFailedStems([]);
@@ -472,10 +474,11 @@ export default function GroovexPlayer() {
     } else {
       setDuration(engine.duration);
     }
-    if (engine.isPlaying) {
+    if (engine.isPlaying || engine.vinylTransitionState !== 'idle') {
       rafRef.current = requestAnimationFrame(updateTime);
     } else if (isPlaying) {
       setIsPlaying(false);
+      setTonearmState('parked');
     }
   }, [isPlaying]);
 
@@ -484,12 +487,20 @@ export default function GroovexPlayer() {
     if (!engine) return;
     resumeAudioContext();
     if (isPlaying) {
-      pause(engine);
       setIsPlaying(false);
-      cancelAnimationFrame(rafRef.current);
+      setTonearmState('disengaged');
+      pause(engine, () => {
+        setTonearmState('parked');
+        if (engineRef.current) {
+          setCurrentTime(getCurrentTime(engineRef.current));
+        }
+      });
     } else {
-      play(engine);
       setIsPlaying(true);
+      setTonearmState('playing');
+      play(engine, () => {
+        // Steady operating speed reached
+      });
       rafRef.current = requestAnimationFrame(updateTime);
     }
   }
@@ -499,6 +510,7 @@ export default function GroovexPlayer() {
     if (!engine) return;
     stop(engine);
     setIsPlaying(false);
+    setTonearmState('parked');
     setCurrentTime(0);
     cancelAnimationFrame(rafRef.current);
     mediaSessionCoordinator.stopSession('groovex');
@@ -951,14 +963,19 @@ export default function GroovexPlayer() {
         /* Precision Tonearm Smooth Transition */
         .gx-tonearm-assembly {
           transform-origin: 32px 32px;
-          transition: transform 0.95s cubic-bezier(0.25, 1, 0.35, 1);
+          transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), filter 0.35s ease;
           will-change: transform;
         }
         .gx-tonearm-assembly.playing {
           transform: rotate(24.5deg);
         }
+        .gx-tonearm-assembly.disengaged {
+          transform: rotate(24.5deg) translate(-2px, -3px) scale(1.01);
+          filter: drop-shadow(3px 5px 8px rgba(0, 0, 0, 0.4));
+        }
         .gx-tonearm-assembly.parked {
           transform: rotate(0deg);
+          transition: transform 0.65s cubic-bezier(0.25, 1, 0.35, 1);
         }
 
         /* Animated Live Waveform Frequency Bars */
@@ -1411,7 +1428,7 @@ export default function GroovexPlayer() {
               {/* Tonearm Armature & Headshell */}
               <svg
                 id="tonearm-assembly"
-                className={`gx-tonearm-assembly ${isPlaying ? 'playing' : 'parked'}`}
+                className={`gx-tonearm-assembly ${tonearmState}`}
                 viewBox="0 0 90 190"
                 style={{
                   width: '100%',
