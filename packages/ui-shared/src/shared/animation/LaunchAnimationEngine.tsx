@@ -123,8 +123,8 @@ export function LaunchAnimationEngine({
     };
   }, [stage, loopMode]);
 
-  // Color variables based on theme
-  const bgColor = isAmoled ? '#000000' : isLight ? '#f8f9fa' : '#0a0a0c';
+  // Color variables based on theme - Livex logo background is true AMOLED black (#000000)
+  const bgColor = '#000000';
 
   const logoColor = isLight ? '#0f172a' : '#ffffff';
 
