@@ -98,16 +98,10 @@ export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
     heading: 'Added',
     items: [
-      'Drumex 3-State Exclusive Audio Volume Mode: Introduced a 3-state volume controller (Normal -> Exclusive -> Mute -> Normal) accessible via a compact morphing dock in the bottom navigation area, supporting hardware volume key interception and background audio management.',
-      'Direct BPM Input with Viewport Stability: Native Android soft keyboard integration with clamped [40, 280] range, enterKeyHint="done", and zero layout reflow via adjustNothing window mode.',
-    ],
-  },
-  {
-    heading: 'Fixed',
-    items: [
-      'Chordex Library Android Vertical Touch Scrolling: Resolved vertical scrolling lockout across the entire Chordex Library page on Android. Enclosed LibraryMainView in a canonical flex container and configured its scroll container with hardware-accelerated momentum touch scrolling, overscroll containment, and explicit pan-y touch action.',
-      'Android Motion Transition Containment: Enforced strict flex column layout on StudioPageTransition wrappers in LibraryPanel, preventing block-flow height expansion and ancestor viewport clipping.',
-      'Touch Action Alignment Across Views: Standardized min-h-0, touch-action pan-y, and overscroll-behavior-y contain across CategoryScreenView and LibraryChordDetail, while assigning pan-x pan-y to horizontal carousels to eliminate gesture conflicts.',
+      'Vocalex In-Project Recording Studio: Integrated empty-project recording workspace directly inside TakeDetailView. Creating a new take initializes an empty project with durationMs 0 and opens its detail workspace equipped with a real-time 48-band frequency visualizer, count-in countdown respecting user preferences, active timer, stop action, and live hardware DSP status badges (48kHz Lossless, Noise Filter, Auto Gain).',
+      'Vocalex Take Project Management & Re-recording: Added in-project re-recording support and inline project title renaming with automatic persistence to vocalexRepository.',
+      'Vocalex Take List Ready Badge: Empty takes in the takes list render a dedicated microphone icon and "READY TO RECORD" badge, guiding users directly into recording without zero-duration errors.',
+      'Standalone Vocalex Recorder Section Removed: Streamlined Vocalex top-level navigation to three focused, canonical sections: Coach, Takes, and Preferences. Deprecated and removed all standalone recorder references across navigation registries, search index, session state stores, app dock, and preferences panel.',
     ],
   },
 ];
@@ -119,6 +113,16 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.5.73',
+    date: '2026-09-07',
+    highlights: [
+      'Vocalex In-Project Recording Studio: Integrated empty-project recording workspace directly inside TakeDetailView. Creating a new take initializes an empty project with durationMs 0 and opens its detail workspace equipped with a real-time 48-band frequency visualizer, count-in countdown respecting user preferences, active timer, stop action, and live hardware DSP status badges (48kHz Lossless, Noise Filter, Auto Gain).',
+      'Vocalex Take Project Management & Re-recording: Added in-project re-recording support and inline project title renaming with automatic persistence to vocalexRepository.',
+      'Vocalex Take List Ready Badge: Empty takes in the takes list render a dedicated microphone icon and "READY TO RECORD" badge, guiding users directly into recording without zero-duration errors.',
+      'Standalone Vocalex Recorder Section Removed: Streamlined Vocalex top-level navigation to three focused, canonical sections: Coach, Takes, and Preferences. Deprecated and removed all standalone recorder references across navigation registries, search index, session state stores, app dock, and preferences panel.',
+    ],
+  },
   {
     version: '4.5.72',
     date: '2026-09-06',
@@ -217,18 +221,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'Full Musical Transposition Scale: Supported pitch shifting across -12 to +12 semitones with instantaneous cache retrieval and seamless 25ms crossfade stem hot-swapping during live playback.',
       'Percussion Stem Transposition Immunity: Guaranteed 100% pitch and tempo immunity for all drum and percussion stems (kick, snare, toms, cymbals, hi-hats, percussion), keeping rhythm strictly locked to the hardware audio clock.',
       'Unified Zero-Latency Audio Graph: Eliminated worklet starvation delays, underrun zero-padding, and fractional skip resets by routing all stems directly into the unified master gain with Delta t = 0.000ms.',
-    ],
-  },
-  {
-    version: '4.5.63',
-    date: '2026-09-05',
-    highlights: [
-      'Canonical Chordex Section-Entry Animations: Integrated the canonical Studio motion system (`StudioPageTransition` with `variant="drilldown"`) across all redesigned Chordex views (Library, Category browsing, Chord Detail, Songs list, Song Editor, and Saxophone Practice).',
-      'Dynamic Drilldown Initial Entrance Support: Enhanced `StudioPageTransition` to support conditional initial mount entrance transitions, ensuring sub-views animate smoothly upon appearance while preserving root tab transitions.',
-      'Canonical Studio Header Parity: Replaced all custom, ad-hoc, and static headers across Chordex with canonical `StudioHeader` (in-flow) and `SharedFloatingHeader` (floating glass capsule) components.',
-      'Studio Performance & Architecture Optimization: Consolidated redundant orientation and navigation listeners in Stagex, purged dead module candidate scoring loops in Studio Hub, and eliminated unreferenced redesign imports across Chordex and Vocalex.',
-      'Drumex Pattern Library Layout Unification: Unified desktop and mobile pattern browsing under the canonical `DrumPatternsPanel`, removing over 700 lines of duplicate code and reducing bundle overhead.',
-      'Groovex Store Selector Memoization: Converted broad store subscriptions in Groovex Preferences to fine-grained atomic Zustand selectors, isolating preference views from unrelated playback state mutations.',
     ],
   },
 ];

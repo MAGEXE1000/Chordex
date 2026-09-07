@@ -1,14 +1,13 @@
-# Version 4.5.72
+# Version 4.5.73
 
-Release Date: 2026-09-06
+Release Date: 2026-09-07
 
 ### Added
 
-- Drumex 3-State Exclusive Audio Volume Mode: Introduced a 3-state volume controller (Normal -> Exclusive -> Mute -> Normal) accessible via a compact morphing dock in the bottom navigation area, supporting hardware volume key interception and background audio management.
-- Direct BPM Input with Viewport Stability: Native Android soft keyboard integration with clamped [40, 280] range, enterKeyHint="done", and zero layout reflow via adjustNothing window mode.
+- Vocalex In-Project Recording Studio: Integrated empty-project recording workspace directly inside TakeDetailView. Creating a new take initializes an empty project with durationMs 0 and opens its detail workspace equipped with a real-time 48-band frequency visualizer, count-in countdown respecting user preferences, active timer, stop action, and live hardware DSP status badges (48kHz Lossless, Noise Filter, Auto Gain).
+- Vocalex Take Project Management & Re-recording: Added in-project re-recording support and inline project title renaming with automatic persistence to vocalexRepository.
+- Vocalex Take List Ready Badge: Empty takes in the takes list render a dedicated microphone icon and "READY TO RECORD" badge, guiding users directly into recording without zero-duration errors.
 
-### Fixed & Improved
+### Removed & Streamlined
 
-- Chordex Library Android Vertical Touch Scrolling: Resolved vertical scrolling lockout across the entire Chordex Library page on Android. Enclosed LibraryMainView in a canonical flex container and configured its scroll container with hardware-accelerated momentum touch scrolling, overscroll containment, and explicit pan-y touch action.
-- Android Motion Transition Containment: Enforced strict flex column layout on StudioPageTransition wrappers in LibraryPanel, preventing block-flow height expansion and ancestor viewport clipping.
-- Touch Action Alignment Across Views: Standardized min-h-0, touch-action pan-y, and overscroll-behavior-y contain across CategoryScreenView and LibraryChordDetail, while assigning pan-x pan-y to horizontal carousels to eliminate gesture conflicts.
+- Standalone Vocalex Recorder Section Removed: Streamlined Vocalex top-level navigation to three focused, canonical sections: Coach, Takes, and Preferences. Deprecated and removed all standalone recorder references across navigation registries, search index, session state stores, app dock, and preferences panel.
