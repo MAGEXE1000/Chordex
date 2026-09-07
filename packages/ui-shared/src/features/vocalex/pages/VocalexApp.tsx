@@ -25,16 +25,13 @@ const CoachPanelLazy = lazy(() =>
 const TakesPanelLazy = lazy(() =>
   import('../components/TakesPanel').then((m) => ({ default: m.default || m }))
 );
-const RecordingViewLazy = lazy(() =>
-  import('../components/RecordingView').then((m) => ({ default: m.default || m }))
-);
 const PreferencesPanelLazy = lazy(() =>
   import('../components/VocalexPreferencesPanel').then((m) => ({ default: m.default || m }))
 );
 
-type VocalexPanel = 'coach' | 'recorder' | 'takes' | 'preferences';
+type VocalexPanel = 'coach' | 'takes' | 'preferences';
 
-const NAV_ORDER: VocalexPanel[] = ['coach', 'recorder', 'takes', 'preferences'];
+const NAV_ORDER: VocalexPanel[] = ['coach', 'takes', 'preferences'];
 
 export default function VocalexApp() {
   const isWebDesktop = useIsWebDesktop();
@@ -59,12 +56,10 @@ export default function VocalexApp() {
     const s = useSettingsStore.getState();
     if (!s.settings.restoreLastSession) {
       const def = s.settings.defaultVocalexTab as any;
-      return def === 'practice' || def === 'vocalLab' || def === 'pitch' ? 'coach' : def || 'coach';
+      return def === 'takes' || def === 'preferences' ? def : 'coach';
     }
     const saved = useSessionStore.getState().lastSession?.vocalexTab as any;
-    return saved === 'coach' || saved === 'recorder' || saved === 'takes' || saved === 'preferences'
-      ? (saved as VocalexPanel)
-      : 'coach';
+    return saved === 'takes' || saved === 'preferences' ? (saved as VocalexPanel) : 'coach';
   })();
   const activeTab = useNavigationStore((s) => {
     const last = s.history[s.history.length - 1];
@@ -78,11 +73,6 @@ export default function VocalexApp() {
     useSessionStore.getState().setLastSession({ vocalexTab: activeTab });
     resetNav();
   }, [activeTab]);
-
-  const handleRecordingComplete = async (take: any) => {
-    await vocalexRepository.saveTake(take);
-    NavigationDispatcher.push({ app: 'vocalex', page: 'takes', subView: 'detail', id: take.id });
-  };
 
   const appKey = 'vocalex' as AppKey;
   const activeVis = settings.perApp?.[appKey] ?? {
@@ -126,18 +116,15 @@ export default function VocalexApp() {
   }, []);
 
   const pitchScrollRef = useRef<HTMLDivElement | null>(null);
-  const recorderScrollRef = useRef<HTMLDivElement | null>(null);
   const takesScrollRef = useRef<HTMLDivElement | null>(null);
   const preferencesScrollRef = useRef<HTMLDivElement | null>(null);
 
   const activeScrollRef =
     activeTab === 'coach'
       ? pitchScrollRef
-      : activeTab === 'recorder'
-        ? recorderScrollRef
-        : activeTab === 'takes'
-          ? takesScrollRef
-          : preferencesScrollRef;
+      : activeTab === 'takes'
+        ? takesScrollRef
+        : preferencesScrollRef;
 
   useScrollHide(activeScrollRef, activeTab);
 
@@ -201,11 +188,9 @@ export default function VocalexApp() {
               const scrollRef =
                 viewId === 'coach'
                   ? pitchScrollRef
-                  : viewId === 'recorder'
-                    ? recorderScrollRef
-                    : viewId === 'takes'
-                      ? takesScrollRef
-                      : preferencesScrollRef;
+                  : viewId === 'takes'
+                    ? takesScrollRef
+                    : preferencesScrollRef;
               return (
                 <div
                   ref={scrollRef}
@@ -221,16 +206,6 @@ export default function VocalexApp() {
                   {viewId === 'coach' && (
                     <Suspense fallback={null}>
                       <CoachPanelLazy active={activeTab === 'coach'} />
-                    </Suspense>
-                  )}
-                  {viewId === 'recorder' && (
-                    <Suspense fallback={null}>
-                      <RecordingViewLazy
-                        onComplete={handleRecordingComplete}
-                        onCancel={() =>
-                          NavigationDispatcher.push({ app: 'vocalex', page: 'takes' })
-                        }
-                      />
                     </Suspense>
                   )}
                   {viewId === 'takes' && (

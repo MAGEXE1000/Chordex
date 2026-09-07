@@ -22,7 +22,6 @@ export const APP_SECTIONS: Record<string, AppSection[]> = {
   ],
   vocalex: [
     { id: 'coach', labelKey: 'vocalexCoach', icon: 'graduation-cap' },
-    { id: 'recorder', labelKey: 'vocalexRecorder', icon: 'mic' },
     { id: 'takes', labelKey: 'vocalexTakes', icon: 'clap' },
     { id: 'preferences', labelKey: 'vocalexPreferences', icon: 'sliders-horizontal' },
   ],

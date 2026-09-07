@@ -109,7 +109,6 @@ export function BottomNavigationController() {
         return nav.groovexRhythms || 'Rhythms';
       if (key === 'groovexPreferences') return nav.groovexPreferences || 'Preferences';
       if (key === 'vocalexCoach') return nav.vocalexCoach || 'Coach';
-      if (key === 'vocalexRecorder') return nav.vocalexRecorder || 'Recorder';
       if (key === 'vocalexTakes') return nav.vocalexTakes || 'Takes';
       if (key === 'vocalexPreferences') return nav.vocalexPreferences || 'Preferences';
       if (key === 'stagexStage') return nav.stagexStage || 'Stage';

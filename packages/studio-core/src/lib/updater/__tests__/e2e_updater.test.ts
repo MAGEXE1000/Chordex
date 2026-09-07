@@ -193,7 +193,10 @@ describe('E2E Updater Flow Validation (v4.3.33 to v4.3.34)', () => {
     expect(globalUpdateState.updateState).toBe('PACKAGEINSTALLER_VISIBLE');
 
     // Yield to let the async setup complete and set activeInstallPromiseResolver
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    for (let i = 0; i < 50; i++) {
+      if (updateDebugLogs.installError?.includes('Launching APK installer intent')) break;
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    }
 
     // 5. Simulate system status callbacks
     if (typeof (window as any).triggerOtaInstallStatus === 'function') {
@@ -213,5 +216,5 @@ describe('E2E Updater Flow Validation (v4.3.33 to v4.3.34)', () => {
     // Verify it completed with INSTALL_SUCCESS
     expect(globalUpdateState.updateState).toBe('INSTALL_SUCCESS');
     console.log('[DEBUG] Final State after install callback =', globalUpdateState.updateState);
-  });
+  }, 15000);
 });

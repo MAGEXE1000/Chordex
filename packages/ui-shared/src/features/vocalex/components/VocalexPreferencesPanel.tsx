@@ -167,7 +167,7 @@ export default function VocalexPreferencesPanel() {
                 : 'Choose which screen activates when Vocalex launches.')
             }
           >
-            <SegmentedControl<'coach' | 'recorder' | 'takes' | 'preferences'>
+            <SegmentedControl<'coach' | 'takes' | 'preferences'>
               value={startTab}
               onChange={(val) =>
                 useSettingsStore.getState().updateSettings({ defaultVocalexTab: val })
@@ -177,11 +177,6 @@ export default function VocalexPreferencesPanel() {
               layoutId="vocalex-start-tab"
               options={[
                 { value: 'coach', label: vt.navCoach || 'Coach', testId: 'vocalex-start-coach' },
-                {
-                  value: 'recorder',
-                  label: vt.navRecorder || 'Recorder',
-                  testId: 'vocalex-start-recorder',
-                },
                 { value: 'takes', label: vt.tabTakes || 'Takes', testId: 'vocalex-start-takes' },
                 {
                   value: 'preferences',

@@ -117,7 +117,7 @@ class CentralizedSearchIndex {
       subtitleEs: 'Graba sesiones vocales y rastrea el historial de tono',
       keywordsEn: ['record', 'voice', 'recorder', 'mic', 'vocalex'],
       keywordsEs: ['grabar', 'voz', 'grabadora', 'micro', 'vocalex'],
-      target: { app: 'vocalex', page: 'recorder' },
+      target: { app: 'vocalex', page: 'takes' },
     });
     this.register({
       id: 'vocalex-takes',
@@ -292,7 +292,7 @@ class CentralizedSearchIndex {
               app: 'chordex',
               tab: 'songs',
               page: 'practice',
-              params: { songId: song.id }
+              params: { songId: song.id },
             } as any);
           },
         },

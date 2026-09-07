@@ -50,7 +50,7 @@ export interface AppSettings {
   defaultTab: ActivePanel;
   defaultDrumTab: 'metronome' | 'songs' | 'beats' | 'patterns' | 'prefs';
   defaultStageView: 'Editor' | 'Setup' | 'Preferences';
-  defaultVocalexTab?: 'coach' | 'recorder' | 'takes' | 'preferences';
+  defaultVocalexTab?: 'coach' | 'takes' | 'preferences';
   vocalexReferencePitch?: number;
   vocalexTolerance?: number;
   vocalexNoteNaming?: 'standard' | 'solfege';

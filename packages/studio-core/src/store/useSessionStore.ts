@@ -5,7 +5,7 @@ import type { AppKey } from './useSettingsStore';
 export interface SessionState {
   lastSession: {
     app?: AppKey;
-    vocalexTab?: 'coach' | 'recorder' | 'takes' | 'preferences';
+    vocalexTab?: 'coach' | 'takes' | 'preferences';
     stagexView?: string;
     drumexTab?: 'metronome' | 'songs' | 'patterns' | 'prefs';
     groovexView?: 'library' | 'player' | 'preferences';

@@ -15,7 +15,6 @@ import { clearTakeCache } from '../services/harmonyEngine';
 import { Button } from '../../../shared/design-system/StudioDesignSystem';
 import { StudioHeader } from '../../../shared/layout/StudioHeader';
 
-import RecordingView from './RecordingView';
 import TakeDetailView from './TakeDetailView';
 
 function formatDuration(ms: number): string {
@@ -44,7 +43,7 @@ function formatDateI18n(
   return d.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
-type ViewState = { mode: 'list' } | { mode: 'recording' } | { mode: 'detail'; takeId: string };
+type ViewState = { mode: 'list' } | { mode: 'detail'; takeId: string };
 
 const ANIM_CSS = `
 @keyframes tp-fade-up {
@@ -99,9 +98,6 @@ export default function TakesPanel() {
 
   const view = useMemo<ViewState>(() => {
     if (currentRoute.app === 'vocalex' && currentRoute.page === 'takes') {
-      if (currentRoute.subView === 'recording') {
-        return { mode: 'recording' };
-      }
       if (currentRoute.subView === 'detail' && currentRoute.id) {
         return { mode: 'detail', takeId: currentRoute.id };
       }
@@ -190,14 +186,26 @@ export default function TakesPanel() {
     }
   }, []);
 
-  const handleRecordingComplete = useCallback(
-    async (take: TakeRecord) => {
-      await vocalexRepository.saveTake(take);
-      await loadTakes();
-      NavigationDispatcher.push({ app: 'vocalex', page: 'takes', subView: 'detail', id: take.id });
-    },
-    [loadTakes]
-  );
+  const handleCreateNewProject = useCallback(async () => {
+    const isEs = (language ?? 'en') === 'es';
+    const newProject: TakeRecord = {
+      id: `take-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      name: isEs ? `Proyecto ${takes.length + 1}` : `Project ${takes.length + 1}`,
+      createdAt: Date.now(),
+      durationMs: 0,
+      audioBlob: new Blob([], { type: 'audio/webm' }),
+      waveformPeaks: [],
+      sampleRate: 48000,
+    };
+    await vocalexRepository.saveTake(newProject);
+    await loadTakes();
+    NavigationDispatcher.push({
+      app: 'vocalex',
+      page: 'takes',
+      subView: 'detail',
+      id: newProject.id,
+    });
+  }, [language, takes.length, loadTakes]);
 
   const handleDelete = useCallback(
     async (id: string) => {
@@ -235,15 +243,6 @@ export default function TakesPanel() {
     [stopPlayback]
   );
 
-  if (view.mode === 'recording') {
-    return (
-      <RecordingView
-        onComplete={handleRecordingComplete}
-        onCancel={() => NavigationDispatcher.pop()}
-      />
-    );
-  }
-
   if (view.mode === 'detail') {
     const take = takes.find((t) => t.id === view.takeId);
     if (!take) {
@@ -259,6 +258,10 @@ export default function TakesPanel() {
         onBack={() => NavigationDispatcher.pop()}
         onDelete={handleDelete}
         onSaveBounce={handleSaveBounce}
+        onUpdateTake={async (updatedTake) => {
+          await vocalexRepository.saveTake(updatedTake);
+          await loadTakes();
+        }}
       />
     );
   }
@@ -351,7 +354,7 @@ export default function TakesPanel() {
           {/* Primary Action: New Take Button */}
           <Button
             variant="primary"
-            onClick={() => NavigationDispatcher.push({ app: 'vocalex', page: 'recorder' })}
+            onClick={handleCreateNewProject}
             style={{
               background: 'var(--studio-accent, #007aff)',
               color: '#ffffff',
@@ -481,6 +484,29 @@ export default function TakesPanel() {
               >
                 {t.vocalex.noTakesHint}
               </p>
+
+              <Button
+                variant="primary"
+                onClick={handleCreateNewProject}
+                style={{
+                  marginTop: 18,
+                  background: 'var(--studio-accent, #007aff)',
+                  color: '#ffffff',
+                  borderRadius: 14,
+                  padding: '9px 18px',
+                  fontWeight: 700,
+                  fontSize: 13,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  boxShadow: '0 4px 14px 0 rgba(0, 122, 255, 0.25)',
+                  border: 'none',
+                  cursor: 'pointer',
+                }}
+                icon="mic"
+              >
+                {t.vocalex.newTake}
+              </Button>
 
               {/* Lossless & Pitch Badges */}
               <div
@@ -786,39 +812,74 @@ function TakeListItem({
         animation: `tp-fade-up 350ms cubic-bezier(0.22,1,0.36,1) ${index * 35}ms both`,
       }}
     >
-      {/* Play / Pause Touch Button */}
-      <button
-        type="button"
-        aria-label={isPlaying ? 'Pause take' : 'Play take'}
-        onClick={onTogglePlay}
-        style={{
-          width: 40,
-          height: 40,
-          borderRadius: '50%',
-          background: isPlaying
-            ? 'var(--studio-accent, #007aff)'
-            : 'rgba(var(--studio-accent-rgb, 0,122,255), 0.10)',
-          color: isPlaying ? '#ffffff' : 'var(--studio-accent, #007aff)',
-          border: 'none',
-          cursor: 'pointer',
-          flexShrink: 0,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          transition: 'all 150ms ease',
-        }}
-      >
-        <span
-          className="material-symbols-outlined"
+      {/* Play / Record Touch Button */}
+      {take.durationMs === 0 ? (
+        <button
+          type="button"
+          aria-label={t.vocalex.newTake || 'Record'}
+          onClick={(e) => {
+            e.stopPropagation();
+            onOpen();
+          }}
           style={{
-            fontSize: 22,
-            fontVariationSettings: "'FILL' 1",
-            marginLeft: isPlaying ? 0 : 2,
+            width: 40,
+            height: 40,
+            borderRadius: '50%',
+            background: 'rgba(var(--studio-accent-rgb, 0,122,255), 0.12)',
+            color: 'var(--studio-accent, #007aff)',
+            border: 'none',
+            cursor: 'pointer',
+            flexShrink: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: 'all 150ms ease',
           }}
         >
-          {isPlaying ? 'pause' : 'play_arrow'}
-        </span>
-      </button>
+          <span
+            className="material-symbols-outlined"
+            style={{
+              fontSize: 20,
+              fontVariationSettings: "'FILL' 1",
+            }}
+          >
+            mic
+          </span>
+        </button>
+      ) : (
+        <button
+          type="button"
+          aria-label={isPlaying ? 'Pause take' : 'Play take'}
+          onClick={onTogglePlay}
+          style={{
+            width: 40,
+            height: 40,
+            borderRadius: '50%',
+            background: isPlaying
+              ? 'var(--studio-accent, #007aff)'
+              : 'rgba(var(--studio-accent-rgb, 0,122,255), 0.10)',
+            color: isPlaying ? '#ffffff' : 'var(--studio-accent, #007aff)',
+            border: 'none',
+            cursor: 'pointer',
+            flexShrink: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: 'all 150ms ease',
+          }}
+        >
+          <span
+            className="material-symbols-outlined"
+            style={{
+              fontSize: 22,
+              fontVariationSettings: "'FILL' 1",
+              marginLeft: isPlaying ? 0 : 2,
+            }}
+          >
+            {isPlaying ? 'pause' : 'play_arrow'}
+          </span>
+        </button>
+      )}
 
       {/* Take Titles & Metadata */}
       <div style={{ flex: 1, minWidth: 0 }}>
@@ -857,9 +918,26 @@ function TakeListItem({
               opacity: 0.5,
             }}
           />
-          <span style={{ fontFamily: 'var(--studio-font-mono)', fontWeight: 600 }}>
-            {formatDuration(take.durationMs)}
-          </span>
+          {take.durationMs === 0 ? (
+            <span
+              style={{
+                fontFamily: 'var(--studio-font-mono)',
+                fontSize: 10,
+                fontWeight: 700,
+                color: 'var(--studio-accent, #007aff)',
+                background: 'rgba(var(--studio-accent-rgb, 0,122,255), 0.12)',
+                padding: '2px 6px',
+                borderRadius: 6,
+                letterSpacing: '0.04em',
+              }}
+            >
+              READY TO RECORD
+            </span>
+          ) : (
+            <span style={{ fontFamily: 'var(--studio-font-mono)', fontWeight: 600 }}>
+              {formatDuration(take.durationMs)}
+            </span>
+          )}
           {take.sampleRate ? (
             <>
               <span
@@ -894,31 +972,33 @@ function TakeListItem({
         style={{ display: 'flex', alignItems: 'center', gap: 2, flexShrink: 0 }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Export .wav */}
-        <button
-          type="button"
-          aria-label="Export take"
-          onClick={onExport}
-          style={{
-            width: 32,
-            height: 32,
-            borderRadius: 8,
-            background: 'transparent',
-            border: 'none',
-            color: 'var(--c-text-secondary)',
-            opacity: 0.7,
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            transition: 'opacity 150ms ease',
-          }}
-          title="Export audio (.wav)"
-        >
-          <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
-            download
-          </span>
-        </button>
+        {/* Export .wav (only if recorded) */}
+        {take.durationMs > 0 && (
+          <button
+            type="button"
+            aria-label="Export take"
+            onClick={onExport}
+            style={{
+              width: 32,
+              height: 32,
+              borderRadius: 8,
+              background: 'transparent',
+              border: 'none',
+              color: 'var(--c-text-secondary)',
+              opacity: 0.7,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'opacity 150ms ease',
+            }}
+            title="Export audio (.wav)"
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+              download
+            </span>
+          </button>
+        )}
 
         {/* Delete */}
         <button

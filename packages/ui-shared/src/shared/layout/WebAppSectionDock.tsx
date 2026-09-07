@@ -230,8 +230,6 @@ export default function WebAppSectionDock({
 
       case 'vocalexCoach':
         return vt.navCoach || 'Coach';
-      case 'vocalexRecorder':
-        return vt.navRecorder || 'Recorder';
       case 'vocalexTakes':
         return vt.navTakes || 'Takes';
       case 'vocalexPreferences':
