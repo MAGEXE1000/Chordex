@@ -199,9 +199,13 @@ async function getShiftedBuffer(
   return shifted;
 }
 
-/** Clear the cache for a take (call on delete). */
-export function clearTakeCache(takeId: string) {
-  cache.delete(takeId);
+/** Clear the cache for a take, or all takes if no ID is provided. */
+export function clearTakeCache(takeId?: string) {
+  if (takeId) {
+    cache.delete(takeId);
+  } else {
+    cache.clear();
+  }
 }
 
 // ── Playback session ────────────────────────────────────────────────────────

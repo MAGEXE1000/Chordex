@@ -18,11 +18,6 @@ import { useState, useRef, useEffect, lazy, Suspense } from 'react';
 import { SharedNavigationContainer } from '../../../navigation/SharedNavigationContainer';
 
 import WebAppSectionDock from '../../../shared/layout/WebAppSectionDock';
-import { Card } from '../../../shared/design-system/StudioDesignSystem';
-import { StudioHeader } from '../../../shared/layout/StudioHeader';
-import { AnimatedNavigationIcon } from '../../hub/navigation/AnimatedNavigationIcon';
-
-import { IconSettings } from '../../hub/icons/NavIcons';
 
 const CoachPanelLazy = lazy(() =>
   import('../components/CoachPanel').then((m) => ({ default: m.default || m }))
@@ -32,6 +27,9 @@ const TakesPanelLazy = lazy(() =>
 );
 const RecordingViewLazy = lazy(() =>
   import('../components/RecordingView').then((m) => ({ default: m.default || m }))
+);
+const PreferencesPanelLazy = lazy(() =>
+  import('../components/VocalexPreferencesPanel').then((m) => ({ default: m.default || m }))
 );
 
 type VocalexPanel = 'coach' | 'recorder' | 'takes' | 'preferences';
@@ -240,131 +238,17 @@ export default function VocalexApp() {
                       <TakesPanelLazy />
                     </Suspense>
                   )}
-                  {viewId === 'preferences' && <VocalexPreferences />}
+                  {viewId === 'preferences' && (
+                    <Suspense fallback={null}>
+                      <PreferencesPanelLazy />
+                    </Suspense>
+                  )}
                 </div>
               );
             }}
           </SharedNavigationContainer>
         </div>
       </div>
-    </div>
-  );
-}
-
-function VocalexPreferences() {
-  const settings = useSettingsStore(useShallow((s) => s.settings));
-
-  const t = useT();
-  const vt = t.vocalex as any;
-  const activeVis = settings.perApp?.vocalex ?? { theme: 'dark', amoledMode: false };
-  const acc = resolveAccent(settings.accentColor);
-  const isLight =
-    activeVis.theme === 'light' ||
-    (activeVis.theme === 'system' &&
-      typeof window !== 'undefined' &&
-      window.matchMedia('(prefers-color-scheme: light)').matches);
-
-  const cur = settings.defaultVocalexTab ?? 'coach';
-  const tabs = [
-    { value: 'coach' as const, label: 'Coach', iconName: 'graduation-cap' },
-    { value: 'recorder' as const, label: 'Recorder', iconName: 'mic' },
-    { value: 'takes' as const, label: 'Takes', iconName: 'clap' },
-    { value: 'preferences' as const, label: 'Preferences', iconName: 'sliders-horizontal' },
-  ];
-
-  return (
-    <div
-      style={{
-        padding: '0 var(--page-header-inset-h, var(--page-inset-h, 24px))',
-        minHeight: '100%',
-      }}
-    >
-      <StudioHeader
-        title={vt.settingsTitle || 'Preferences'}
-        subtitle="Configure default behaviors for Vocalex."
-        disableHorizontalPadding={true}
-      />
-
-      <Card
-        style={{
-          padding: '16px 20px',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 12,
-        }}
-      >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div>
-            <h3
-              style={{
-                margin: 0,
-                fontSize: 'var(--type-body-size, 14.5px)',
-                lineHeight: 'var(--type-body-lh, 18px)',
-                fontWeight: 600,
-                fontFamily:
-                  'var(--type-title-font, var(--studio-font-display, "Inter Tight", sans-serif))',
-                letterSpacing: '-0.2px',
-                color: 'var(--c-text-primary, var(--text))',
-              }}
-            >
-              Start On
-            </h3>
-            <p
-              style={{
-                margin: '4px 0 0',
-                fontSize: 'var(--type-meta-size, 12px)',
-                lineHeight: 'var(--type-meta-lh, 16px)',
-                letterSpacing: 'var(--type-meta-tracking, 0.2px)',
-                color: 'var(--c-text-secondary, var(--muted))',
-                fontFamily: 'var(--type-meta-font, var(--studio-font-body, "Inter", sans-serif))',
-              }}
-            >
-              Choose which screen opens when you launch Vocalex.
-            </p>
-          </div>
-          <div style={{ display: 'flex', gap: '6px' }}>
-            {tabs.map(({ value, label, iconName }) => {
-              const active = cur === value;
-              return (
-                <button
-                  key={value}
-                  onClick={() =>
-                    useSettingsStore.getState().updateSettings({ defaultVocalexTab: value })
-                  }
-                  title={label}
-                  className="btn-smooth touch-target-44"
-                  style={{
-                    width: 'var(--btn-size-md, 42px)',
-                    height: 'var(--btn-size-md, 42px)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    borderRadius: 'var(--radius-compact, 12px)',
-                    border: active
-                      ? `2px solid ${acc.from}`
-                      : '1px solid var(--track, var(--c-border))',
-                    background: active
-                      ? `linear-gradient(135deg, ${acc.from}22, ${acc.to}18)`
-                      : 'var(--app-surface-low)',
-                    color: active ? acc.from : 'var(--c-text-secondary, var(--muted))',
-                    cursor: 'pointer',
-                    transition: 'all 150ms ease',
-                    flexShrink: 0,
-                  }}
-                >
-                  <AnimatedNavigationIcon
-                    itemKey={value}
-                    iconName={iconName}
-                    size={20}
-                    isActive={active}
-                    color={active ? acc.from : 'var(--c-text-secondary)'}
-                  />
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      </Card>
     </div>
   );
 }

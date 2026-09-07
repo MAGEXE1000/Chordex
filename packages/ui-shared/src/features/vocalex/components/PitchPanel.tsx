@@ -6,21 +6,36 @@ import { detectPitch, type PitchResult } from '../services/pitchYin';
 
 const HISTORY_LEN = 24;
 const SMOOTHING = 0.3;
+const SOLFEGE_NAMES = [
+  'Do',
+  'Do#',
+  'Re',
+  'Re#',
+  'Mi',
+  'Fa',
+  'Fa#',
+  'Sol',
+  'Sol#',
+  'La',
+  'La#',
+  'Si',
+];
 
-function centsToColor(cents: number): string {
+function centsToColor(cents: number, tolerance: number = 5): string {
   const abs = Math.abs(cents);
-  if (abs <= 5) return '#10b981';
-  if (abs <= 15) return '#f59e0b';
+  if (abs <= tolerance) return '#10b981';
+  if (abs <= tolerance * 2.5) return '#f59e0b';
   return '#ef4444';
 }
 
 function centsToLabel(
   cents: number,
-  labels: { inTune?: string; close?: string; offKey?: string }
+  labels: { inTune?: string; close?: string; offKey?: string },
+  tolerance: number = 5
 ): string {
   const abs = Math.abs(cents);
-  if (abs <= 5) return labels.inTune || 'IN TUNE';
-  if (abs <= 15) return labels.close || 'CLOSE';
+  if (abs <= tolerance) return labels.inTune || 'IN TUNE';
+  if (abs <= tolerance * 2.5) return labels.close || 'CLOSE';
   return labels.offKey || 'OFF KEY';
 }
 
@@ -53,6 +68,9 @@ export default function PitchPanel({ active: panelActive = true }: { active?: bo
   const startingRef = useRef<boolean>(false);
   const wasListeningBeforeBackground = useRef<boolean>(false);
 
+  const settingsRef = useRef(settings);
+  settingsRef.current = settings;
+
   const detectLoop = useCallback(() => {
     const analyser = analyserRef.current;
     const ctx = audioCtxRef.current;
@@ -73,19 +91,26 @@ export default function PitchPanel({ active: panelActive = true }: { active?: bo
       return;
     }
 
-    const raw = detectPitch(buf, ctx.sampleRate, 0.8);
+    const s = settingsRef.current;
+    const sensitivity = s.vocalexSensitivity ?? 'normal';
+    const smoothing = sensitivity === 'smooth' ? 0.15 : sensitivity === 'fast' ? 0.55 : 0.3;
+    const clarityThresh = sensitivity === 'smooth' ? 0.85 : sensitivity === 'fast' ? 0.7 : 0.8;
+    const refPitch = s.vocalexReferencePitch ?? 440;
+
+    const raw = detectPitch(buf, ctx.sampleRate, clarityThresh);
     if (raw) {
       if (smoothedFreqRef.current === 0) {
         smoothedFreqRef.current = raw.frequency;
       } else {
         smoothedFreqRef.current =
-          SMOOTHING * raw.frequency + (1 - SMOOTHING) * smoothedFreqRef.current;
+          smoothing * raw.frequency + (1 - smoothing) * smoothedFreqRef.current;
       }
       const smoothed = { ...raw };
       smoothed.frequency = smoothedFreqRef.current;
-      const midiNote = 12 * Math.log2(smoothed.frequency / 440) + 69;
+      const midiNote = 12 * Math.log2(smoothed.frequency / refPitch) + 69;
       const roundedMidi = Math.round(midiNote);
       smoothed.cents = (midiNote - roundedMidi) * 100;
+      smoothed.midiNote = roundedMidi;
 
       setResult(smoothed);
       setHistory((prev) => {
@@ -119,10 +144,12 @@ export default function PitchPanel({ active: panelActive = true }: { active?: bo
       if (!navigator.mediaDevices?.getUserMedia) {
         throw new Error('Microphone API is not supported in this browser context.');
       }
+      const noiseSuppression = settingsRef.current.vocalexNoiseSuppression ?? false;
+      const autoGainControl = settingsRef.current.vocalexAutoGainControl ?? false;
       let stream: MediaStream;
       try {
         stream = await navigator.mediaDevices.getUserMedia({
-          audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
+          audio: { echoCancellation: false, noiseSuppression, autoGainControl },
         });
       } catch (constraintsErr) {
         console.debug(
@@ -225,16 +252,28 @@ export default function PitchPanel({ active: panelActive = true }: { active?: bo
     smoothedFreqRef.current = 0;
   };
 
+  const tolerance = settings.vocalexTolerance ?? 5;
+  const noteNaming = settings.vocalexNoteNaming ?? 'standard';
+
   const active = listening && result !== null;
   const needleRot = centsToNeedleRotation(active ? result!.cents : 0);
   const statusColor = active
-    ? centsToColor(result!.cents)
+    ? centsToColor(result!.cents, tolerance)
     : listening
       ? accent.from
       : isLight
         ? 'rgba(0,0,0,0.2)'
         : 'rgba(255,255,255,0.2)';
-  const statusLabel = active ? centsToLabel(result!.cents, t.vocalex) : '';
+  const statusLabel = active ? centsToLabel(result!.cents, t.vocalex, tolerance) : '';
+
+  const displayNoteName = (() => {
+    if (!active || !result) return '—';
+    if (noteNaming === 'solfege') {
+      const idx = ((result.midiNote % 12) + 12) % 12;
+      return SOLFEGE_NAMES[idx] || result.noteName;
+    }
+    return result.noteName;
+  })();
 
   const vt = t.vocalex as any;
 
@@ -357,7 +396,9 @@ export default function PitchPanel({ active: panelActive = true }: { active?: bo
                 fontSize: 12,
                 fontWeight: 800,
                 color:
-                  active && Math.abs(result!.cents) <= 5 ? '#10B981' : 'var(--c-text-secondary)',
+                  active && Math.abs(result!.cents) <= tolerance
+                    ? '#10B981'
+                    : 'var(--c-text-secondary)',
                 transform: 'translateY(-2px)',
                 transition: 'color 150ms ease',
               }}
@@ -453,7 +494,7 @@ export default function PitchPanel({ active: panelActive = true }: { active?: bo
                   transition: 'color 180ms ease, opacity 180ms ease',
                 }}
               >
-                {active ? result!.noteName : '—'}
+                {displayNoteName}
               </span>
               {active && (
                 <span
@@ -733,7 +774,7 @@ export default function PitchPanel({ active: panelActive = true }: { active?: bo
               if (entry) {
                 const absCents = Math.abs(entry.cents);
                 barH = Math.max(12, Math.min(100, (1 - absCents / 50) * 100));
-                barBg = absCents <= 5 ? '#10B981' : absCents <= 15 ? '#f59e0b' : '#ef4444';
+                barBg = centsToColor(entry.cents, tolerance);
               }
 
               return (

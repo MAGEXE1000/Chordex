@@ -51,6 +51,13 @@ export interface AppSettings {
   defaultDrumTab: 'metronome' | 'songs' | 'beats' | 'patterns' | 'prefs';
   defaultStageView: 'Editor' | 'Setup' | 'Preferences';
   defaultVocalexTab?: 'coach' | 'recorder' | 'takes' | 'preferences';
+  vocalexReferencePitch?: number;
+  vocalexTolerance?: number;
+  vocalexNoteNaming?: 'standard' | 'solfege';
+  vocalexSensitivity?: 'smooth' | 'normal' | 'fast';
+  vocalexNoiseSuppression?: boolean;
+  vocalexAutoGainControl?: boolean;
+  vocalexCountIn?: number;
   defaultGroovexView?: 'library' | 'preferences';
   startupApp: AppKey;
   hubUserName: string;
@@ -135,6 +142,13 @@ const DEFAULT_SETTINGS: AppSettings = {
   defaultDrumTab: 'songs',
   defaultStageView: 'Editor',
   defaultVocalexTab: 'coach',
+  vocalexReferencePitch: 440,
+  vocalexTolerance: 5,
+  vocalexNoteNaming: 'standard',
+  vocalexSensitivity: 'normal',
+  vocalexNoiseSuppression: false,
+  vocalexAutoGainControl: false,
+  vocalexCountIn: 3,
   defaultGroovexView: 'library',
   startupApp: 'hub',
   hubUserName: '',

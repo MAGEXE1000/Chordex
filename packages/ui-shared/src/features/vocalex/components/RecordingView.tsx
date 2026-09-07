@@ -4,6 +4,7 @@ import {
   createAudioContext,
   NavigationDispatcher,
   useBackHandler,
+  useSettingsStore,
 } from '@workspace/studio-core';
 import {
   blobToAudioBuffer,
@@ -102,13 +103,17 @@ export default function RecordingView({
     if (!navigator.mediaDevices?.getUserMedia) {
       throw new Error('Microphone API is not supported in this browser context.');
     }
+    const s = useSettingsStore.getState().settings;
+    const noiseSuppression = s.vocalexNoiseSuppression ?? false;
+    const autoGainControl = s.vocalexAutoGainControl ?? false;
+
     let stream: MediaStream;
     try {
       stream = await navigator.mediaDevices.getUserMedia({
         audio: {
           echoCancellation: false,
-          noiseSuppression: false,
-          autoGainControl: false,
+          noiseSuppression,
+          autoGainControl,
           sampleRate: { ideal: 48000 },
           channelCount: { ideal: 1 },
         },
@@ -169,19 +174,26 @@ export default function RecordingView({
       setError(null);
       await acquireMic();
 
-      setState('countdown');
-      setCountdownNum(3);
+      const s = useSettingsStore.getState().settings;
+      const countIn = s.vocalexCountIn ?? 3;
 
-      let count = 3;
-      const cdInterval = setInterval(() => {
-        count--;
-        if (count <= 0) {
-          clearInterval(cdInterval);
-          beginRecording();
-        } else {
-          setCountdownNum(count);
-        }
-      }, 1000);
+      if (countIn <= 0) {
+        beginRecording();
+      } else {
+        setState('countdown');
+        setCountdownNum(countIn);
+
+        let count = countIn;
+        const cdInterval = setInterval(() => {
+          count--;
+          if (count <= 0) {
+            clearInterval(cdInterval);
+            beginRecording();
+          } else {
+            setCountdownNum(count);
+          }
+        }, 1000);
+      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Microphone access denied');
     }
