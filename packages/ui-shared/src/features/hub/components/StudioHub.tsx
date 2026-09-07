@@ -2475,6 +2475,7 @@ export default function StudioHub() {
           </div>
         </div>
       )}
+      {devToast && renderDevToast()}
     </div>
   );
 }

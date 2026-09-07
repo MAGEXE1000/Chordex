@@ -595,6 +595,122 @@ export function HubSettings({
     prevLenRef.current = curLen;
   }
 
+  // ── Hidden Developer Options 10-tap Unlock Gesture ──
+  const [localDevToast, setLocalDevToast] = useState<string | null>(null);
+  const localToastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const aboutTapCountRef = useRef(0);
+  const lastAboutTapTimeRef = useRef(0);
+  const aboutTapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (aboutTapTimerRef.current) {
+        clearTimeout(aboutTapTimerRef.current);
+      }
+      if (localToastTimerRef.current) {
+        clearTimeout(localToastTimerRef.current);
+      }
+    };
+  }, []);
+
+  const triggerDevToast = useCallback(
+    (msg: string) => {
+      showDevToast?.(msg);
+      if (localToastTimerRef.current) {
+        clearTimeout(localToastTimerRef.current);
+      }
+      setLocalDevToast(msg);
+      localToastTimerRef.current = setTimeout(() => {
+        setLocalDevToast(null);
+      }, 2000);
+    },
+    [showDevToast]
+  );
+
+  const handleAboutLogoTap = useCallback(() => {
+    handleLogoTap?.();
+
+    const now = Date.now();
+    const timeDelta = now - lastAboutTapTimeRef.current;
+
+    // Minimum interval debounce guard to avoid synthetic or hardware double-tap events
+    if (timeDelta < 80) {
+      return;
+    }
+    lastAboutTapTimeRef.current = now;
+
+    if (aboutTapTimerRef.current) {
+      clearTimeout(aboutTapTimerRef.current);
+      aboutTapTimerRef.current = null;
+    }
+
+    // Interval threshold: 1000ms idle resets counter sequence
+    if (timeDelta > 1000) {
+      aboutTapCountRef.current = 1;
+    } else {
+      aboutTapCountRef.current += 1;
+    }
+
+    // Set expiration timer for incomplete sequences
+    aboutTapTimerRef.current = setTimeout(() => {
+      aboutTapCountRef.current = 0;
+    }, 1000);
+
+    if (aboutTapCountRef.current === 10) {
+      aboutTapCountRef.current = 0;
+      if (aboutTapTimerRef.current) {
+        clearTimeout(aboutTapTimerRef.current);
+        aboutTapTimerRef.current = null;
+      }
+
+      if (settings.developerMode) {
+        triggerDevToast(
+          lang === 'es'
+            ? 'Las opciones de desarrollador ya están activadas'
+            : 'Developer options are already active'
+        );
+      } else {
+        updateSettings({ developerMode: true });
+        triggerDevToast(
+          lang === 'es' ? 'Opciones de desarrollador desbloqueadas' : 'Developer options unlocked'
+        );
+      }
+    }
+  }, [handleLogoTap, settings.developerMode, updateSettings, triggerDevToast, lang]);
+
+  const activeDevToast = devToast || localDevToast;
+
+  const renderToastElement = () => {
+    if (!activeDevToast) return null;
+    if (devToast && renderDevToast && renderDevToast()) {
+      return renderDevToast();
+    }
+    return (
+      <div
+        style={{
+          position: 'fixed',
+          bottom: '32px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          background: isLight ? 'rgba(0, 0, 0, 0.75)' : 'rgba(255, 255, 255, 0.85)',
+          color: isLight ? '#fff' : '#000',
+          padding: '8px 18px',
+          borderRadius: '20px',
+          fontSize: '12.5px',
+          fontFamily: 'Inter, sans-serif',
+          fontWeight: 600,
+          zIndex: 999999,
+          pointerEvents: 'none',
+          backdropFilter: 'blur(8px)',
+          boxShadow: '0 4px 16px rgba(0,0,0,0.20)',
+          whiteSpace: 'nowrap',
+        }}
+      >
+        {activeDevToast}
+      </div>
+    );
+  };
+
   const activePageId = page === 'main' ? 'general' : page;
 
   const sections = useMemo(() => {
@@ -3343,8 +3459,8 @@ export function HubSettings({
 
     return (
       <SettingsContentContainer style={{ paddingBottom: 'var(--space-6)' }}>
-        <div style={heroCardStyle}>
-          <SpotlightLogo onClick={handleLogoTap} />
+        <div style={heroCardStyle} data-about-hero="true">
+          <SpotlightLogo onClick={handleAboutLogoTap} />
           <p
             style={{
               margin: 'var(--space-4) 0 0',
@@ -5088,6 +5204,7 @@ export function HubSettings({
             return null;
           }}
         </SharedNavigationContainer>
+        {renderToastElement()}
       </div>
     );
   }
@@ -5345,6 +5462,7 @@ export function HubSettings({
         </div>
 
         <ChangelogSheet open={changelogOpen} onClose={() => setChangelogOpen(false)} />
+        {renderToastElement()}
       </div>
     </div>,
     document.body
