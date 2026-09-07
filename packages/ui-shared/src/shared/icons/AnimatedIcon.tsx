@@ -16,6 +16,7 @@ import {
   LoaderCircle,
   LogOut,
   Music,
+  Pencil,
   Share2,
   Shield,
   ShieldCheck,
@@ -143,6 +144,8 @@ const staticLucideIcons: Record<string, LucideIcon> = {
   'loader-circle': LoaderCircle,
   'log-out': LogOut,
   music: Music,
+  pencil: Pencil,
+  edit: Pencil,
   'share-2': Share2,
   shield: Shield,
   'shield-check': ShieldCheck,
@@ -244,6 +247,8 @@ function getAnimatedIconComponent(name: string) {
     normName = 'bug';
   } else if (normName === 'content_copy' || normName === 'copy') {
     normName = 'copy';
+  } else if (normName === 'edit' || normName === 'pencil' || normName === 'mode_edit') {
+    normName = 'pencil';
   } else if (
     normName === 'delete' ||
     normName === 'delete_forever' ||
@@ -525,6 +530,9 @@ export const AnimatedIcon = forwardRef<AnimatedIconHandle, AnimatedIconProps>(
       }
       if (lower.includes('copy')) {
         return { scale: 1.12, x: 1, y: -1 };
+      }
+      if (lower.includes('edit') || lower.includes('pencil')) {
+        return { scale: 1.1, rotate: -10 };
       }
       if (lower.includes('share')) {
         return { scale: 1.15, rotate: 12 };

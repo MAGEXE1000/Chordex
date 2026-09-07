@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import {
   useMetronomeStore,
   useSettingsStore,
@@ -12,6 +13,7 @@ import {
   type MetronomePreset,
 } from '@workspace/studio-core';
 import { SharedFloatingHeader } from '../../../shared/layout/StudioLayoutSystem';
+import { AnimatedIcon } from '../../../shared/icons/AnimatedIcon';
 import {
   TimeSignatureModal,
   SubdivisionModal,
@@ -105,6 +107,7 @@ export function MetronomePanel({ onBack, onScroll, isAmoled: propIsAmoled }: Met
   const [presetSearch, setPresetSearch] = useState('');
   const [showSoundMenu, setShowSoundMenu] = useState(false);
   const [activePresetMenuId, setActivePresetMenuId] = useState<string | null>(null);
+  const [deletingPresetId, setDeletingPresetId] = useState<string | null>(null);
 
   // In-modal Create/Edit Preset Form state transformation
   const [presetFormMode, setPresetFormMode] = useState<'create' | 'edit' | null>(null);
@@ -137,6 +140,17 @@ export function MetronomePanel({ onBack, onScroll, isAmoled: propIsAmoled }: Met
     }
   }, [presetFormMode]);
 
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      (window as any).__metronomeStore = useMetronomeStore;
+    }
+    return () => {
+      if (typeof window !== 'undefined') {
+        delete (window as any).__metronomeStore;
+      }
+    };
+  }, []);
+
   useBackHandler(
     'overlay',
     () => {
@@ -165,6 +179,15 @@ export function MetronomePanel({ onBack, onScroll, isAmoled: propIsAmoled }: Met
         setEditingPresetId(null);
         return true;
       }
+      if (deletingPresetId !== null) {
+        setDeletingPresetId(null);
+        setActivePresetMenuId(null);
+        return true;
+      }
+      if (activePresetMenuId !== null) {
+        setActivePresetMenuId(null);
+        return true;
+      }
       if (isPresetsOpen) {
         setIsPresetsOpen(false);
         return true;
@@ -184,6 +207,8 @@ export function MetronomePanel({ onBack, onScroll, isAmoled: propIsAmoled }: Met
       presetFormMode,
       isPresetsOpen,
       showSoundMenu,
+      deletingPresetId,
+      activePresetMenuId,
     ]
   );
 
@@ -1784,7 +1809,13 @@ export function MetronomePanel({ onBack, onScroll, isAmoled: propIsAmoled }: Met
               </div>
 
               {/* Presets List */}
-              <div className="flex-1 overflow-y-auto px-5 py-2.5 flex flex-col gap-4 no-scrollbar pb-8">
+              <div
+                onClick={() => {
+                  if (activePresetMenuId !== null) setActivePresetMenuId(null);
+                  if (deletingPresetId !== null) setDeletingPresetId(null);
+                }}
+                className="flex-1 overflow-y-auto px-5 py-2.5 flex flex-col gap-4 no-scrollbar pb-8"
+              >
                 {/* SAVED USER PRESETS SECTION */}
                 <div className="flex flex-col gap-2">
                   <div className="flex items-center justify-between px-1">
@@ -1833,166 +1864,267 @@ export function MetronomePanel({ onBack, onScroll, isAmoled: propIsAmoled }: Met
                   ) : (
                     filteredUserPresets.map((p) => {
                       const isCurrent = activePresetId === p.id;
+                      const isActionActive = activePresetMenuId === p.id;
+                      const isConfirmActive = deletingPresetId === p.id;
+
                       return (
                         <div
                           key={p.id}
                           onClick={() => {
+                            if (isActionActive || isConfirmActive) return;
                             loadPreset(p.id);
                             setTimeout(() => setIsPresetsOpen(false), 220);
                           }}
-                          className={`relative p-3 rounded-2xl flex items-center justify-between transition tap-press cursor-pointer ${
-                            isCurrent
+                          className={`relative p-3 rounded-2xl flex items-center transition-colors min-h-[62px] overflow-hidden ${
+                            isActionActive || isConfirmActive
                               ? isAmoled
-                                ? 'bg-black border-2 border-[#007aff] shadow-[0_4px_16px_rgba(0,122,255,0.15)]'
-                                : 'bg-white dark:bg-zinc-900 border-2 border-[#007aff] shadow-[0_4px_16px_rgba(0,122,255,0.08)]'
-                              : isAmoled
-                                ? 'bg-black border border-white/15 shadow-none hover:border-white/25'
-                                : 'bg-white dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-800 shadow-xs hover:border-slate-300 dark:hover:border-zinc-700'
+                                ? 'bg-black border border-white/20 shadow-none'
+                                : 'bg-slate-50 dark:bg-zinc-800/80 border border-slate-300 dark:border-zinc-700 shadow-xs'
+                              : isCurrent
+                                ? isAmoled
+                                  ? 'bg-black border-2 border-[#007aff] shadow-[0_4px_16px_rgba(0,122,255,0.15)] tap-press cursor-pointer'
+                                  : 'bg-white dark:bg-zinc-900 border-2 border-[#007aff] shadow-[0_4px_16px_rgba(0,122,255,0.08)] tap-press cursor-pointer'
+                                : isAmoled
+                                  ? 'bg-black border border-white/15 shadow-none hover:border-white/25 tap-press cursor-pointer'
+                                  : 'bg-white dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-800 shadow-xs hover:border-slate-300 dark:hover:border-zinc-700 tap-press cursor-pointer'
                           }`}
                         >
-                          <div className="flex items-center gap-3">
-                            <div
-                              className={`w-10 h-10 rounded-xl flex items-center justify-center font-manrope font-extrabold text-sm border flex-shrink-0 ${
-                                isCurrent
-                                  ? isAmoled
-                                    ? 'bg-[#007aff]/15 text-[#007aff] border-[#007aff]/30'
-                                    : 'bg-blue-50 dark:bg-blue-950/40 text-[#007aff] border-blue-100 dark:border-blue-900'
-                                  : isAmoled
-                                    ? 'bg-[#0a0a0c] text-zinc-400 border-white/10'
-                                    : 'bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 border-slate-200 dark:border-zinc-700'
-                              }`}
-                            >
-                              <span className="material-symbols-outlined text-[20px]">
-                                {p.icon || 'bookmark'}
-                              </span>
-                            </div>
-                            <div>
-                              <div className="flex items-center gap-1.5">
-                                <h3 className="text-xs font-extrabold font-manrope text-slate-900 dark:text-zinc-100 leading-tight">
-                                  {p.name}
-                                </h3>
-                                {isCurrent && (
-                                  <span
-                                    className={`px-1.5 py-0.5 rounded ${
-                                      isAmoled
-                                        ? 'bg-[#007aff]/20 text-[#007aff]'
-                                        : 'bg-blue-100 dark:bg-blue-900/60 text-[#007aff]'
-                                    } text-[9px] font-extrabold uppercase tracking-wide`}
-                                  >
-                                    Current
-                                  </span>
-                                )}
-                              </div>
-                              <div className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-zinc-400 mt-0.5">
-                                <span className="font-bold text-slate-700 dark:text-zinc-200">
-                                  {p.timeSignature}
-                                </span>
-                                <span>•</span>
-                                <span>{p.subdivision} Note</span>
-                                <span>•</span>
-                                <span className="truncate max-w-[90px]">
-                                  {SOUND_LABELS[p.sound]}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className="flex items-center gap-2">
-                            <span
-                              className={`px-2 py-1 rounded-lg font-manrope text-xs ${
-                                isCurrent
-                                  ? isAmoled
-                                    ? 'bg-[#007aff]/20 text-[#007aff] font-extrabold'
-                                    : 'bg-blue-50 dark:bg-blue-950/40 text-[#007aff] font-extrabold'
-                                  : isAmoled
-                                    ? 'bg-[#0a0a0c] text-zinc-300 font-bold border border-white/10'
-                                    : 'bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 font-bold'
-                              }`}
-                            >
-                              {p.bpm} <span className="text-[9px]">BPM</span>
-                            </span>
-                            <div className="relative">
-                              <button
-                                aria-label="Preset options"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setActivePresetMenuId(activePresetMenuId === p.id ? null : p.id);
-                                }}
-                                className={`w-7 h-7 rounded-full ${
-                                  isAmoled
-                                    ? 'hover:bg-white/10 text-zinc-400 hover:text-zinc-200'
-                                    : 'hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-400 hover:text-slate-700 dark:hover:text-zinc-200'
-                                } flex items-center justify-center transition cursor-pointer`}
-                                type="button"
+                          <AnimatePresence mode="wait" initial={false}>
+                            {isConfirmActive ? (
+                              /* ── State 3: Inline Delete Confirmation ── */
+                              <motion.div
+                                key="confirm"
+                                initial={{ opacity: 0, x: 20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: 20 }}
+                                transition={{ duration: 0.18, ease: [0.22, 1.0, 0.36, 1.0] }}
+                                className="w-full flex items-center justify-between gap-2 min-w-0"
+                                onClick={(e) => e.stopPropagation()}
                               >
-                                <span className="material-symbols-outlined text-[16px]">
-                                  more_vert
-                                </span>
-                              </button>
-
-                              {/* Options menu popover */}
-                              {activePresetMenuId === p.id && (
-                                <div
-                                  onClick={(e) => e.stopPropagation()}
-                                  className={`absolute right-0 top-8 z-50 ${
-                                    isAmoled
-                                      ? 'bg-black border-white/15'
-                                      : 'bg-white dark:bg-zinc-800 border-slate-200 dark:border-zinc-700'
-                                  } border rounded-xl shadow-lg py-1 min-w-[130px] flex flex-col`}
-                                >
+                                <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                                  <span className="text-[11px] font-extrabold uppercase tracking-wide text-rose-500 flex-shrink-0">
+                                    Delete?
+                                  </span>
+                                  <span className="text-xs font-bold font-manrope truncate text-slate-800 dark:text-zinc-200">
+                                    &ldquo;{p.name}&rdquo;
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-1.5 flex-shrink-0">
                                   <button
-                                    onClick={() => handleOpenEditForm(p)}
-                                    className={`px-3 py-1.5 text-left text-xs font-medium ${
-                                      isAmoled
-                                        ? 'text-zinc-200 hover:bg-white/10'
-                                        : 'text-slate-700 dark:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-700'
-                                    }`}
-                                  >
-                                    Edit
-                                  </button>
-                                  <button
-                                    onClick={() => {
-                                      updateCurrentPreset();
+                                    type="button"
+                                    aria-label="Cancel deletion"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setDeletingPresetId(null);
                                       setActivePresetMenuId(null);
                                     }}
-                                    className={`px-3 py-1.5 text-left text-xs font-medium ${
+                                    className={`h-8 px-3 rounded-xl text-xs font-bold font-manrope flex items-center justify-center transition cursor-pointer ${
                                       isAmoled
-                                        ? 'text-zinc-200 hover:bg-white/10'
-                                        : 'text-slate-700 dark:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-700'
+                                        ? 'bg-white/10 hover:bg-white/15 text-zinc-300 border border-white/10'
+                                        : 'bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-300 border border-slate-200 dark:border-zinc-700'
                                     }`}
                                   >
-                                    Update with current
+                                    Cancel
                                   </button>
                                   <button
-                                    onClick={() => {
-                                      duplicatePreset(p.id);
-                                      setActivePresetMenuId(null);
-                                    }}
-                                    className={`px-3 py-1.5 text-left text-xs font-medium ${
-                                      isAmoled
-                                        ? 'text-zinc-200 hover:bg-white/10'
-                                        : 'text-slate-700 dark:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-700'
-                                    }`}
-                                  >
-                                    Duplicate
-                                  </button>
-                                  <button
-                                    onClick={() => {
+                                    type="button"
+                                    aria-label={`Confirm delete ${p.name}`}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
                                       deletePreset(p.id);
+                                      setDeletingPresetId(null);
                                       setActivePresetMenuId(null);
                                     }}
-                                    className={`px-3 py-1.5 text-left text-xs font-medium ${
-                                      isAmoled
-                                        ? 'text-rose-400 hover:bg-rose-950/40'
-                                        : 'text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40'
-                                    }`}
+                                    className="h-8 px-3 rounded-xl text-xs font-bold font-manrope bg-rose-600 hover:bg-rose-500 text-white shadow-xs cursor-pointer active:scale-95 transition"
                                   >
                                     Delete
                                   </button>
                                 </div>
-                              )}
-                            </div>
-                          </div>
+                              </motion.div>
+                            ) : isActionActive ? (
+                              /* ── State 2: Inline Action Toolbar (enters from right) ── */
+                              <motion.div
+                                key="actions"
+                                initial={{ opacity: 0, x: 24 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: 24 }}
+                                transition={{ duration: 0.2, ease: [0.22, 1.0, 0.36, 1.0] }}
+                                className="w-full flex items-center justify-between gap-2 min-w-0"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <div className="flex items-center gap-1.5 min-w-0 flex-1 mr-1">
+                                  <button
+                                    type="button"
+                                    aria-label="Close actions"
+                                    title="Close"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setActivePresetMenuId(null);
+                                      setDeletingPresetId(null);
+                                    }}
+                                    className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 transition cursor-pointer ${
+                                      isAmoled
+                                        ? 'text-zinc-400 hover:text-zinc-200 hover:bg-white/10'
+                                        : 'text-slate-400 dark:text-zinc-400 hover:text-slate-700 dark:hover:text-zinc-200 hover:bg-slate-200/60 dark:hover:bg-zinc-700'
+                                    }`}
+                                  >
+                                    <AnimatedIcon name="close" size={15} />
+                                  </button>
+                                  <span className="text-xs font-bold font-manrope truncate text-slate-700 dark:text-zinc-300">
+                                    {p.name}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-1.5 flex-shrink-0">
+                                  {/* 1. Edit (pencil icon) */}
+                                  <button
+                                    type="button"
+                                    aria-label={`Edit ${p.name}`}
+                                    title="Edit"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleOpenEditForm(p);
+                                      setActivePresetMenuId(null);
+                                      setDeletingPresetId(null);
+                                    }}
+                                    className={`w-8 h-8 rounded-xl flex items-center justify-center transition cursor-pointer active:scale-95 ${
+                                      isAmoled
+                                        ? 'bg-[#0a0a0c] text-zinc-300 hover:text-white hover:bg-white/10 border border-white/10'
+                                        : 'bg-white dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-700 border border-slate-200 dark:border-zinc-700 shadow-2xs'
+                                    }`}
+                                  >
+                                    <AnimatedIcon name="pencil" size={16} />
+                                  </button>
+
+                                  {/* 2. Duplicate (two overlapping documents icon) */}
+                                  <button
+                                    type="button"
+                                    aria-label={`Duplicate ${p.name}`}
+                                    title="Duplicate"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      duplicatePreset(p.id);
+                                      setActivePresetMenuId(null);
+                                      setDeletingPresetId(null);
+                                    }}
+                                    className={`w-8 h-8 rounded-xl flex items-center justify-center transition cursor-pointer active:scale-95 ${
+                                      isAmoled
+                                        ? 'bg-[#0a0a0c] text-zinc-300 hover:text-white hover:bg-white/10 border border-white/10'
+                                        : 'bg-white dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-700 border border-slate-200 dark:border-zinc-700 shadow-2xs'
+                                    }`}
+                                  >
+                                    <AnimatedIcon name="copy" size={16} />
+                                  </button>
+
+                                  {/* 3. Delete (trash icon at far right) */}
+                                  <button
+                                    type="button"
+                                    aria-label={`Delete ${p.name}`}
+                                    title="Delete"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setDeletingPresetId(p.id);
+                                    }}
+                                    className={`w-8 h-8 rounded-xl flex items-center justify-center transition cursor-pointer active:scale-95 ${
+                                      isAmoled
+                                        ? 'bg-[#0a0a0c] text-rose-400 hover:text-rose-300 hover:bg-rose-950/40 border border-rose-900/30'
+                                        : 'bg-white dark:bg-zinc-800 text-rose-500 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-rose-200 dark:border-rose-900/30 shadow-2xs'
+                                    }`}
+                                  >
+                                    <AnimatedIcon name="trash" size={16} />
+                                  </button>
+                                </div>
+                              </motion.div>
+                            ) : (
+                              /* ── State 1: Normal Preset Row ── */
+                              <motion.div
+                                key="normal"
+                                initial={{ opacity: 0, x: -12 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: -12 }}
+                                transition={{ duration: 0.18, ease: [0.22, 1.0, 0.36, 1.0] }}
+                                className="w-full flex items-center justify-between gap-2 min-w-0"
+                              >
+                                <div className="flex items-center gap-3 min-w-0 flex-1">
+                                  <div
+                                    className={`w-10 h-10 rounded-xl flex items-center justify-center font-manrope font-extrabold text-sm border flex-shrink-0 ${
+                                      isCurrent
+                                        ? isAmoled
+                                          ? 'bg-[#007aff]/15 text-[#007aff] border-[#007aff]/30'
+                                          : 'bg-blue-50 dark:bg-blue-950/40 text-[#007aff] border-blue-100 dark:border-blue-900'
+                                        : isAmoled
+                                          ? 'bg-[#0a0a0c] text-zinc-400 border-white/10'
+                                          : 'bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 border-slate-200 dark:border-zinc-700'
+                                    }`}
+                                  >
+                                    <span className="material-symbols-outlined text-[20px]">
+                                      {p.icon || 'bookmark'}
+                                    </span>
+                                  </div>
+                                  <div className="min-w-0 flex-1">
+                                    <div className="flex items-center gap-1.5">
+                                      <h3 className="text-xs font-extrabold font-manrope text-slate-900 dark:text-zinc-100 leading-tight truncate">
+                                        {p.name}
+                                      </h3>
+                                      {isCurrent && (
+                                        <span
+                                          className={`px-1.5 py-0.5 rounded flex-shrink-0 ${
+                                            isAmoled
+                                              ? 'bg-[#007aff]/20 text-[#007aff]'
+                                              : 'bg-blue-100 dark:bg-blue-900/60 text-[#007aff]'
+                                          } text-[9px] font-extrabold uppercase tracking-wide`}
+                                        >
+                                          Current
+                                        </span>
+                                      )}
+                                    </div>
+                                    <div className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-zinc-400 mt-0.5 truncate">
+                                      <span className="font-bold text-slate-700 dark:text-zinc-200 flex-shrink-0">
+                                        {p.timeSignature}
+                                      </span>
+                                      <span>•</span>
+                                      <span className="flex-shrink-0">{p.subdivision} Note</span>
+                                      <span>•</span>
+                                      <span className="truncate">{SOUND_LABELS[p.sound]}</span>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center gap-2 flex-shrink-0">
+                                  <span
+                                    className={`px-2 py-1 rounded-lg font-manrope text-xs ${
+                                      isCurrent
+                                        ? isAmoled
+                                          ? 'bg-[#007aff]/20 text-[#007aff] font-extrabold'
+                                          : 'bg-blue-50 dark:bg-blue-950/40 text-[#007aff] font-extrabold'
+                                        : isAmoled
+                                          ? 'bg-[#0a0a0c] text-zinc-300 font-bold border border-white/10'
+                                          : 'bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 font-bold'
+                                    }`}
+                                  >
+                                    {p.bpm} <span className="text-[9px]">BPM</span>
+                                  </span>
+                                  <button
+                                    aria-label="Preset options"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setActivePresetMenuId(p.id);
+                                      setDeletingPresetId(null);
+                                    }}
+                                    className={`w-7 h-7 rounded-full ${
+                                      isAmoled
+                                        ? 'hover:bg-white/10 text-zinc-400 hover:text-zinc-200'
+                                        : 'hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-400 hover:text-slate-700 dark:hover:text-zinc-200'
+                                    } flex items-center justify-center transition cursor-pointer`}
+                                    type="button"
+                                  >
+                                    <span className="material-symbols-outlined text-[16px]">
+                                      more_vert
+                                    </span>
+                                  </button>
+                                </div>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
                         </div>
                       );
                     })
