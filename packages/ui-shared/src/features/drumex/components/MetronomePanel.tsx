@@ -161,7 +161,9 @@ export function MetronomePanel({ onBack, onScroll, isAmoled: propIsAmoled }: Met
   useEffect(() => {
     if (isEditingBpm && bpmInputRef.current) {
       bpmInputRef.current.focus({ preventScroll: true });
-      bpmInputRef.current.select();
+      try {
+        bpmInputRef.current.setSelectionRange(0, bpmInputRef.current.value.length);
+      } catch {}
     }
   }, [isEditingBpm]);
 
@@ -588,14 +590,11 @@ export function MetronomePanel({ onBack, onScroll, isAmoled: propIsAmoled }: Met
       <main
         ref={mainScrollRef}
         onScroll={(e) => {
-          if (isEditingBpmRef.current && mainScrollRef.current) {
-            if (mainScrollRef.current.scrollTop !== savedScrollTopRef.current) {
-              mainScrollRef.current.scrollTop = savedScrollTopRef.current;
-            }
-          }
           onScroll?.(e as unknown as React.UIEvent<HTMLDivElement>);
         }}
-        className="flex-1 px-4 flex flex-col gap-3.5 overflow-y-auto no-scrollbar"
+        className={`flex-1 px-4 flex flex-col gap-3.5 no-scrollbar ${
+          isEditingBpm ? 'overflow-y-hidden overscroll-none' : 'overflow-y-auto'
+        }`}
         style={{
           paddingTop: 'calc(env(safe-area-inset-top, 0px) + 78px)',
           paddingBottom: 'calc(max(16px, env(safe-area-inset-bottom, 16px)) + 84px)',
@@ -848,9 +847,26 @@ export function MetronomePanel({ onBack, onScroll, isAmoled: propIsAmoled }: Met
                   spellCheck="false"
                   aria-label="Direct BPM input"
                 />
-                <span className="text-[11px] font-extrabold tracking-widest text-[#007aff] uppercase font-manrope mt-1 flex items-center gap-1">
+                <span
+                  role="button"
+                  tabIndex={0}
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    handleSaveBpmEdit();
+                  }}
+                  onTouchStart={(e) => {
+                    e.preventDefault();
+                    handleSaveBpmEdit();
+                  }}
+                  onClick={handleSaveBpmEdit}
+                  className="text-[11px] font-extrabold tracking-widest text-[#007aff] uppercase font-manrope mt-1 flex items-center gap-1 cursor-pointer tap-press"
+                  title="Apply BPM"
+                  aria-label="Apply BPM"
+                >
                   BPM
-                  <span className="material-symbols-outlined text-[13px] opacity-80">check_circle</span>
+                  <span className="material-symbols-outlined text-[13px] opacity-80">
+                    check_circle
+                  </span>
                 </span>
               </div>
             ) : (
@@ -1304,14 +1320,14 @@ export function MetronomePanel({ onBack, onScroll, isAmoled: propIsAmoled }: Met
       {/* Backdrop for morphed bottom bar mode (volume or stopwatch click away) */}
       {bottomBarMode !== 'normal' && (
         <div
-          className="fixed inset-0 z-30 pointer-events-auto bg-black/10 dark:bg-black/25 backdrop-blur-[1px] transition-opacity duration-150"
+          className="absolute inset-0 z-30 pointer-events-auto bg-black/10 dark:bg-black/25 backdrop-blur-[1px] transition-opacity duration-150"
           onClick={() => setBottomBarMode('normal')}
         />
       )}
 
       {/* ── MORPHING FLOATING QUICK CONTROLS DOCK ─────────────────────────── */}
       <div
-        className="fixed inset-x-0 flex flex-col justify-center items-center pointer-events-none z-40"
+        className="absolute inset-x-0 flex flex-col justify-center items-center pointer-events-none z-40"
         style={{
           bottom: 'max(16px, env(safe-area-inset-bottom, 16px))',
         }}

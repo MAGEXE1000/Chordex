@@ -334,8 +334,8 @@ export function SharedAppShell({
       className={`app-container app-mode-${appMode}`}
       style={{
         display: 'flex',
-        width: '100vw',
-        height: '100dvh',
+        width: '100%',
+        height: '100%',
         overflow: 'hidden',
         background: 'var(--app-bg)',
         opacity: 1,
@@ -350,7 +350,7 @@ export function SharedAppShell({
               position: 'absolute',
               inset: 0,
               zIndex: 1,
-              height: '100dvh',
+              height: '100%',
               overflow: 'hidden',
               pointerEvents: isSubAppActive ? 'none' : 'auto',
               opacity: isSubAppActive && !transitionActive ? 0 : 1,
