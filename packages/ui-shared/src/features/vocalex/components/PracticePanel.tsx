@@ -1,6 +1,5 @@
-import { useT, useBackHandler } from '@workspace/studio-core';
+import { useT, useBackHandler, useSettingsStore } from '@workspace/studio-core';
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { StaggeredReveal } from '../../../shared/animation';
 import { StudioHeader } from '../../../shared/layout/StudioHeader';
 
 interface Tip {
@@ -11,6 +10,7 @@ interface Tip {
 interface Section {
   id: string;
   name: string;
+  desc: string;
   icon: string;
   color: string;
   tips: Tip[];
@@ -22,6 +22,8 @@ const SECTION_META = [
     icon: 'local_fire_department',
     color: '#f59e0b',
     nameKey: 'sectionWarmup',
+    descEn: 'Gentle lip trills and sirens to awaken vocal cords',
+    descEs: 'Vibración labial suave y sirenas para activar las cuerdas',
     tipKeys: ['tipWarmup1', 'tipWarmup2', 'tipWarmup3', 'tipWarmup4', 'tipWarmup5'],
   },
   {
@@ -29,6 +31,8 @@ const SECTION_META = [
     icon: 'air',
     color: '#34d399',
     nameKey: 'sectionBreath',
+    descEn: 'Diaphragmatic support and airflow management',
+    descEs: 'Soporte diafragmático y control del flujo de aire',
     tipKeys: ['tipBreath1', 'tipBreath2', 'tipBreath3', 'tipBreath4', 'tipBreath5'],
   },
   {
@@ -36,6 +40,8 @@ const SECTION_META = [
     icon: 'music_note',
     color: '#007aff',
     nameKey: 'sectionPitch',
+    descEn: 'Interval matching and scale accuracy',
+    descEs: 'Afinación de intervalos y precisión en escalas',
     tipKeys: ['tipPitch1', 'tipPitch2', 'tipPitch3', 'tipPitch4', 'tipPitch5'],
   },
   {
@@ -43,13 +49,17 @@ const SECTION_META = [
     icon: 'record_voice_over',
     color: '#a78bfa',
     nameKey: 'sectionResonance',
+    descEn: 'Chest, mask, and head voice acoustic placement',
+    descEs: 'Colocación acústica de voz de pecho, máscara y cabeza',
     tipKeys: ['tipResonance1', 'tipResonance2', 'tipResonance3', 'tipResonance4', 'tipResonance5'],
   },
   {
     id: 'range',
-    icon: 'expand',
+    icon: 'unfold_more',
     color: '#ec4899',
     nameKey: 'sectionRange',
+    descEn: 'Passaggio blending and high register release',
+    descEs: 'Unión del passaggio y notas agudas cómodas',
     tipKeys: ['tipRange1', 'tipRange2', 'tipRange3', 'tipRange4', 'tipRange5'],
   },
   {
@@ -57,6 +67,8 @@ const SECTION_META = [
     icon: 'theater_comedy',
     color: '#ef4444',
     nameKey: 'sectionPerformance',
+    descEn: 'Dynamics, vibrato control, and articulation',
+    descEs: 'Dinámicas, control de vibrato y articulación',
     tipKeys: [
       'tipPerformance1',
       'tipPerformance2',
@@ -67,9 +79,11 @@ const SECTION_META = [
   },
   {
     id: 'harmonies',
-    icon: 'stacked_line_chart',
+    icon: 'graphic_eq',
     color: '#10b981',
     nameKey: 'sectionHarmonies',
+    descEn: 'Intervals, chords, and multi-part blending',
+    descEs: 'Terceras, quintas y armonización de voces',
     tipKeys: [
       'tipHarmonies1',
       'tipHarmonies2',
@@ -88,14 +102,18 @@ const SECTION_META = [
     icon: 'health_and_safety',
     color: '#06b6d4',
     nameKey: 'sectionHealth',
+    descEn: 'Hydration, vocal cord recovery, and fatigue protection',
+    descEs: 'Hidratación, descanso y cuidado de las cuerdas vocales',
     tipKeys: ['tipHealth1', 'tipHealth2', 'tipHealth3', 'tipHealth4', 'tipHealth5'],
   },
 ] as const;
 
-function buildSections(v: Record<string, any>): Section[] {
+function buildSections(v: Record<string, any>, language: string): Section[] {
+  const isEs = language === 'es';
   return SECTION_META.map((m) => ({
     id: m.id,
     name: v[m.nameKey] ?? m.id,
+    desc: isEs ? m.descEs : m.descEn,
     icon: m.icon,
     color: m.color,
     tips: m.tipKeys.map((k) => ({
@@ -107,19 +125,19 @@ function buildSections(v: Record<string, any>): Section[] {
 
 const ANIM_CSS = `
 @keyframes pp-fade-up {
-  from { opacity: 0; transform: translateY(14px); }
+  from { opacity: 0; transform: translateY(12px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 @keyframes pp-slide-in {
-  from { opacity: 0; transform: translateX(40px); }
-  to   { opacity: 1; transform: translateX(0); }
+  from { opacity: 0; transform: translateX(30px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 @keyframes pp-slide-out {
   from { opacity: 1; transform: translateX(0); }
-  to   { opacity: 0; transform: translateX(-40px); }
+  to   { opacity: 0; transform: translateX(-30px); }
 }
 @keyframes pp-expand {
-  from { opacity: 0; transform: translateY(-6px); }
+  from { opacity: 0; transform: translateY(-4px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 `;
@@ -139,7 +157,19 @@ function useAnimStyle() {
   }, []);
 }
 
-function TipCard({ tip, color, index }: { tip: Tip; color: string; index: number }) {
+function TipCard({
+  tip,
+  color,
+  index,
+  isLight,
+  isAmoled,
+}: {
+  tip: Tip;
+  color: string;
+  index: number;
+  isLight: boolean;
+  isAmoled: boolean;
+}) {
   const [expanded, setExpanded] = useState(false);
   const bodyRef = useRef<HTMLDivElement>(null);
   const [bodyH, setBodyH] = useState(0);
@@ -154,38 +184,46 @@ function TipCard({ tip, color, index }: { tip: Tip; color: string; index: number
     <div
       onClick={() => setExpanded(!expanded)}
       style={{
-        background: 'var(--vx-card)',
+        background: isLight
+          ? '#ffffff'
+          : isAmoled
+            ? '#000000'
+            : 'var(--app-surface-low, rgba(255,255,255,0.04))',
         borderRadius: 16,
-        padding: '18px 20px',
+        padding: '16px 18px',
         cursor: 'pointer',
-        border: `1px solid ${expanded ? color + '30' : 'var(--vx-edge)'}`,
-        transition: 'border-color 250ms ease, box-shadow 250ms ease',
-        boxShadow: expanded ? `0 0 20px ${color}08` : 'none',
-        animation: `pp-fade-up 400ms cubic-bezier(0.22,1,0.36,1) ${index * 60}ms both`,
+        border: `1px solid ${expanded ? color + '44' : 'var(--c-border, rgba(128,128,128,0.15))'}`,
+        transition: 'all 200ms ease',
+        boxShadow: expanded
+          ? `0 4px 18px ${color}12`
+          : isLight
+            ? '0 1px 4px rgba(0,0,0,0.03)'
+            : 'none',
+        animation: `pp-fade-up 350ms cubic-bezier(0.22,1,0.36,1) ${index * 45}ms both`,
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         <span
           style={{
-            fontFamily: 'var(--font-headline)',
+            fontFamily: 'var(--studio-font-mono)',
             fontWeight: 800,
-            fontSize: 14,
+            fontSize: 13,
             color: color,
-            opacity: 0.5,
-            minWidth: 20,
-            transition: 'opacity 200ms ease',
-            ...(expanded ? { opacity: 0.9 } : {}),
+            opacity: expanded ? 1 : 0.65,
+            minWidth: 22,
+            transition: 'opacity 180ms ease',
           }}
         >
           {String(index + 1).padStart(2, '0')}
         </span>
         <span
           style={{
-            fontFamily: 'var(--font-headline)',
+            fontFamily: 'var(--studio-font-display)',
             fontWeight: 700,
-            fontSize: 15,
-            color: 'var(--vx-text)',
+            fontSize: 14.5,
+            color: 'var(--c-text-primary)',
             flex: 1,
+            letterSpacing: '-0.01em',
           }}
         >
           {tip.title}
@@ -193,9 +231,9 @@ function TipCard({ tip, color, index }: { tip: Tip; color: string; index: number
         <span
           className="material-symbols-outlined"
           style={{
-            fontSize: 18,
-            color: expanded ? color : 'var(--vx-text-4)',
-            transition: 'transform 300ms cubic-bezier(0.34,1.56,0.64,1), color 250ms ease',
+            fontSize: 20,
+            color: expanded ? color : 'var(--c-text-secondary)',
+            transition: 'transform 260ms cubic-bezier(0.34,1.56,0.64,1), color 200ms ease',
             transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)',
           }}
         >
@@ -205,28 +243,27 @@ function TipCard({ tip, color, index }: { tip: Tip; color: string; index: number
       <div
         style={{
           overflow: 'hidden',
-          maxHeight: expanded ? bodyH + 20 : 0,
-          transition: 'max-height 350ms cubic-bezier(0.22,1,0.36,1)',
+          maxHeight: expanded ? bodyH + 30 : 0,
+          transition: 'max-height 300ms cubic-bezier(0.22,1,0.36,1)',
         }}
       >
         <div ref={bodyRef}>
           <div
             style={{
-              maxHeight: 200,
-              overflowY: 'auto',
-              marginTop: 14,
+              marginTop: 12,
               paddingLeft: 34,
-              WebkitOverflowScrolling: 'touch',
+              paddingTop: 8,
+              borderTop: `1px solid ${expanded ? color + '20' : 'transparent'}`,
             }}
           >
             <p
               style={{
-                fontFamily: 'var(--font-body)',
+                fontFamily: 'var(--studio-font-body)',
                 fontSize: 13.5,
-                color: 'var(--vx-text-2)',
-                lineHeight: 1.7,
+                color: 'var(--c-text-secondary)',
+                lineHeight: 1.65,
                 margin: 0,
-                animation: expanded ? 'pp-expand 300ms cubic-bezier(0.22,1,0.36,1) both' : 'none',
+                animation: expanded ? 'pp-expand 250ms cubic-bezier(0.22,1,0.36,1) both' : 'none',
               }}
             >
               {tip.body}
@@ -238,11 +275,26 @@ function TipCard({ tip, color, index }: { tip: Tip; color: string; index: number
   );
 }
 
-function SectionView({ section }: { section: Section }) {
+function SectionView({
+  section,
+  isLight,
+  isAmoled,
+}: {
+  section: Section;
+  isLight: boolean;
+  isAmoled: boolean;
+}) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
       {section.tips.map((tip, i) => (
-        <TipCard key={i} tip={tip} color={section.color} index={i} />
+        <TipCard
+          key={i}
+          tip={tip}
+          color={section.color}
+          index={i}
+          isLight={isLight}
+          isAmoled={isAmoled}
+        />
       ))}
     </div>
   );
@@ -251,7 +303,17 @@ function SectionView({ section }: { section: Section }) {
 export default function PracticePanel() {
   useAnimStyle();
   const t = useT();
-  const sections = useMemo(() => buildSections(t.vocalex as any), [t]);
+  const settings = useSettingsStore((s) => s.settings);
+  const language = settings.language;
+  const activeVis = settings.perApp?.vocalex ?? { theme: 'dark', amoledMode: false };
+  const isLight =
+    activeVis.theme === 'light' ||
+    (activeVis.theme === 'system' &&
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-color-scheme: light)').matches);
+  const isAmoled = !!activeVis.amoledMode;
+
+  const sections = useMemo(() => buildSections(t.vocalex as any, language), [t, language]);
   const [transitioning, setTransitioning] = useState(false);
   const [direction, setDirection] = useState<'in' | 'out'>('in');
   const [displaySection, setDisplaySection] = useState<string | null>(null);
@@ -271,7 +333,7 @@ export default function PracticePanel() {
     timerRef.current = setTimeout(() => {
       setTransitioning(false);
       timerRef.current = null;
-    }, 400);
+    }, 350);
   }, []);
 
   const goBack = useCallback(() => {
@@ -282,7 +344,7 @@ export default function PracticePanel() {
       setDisplaySection(null);
       setTransitioning(false);
       timerRef.current = null;
-    }, 250);
+    }, 220);
   }, []);
 
   useBackHandler(
@@ -302,111 +364,189 @@ export default function PracticePanel() {
     return (
       <div
         style={{
-          padding: '16px 20px',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          padding:
+            '0 20px calc(var(--bottom-nav-height, 68px) + env(safe-area-inset-bottom, 16px) + 24px)',
           minHeight: '100%',
+          boxSizing: 'border-box',
           animation:
             direction === 'in'
-              ? 'pp-slide-in 350ms cubic-bezier(0.22,1,0.36,1) both'
+              ? 'pp-slide-in 300ms cubic-bezier(0.22,1,0.36,1) both'
               : transitioning
-                ? 'pp-slide-out 250ms cubic-bezier(0.22,1,0.36,1) both'
+                ? 'pp-slide-out 220ms cubic-bezier(0.22,1,0.36,1) both'
                 : 'none',
         }}
       >
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 14,
-            marginBottom: 24,
-            animation: 'pp-fade-up 400ms cubic-bezier(0.22,1,0.36,1) 50ms both',
-          }}
-        >
+        <div style={{ width: '100%', maxWidth: 440 }}>
+          {/* Section Detail Header Bar */}
           <div
             style={{
-              width: 44,
-              height: 44,
-              borderRadius: 12,
-              background: `${section.color}15`,
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
+              gap: 12,
+              marginBottom: 18,
+              paddingTop: 4,
+              animation: 'pp-fade-up 350ms cubic-bezier(0.22,1,0.36,1) 40ms both',
             }}
           >
-            <span
-              className="material-symbols-outlined"
-              style={{ fontSize: 22, color: section.color }}
-            >
-              {section.icon}
-            </span>
-          </div>
-          <div>
-            <h2
+            <button
+              type="button"
+              onClick={goBack}
               style={{
-                fontFamily: 'var(--font-headline)',
-                fontWeight: 800,
-                fontSize: 22,
-                color: 'var(--vx-text)',
-                margin: 0,
+                width: 38,
+                height: 38,
+                borderRadius: '50%',
+                background: isLight
+                  ? '#ffffff'
+                  : isAmoled
+                    ? '#000000'
+                    : 'var(--app-surface-low, rgba(255,255,255,0.06))',
+                border: '1px solid var(--c-border, rgba(128,128,128,0.18))',
+                color: 'var(--c-text-primary)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                flexShrink: 0,
+                boxShadow: isLight ? '0 1px 3px rgba(0,0,0,0.06)' : 'none',
+                transition: 'all 150ms ease',
               }}
             >
-              {section.name}
-            </h2>
-            <span
-              style={{
-                fontFamily: 'var(--font-body)',
-                fontSize: 12,
-                color: 'var(--vx-text-3)',
-              }}
-            >
-              {t.vocalex.tipsCount(section.tips.length)}
-            </span>
-          </div>
-        </div>
+              <span className="material-symbols-outlined" style={{ fontSize: 20 }}>
+                arrow_back
+              </span>
+            </button>
 
-        <SectionView section={section} />
+            <div
+              style={{
+                width: 38,
+                height: 38,
+                borderRadius: 12,
+                background: `${section.color}18`,
+                border: `1px solid ${section.color}30`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}
+            >
+              <span
+                className="material-symbols-outlined"
+                style={{ fontSize: 20, color: section.color }}
+              >
+                {section.icon}
+              </span>
+            </div>
+
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <h2
+                style={{
+                  fontFamily: 'var(--studio-font-display)',
+                  fontWeight: 800,
+                  fontSize: 18,
+                  color: 'var(--c-text-primary)',
+                  margin: 0,
+                  letterSpacing: '-0.02em',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                }}
+              >
+                {section.name}
+              </h2>
+              <span
+                style={{
+                  fontFamily: 'var(--studio-font-mono)',
+                  fontSize: 11.5,
+                  fontWeight: 600,
+                  color: section.color,
+                }}
+              >
+                {t.vocalex.tipsCount(section.tips.length)}
+              </span>
+            </div>
+          </div>
+
+          <SectionView section={section} isLight={isLight} isAmoled={isAmoled} />
+        </div>
       </div>
     );
   }
 
   return (
-    <div style={{ padding: '0 24px', minHeight: '100%' }}>
-      <StudioHeader title={t.vocalex.tipsTitle} subtitle={t.vocalex.tipsSubtitle} />
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        padding:
+          '0 20px calc(var(--bottom-nav-height, 68px) + env(safe-area-inset-bottom, 16px) + 24px)',
+        minHeight: '100%',
+        boxSizing: 'border-box',
+      }}
+    >
+      <div style={{ width: '100%', maxWidth: 440 }}>
+        {/* Canonical Vocalex Page Header */}
+        <StudioHeader
+          title={
+            language === 'es'
+              ? 'Ejercicios Vocales'
+              : (t.vocalex as any).tipsTitle || 'Vocal Exercises'
+          }
+          subtitle={t.vocalex.tipsSubtitle}
+          disableHorizontalPadding={true}
+          containerStyle={{ marginBottom: '16px' }}
+        />
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <StaggeredReveal staggerInterval={40}>
+        {/* Categories List */}
+        <div
+          data-purpose="exercise-categories"
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 10,
+          }}
+        >
           {sections.map((section, i) => (
             <div
               key={section.id}
+              role="button"
+              tabIndex={0}
               onClick={() => goToSection(section.id)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  goToSection(section.id);
+                }
+              }}
               style={{
-                background: 'var(--vx-card)',
+                background: isLight
+                  ? '#ffffff'
+                  : isAmoled
+                    ? '#000000'
+                    : 'var(--app-surface-low, rgba(255,255,255,0.04))',
                 borderRadius: 16,
-                padding: '20px',
+                padding: '14px 16px',
                 cursor: 'pointer',
-                border: '1px solid var(--vx-edge)',
-                transition:
-                  'transform 200ms cubic-bezier(0.34,1.56,0.64,1), border-color 200ms ease, box-shadow 200ms ease',
+                border: '1px solid var(--c-border, rgba(128,128,128,0.15))',
+                transition: 'all 180ms ease',
                 display: 'flex',
                 alignItems: 'center',
-                gap: 16,
-                animation: `pp-fade-up 400ms cubic-bezier(0.22,1,0.36,1) ${100 + i * 50}ms both`,
-              }}
-              onPointerDown={(e) => {
-                (e.currentTarget as HTMLElement).style.transform = 'scale(0.97)';
-              }}
-              onPointerUp={(e) => {
-                (e.currentTarget as HTMLElement).style.transform = 'scale(1)';
-              }}
-              onPointerLeave={(e) => {
-                (e.currentTarget as HTMLElement).style.transform = 'scale(1)';
+                gap: 14,
+                boxShadow: isLight ? '0 1px 4px rgba(0,0,0,0.03)' : 'none',
+                animation: `pp-fade-up 350ms cubic-bezier(0.22,1,0.36,1) ${i * 40}ms both`,
               }}
             >
+              {/* Category Icon Badge */}
               <div
                 style={{
                   width: 48,
                   height: 48,
                   borderRadius: 14,
-                  background: `${section.color}12`,
+                  background: `${section.color}15`,
+                  border: `1px solid ${section.color}28`,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -420,38 +560,76 @@ export default function PracticePanel() {
                   {section.icon}
                 </span>
               </div>
+
+              {/* Category Titles & Meta */}
               <div style={{ flex: 1, minWidth: 0 }}>
-                <p
+                <div
                   style={{
-                    fontFamily: 'var(--font-headline)',
-                    fontWeight: 700,
-                    fontSize: 16,
-                    color: 'var(--vx-text)',
-                    margin: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: 8,
+                    marginBottom: 2,
                   }}
                 >
-                  {section.name}
-                </p>
+                  <h2
+                    style={{
+                      fontFamily: 'var(--studio-font-display)',
+                      fontWeight: 700,
+                      fontSize: 15,
+                      color: 'var(--c-text-primary)',
+                      margin: 0,
+                      letterSpacing: '-0.01em',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                    }}
+                  >
+                    {section.name}
+                  </h2>
+                  <span
+                    style={{
+                      fontFamily: 'var(--studio-font-mono)',
+                      fontSize: 11,
+                      fontWeight: 600,
+                      color: section.color,
+                      flexShrink: 0,
+                    }}
+                  >
+                    {t.vocalex.tipsCount(section.tips.length)}
+                  </span>
+                </div>
                 <p
                   style={{
-                    fontFamily: 'var(--font-body)',
+                    fontFamily: 'var(--studio-font-body)',
                     fontSize: 12,
-                    color: 'var(--vx-text-3)',
-                    margin: '3px 0 0',
+                    color: 'var(--c-text-secondary)',
+                    margin: 0,
+                    lineHeight: 1.4,
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
                   }}
                 >
-                  {t.vocalex.tipsCount(section.tips.length)}
+                  {section.desc}
                 </p>
               </div>
+
+              {/* Navigation Chevron */}
               <span
                 className="material-symbols-outlined"
-                style={{ fontSize: 20, color: 'var(--vx-text-4)' }}
+                style={{
+                  fontSize: 20,
+                  color: 'var(--c-text-secondary)',
+                  opacity: 0.45,
+                  flexShrink: 0,
+                }}
               >
                 chevron_right
               </span>
             </div>
           ))}
-        </StaggeredReveal>
+        </div>
       </div>
     </div>
   );
