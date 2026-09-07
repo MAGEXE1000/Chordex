@@ -91,9 +91,15 @@ export default function LibraryPanel() {
                 height: '100%',
                 position: 'relative',
                 overflow: 'hidden',
+                display: 'flex',
+                flexDirection: 'column',
               }}
             >
-              <StudioPageTransition pageKey={activeMobileView} variant="drilldown">
+              <StudioPageTransition
+                pageKey={activeMobileView}
+                variant="drilldown"
+                className="w-full h-full flex flex-col"
+              >
                 {activeMobileView === 'detail' && (
                   <LibraryChordDetail state={state} onBack={() => selectChord(null)} />
                 )}
