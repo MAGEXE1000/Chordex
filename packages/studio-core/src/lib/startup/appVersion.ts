@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.5.73';
-export const NATIVE_VERSION_CODE = 40573;
-export const WEB_VERSION = '4.5.73';
+export const NATIVE_VERSION = '4.5.74';
+export const NATIVE_VERSION_CODE = 40574;
+export const WEB_VERSION = '4.5.74';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -73,13 +73,13 @@ export const APP_VERSION_DATE = '8/12/2026';
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = '640b2909';
+export const APP_COMMIT_SHA = '0e324701';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '9/7/2026, 2:10:26 PM CST';
+export const APP_BUILD_TIMESTAMP = '9/7/2026, 3:30:30 PM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -96,12 +96,10 @@ export interface ChangelogSection {
 
 export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
-    heading: 'Added',
+    heading: 'Fixed',
     items: [
-      'Vocalex In-Project Recording Studio: Integrated empty-project recording workspace directly inside TakeDetailView. Creating a new take initializes an empty project with durationMs 0 and opens its detail workspace equipped with a real-time 48-band frequency visualizer, count-in countdown respecting user preferences, active timer, stop action, and live hardware DSP status badges (48kHz Lossless, Noise Filter, Auto Gain).',
-      'Vocalex Take Project Management & Re-recording: Added in-project re-recording support and inline project title renaming with automatic persistence to vocalexRepository.',
-      'Vocalex Take List Ready Badge: Empty takes in the takes list render a dedicated microphone icon and "READY TO RECORD" badge, guiding users directly into recording without zero-duration errors.',
-      'Standalone Vocalex Recorder Section Removed: Streamlined Vocalex top-level navigation to three focused, canonical sections: Coach, Takes, and Preferences. Deprecated and removed all standalone recorder references across navigation registries, search index, session state stores, app dock, and preferences panel.',
+      'Global Heading & Header Typography Hierarchy: Restored canonical typography hierarchy across all Studio/Livex applications (Studio Hub, Chordex, Drumex, Stagex, Groovex, Vocalex, and Preferences) ensuring consistent weight, tracking, and line-height scaling across mobile viewports.',
+      'Vocalex Vertical Rhythm, Viewport Elevation & Header Composition: Eliminated stacked bottom clearance voids (saving >100px of dead space) and competing nested scroll containers. Reordered CoachPanel with compact top pill switcher, followed by context-aware StudioHeader with zero collision or title duplication. Elevated main pitch monitor card and action controls, guaranteeing full viewport visibility without scrolling.',
     ],
   },
 ];
@@ -113,6 +111,14 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.5.74',
+    date: '2026-09-07',
+    highlights: [
+      'Global Heading & Header Typography Hierarchy: Restored canonical typography hierarchy across all Studio/Livex applications (Studio Hub, Chordex, Drumex, Stagex, Groovex, Vocalex, and Preferences) ensuring consistent weight, tracking, and line-height scaling across mobile viewports.',
+      'Vocalex Vertical Rhythm, Viewport Elevation & Header Composition: Eliminated stacked bottom clearance voids (saving >100px of dead space) and competing nested scroll containers. Reordered CoachPanel with compact top pill switcher, followed by context-aware StudioHeader with zero collision or title duplication. Elevated main pitch monitor card and action controls, guaranteeing full viewport visibility without scrolling.',
+    ],
+  },
   {
     version: '4.5.73',
     date: '2026-09-07',
@@ -211,16 +217,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'Metronome Presets Management: Full CRUD preset architecture with local storage persistence, supporting instant recall, inline preset creation, duplication, renaming, updating, and search filtering.',
       'Rhythm Metrics & Controls: Segmented pill selectors for Time Signatures (4/4, 3/4, 6/8, 2/4) and Subdivisions (1/4, 1/8, 1/16, 3let), accented Beat 1 tracking, audible count-in, practice timer, tap tempo, and floating quick controls dock.',
       'Clean Audio Lifecycle & Leak Immunity: Guaranteed zero node, timer, or context leaks over repeated start/stop cycles with automatic background/navigation teardown.',
-    ],
-  },
-  {
-    version: '4.5.64',
-    date: '2026-09-05',
-    highlights: [
-      'GrooveX Sample-Accurate Multitrack Transposition: Re-architected transposition engine to use in-memory buffer-level SoundTouch transposition with exact sample length preservation and zero cumulative drift.',
-      'Full Musical Transposition Scale: Supported pitch shifting across -12 to +12 semitones with instantaneous cache retrieval and seamless 25ms crossfade stem hot-swapping during live playback.',
-      'Percussion Stem Transposition Immunity: Guaranteed 100% pitch and tempo immunity for all drum and percussion stems (kick, snare, toms, cymbals, hi-hats, percussion), keeping rhythm strictly locked to the hardware audio clock.',
-      'Unified Zero-Latency Audio Graph: Eliminated worklet starvation delays, underrun zero-padding, and fractional skip resets by routing all stems directly into the unified master gain with Delta t = 0.000ms.',
     ],
   },
 ];
