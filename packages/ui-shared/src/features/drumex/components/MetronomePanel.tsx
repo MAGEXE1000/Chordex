@@ -40,6 +40,7 @@ export function MetronomePanel({ onBack, onScroll, isAmoled: propIsAmoled }: Met
     subdivision,
     sound,
     accentBeat,
+    accentPattern,
     volume,
     isMuted,
     countInEnabled,
@@ -72,6 +73,9 @@ export function MetronomePanel({ onBack, onScroll, isAmoled: propIsAmoled }: Met
     setSubdivision,
     setSound,
     setAccentBeat,
+    setAccentPattern,
+    setBeatAccent,
+    cycleBeatAccent,
     setVolume,
     toggleMute,
     toggleCountIn,
@@ -108,6 +112,39 @@ export function MetronomePanel({ onBack, onScroll, isAmoled: propIsAmoled }: Met
   const [showSoundMenu, setShowSoundMenu] = useState(false);
   const [activePresetMenuId, setActivePresetMenuId] = useState<string | null>(null);
   const [deletingPresetId, setDeletingPresetId] = useState<string | null>(null);
+
+  // Direct BPM numeric keyboard entry state
+  const [isEditingBpm, setIsEditingBpm] = useState(false);
+  const [bpmInputValue, setBpmInputValue] = useState('');
+  const bpmInputRef = useRef<HTMLInputElement>(null);
+
+  const handleStartBpmEdit = () => {
+    if (isTempoLocked) return;
+    setBpmInputValue(String(bpm));
+    setIsEditingBpm(true);
+  };
+
+  const handleCancelBpmEdit = () => {
+    setIsEditingBpm(false);
+    setBpmInputValue('');
+  };
+
+  const handleSaveBpmEdit = () => {
+    const parsed = parseInt(bpmInputValue.replace(/[^0-9]/g, ''), 10);
+    if (!isNaN(parsed)) {
+      const clamped = Math.max(40, Math.min(280, parsed));
+      setBpm(clamped);
+    }
+    setIsEditingBpm(false);
+    setBpmInputValue('');
+  };
+
+  useEffect(() => {
+    if (isEditingBpm && bpmInputRef.current) {
+      bpmInputRef.current.focus();
+      bpmInputRef.current.select();
+    }
+  }, [isEditingBpm]);
 
   // In-modal Create/Edit Preset Form state transformation
   const [presetFormMode, setPresetFormMode] = useState<'create' | 'edit' | null>(null);
@@ -154,6 +191,10 @@ export function MetronomePanel({ onBack, onScroll, isAmoled: propIsAmoled }: Met
   useBackHandler(
     'overlay',
     () => {
+      if (isEditingBpm) {
+        setIsEditingBpm(false);
+        return true;
+      }
       if (showTempoRampModal) {
         setShowTempoRampModal(false);
         return true;
@@ -199,6 +240,7 @@ export function MetronomePanel({ onBack, onScroll, isAmoled: propIsAmoled }: Met
       return false;
     },
     [
+      isEditingBpm,
       showTempoRampModal,
       showCountInModal,
       showTimeSigModal,
@@ -211,6 +253,28 @@ export function MetronomePanel({ onBack, onScroll, isAmoled: propIsAmoled }: Met
       activePresetMenuId,
     ]
   );
+
+  // Accent summary descriptor
+  const { accentSummary, hasAccents } = useMemo(() => {
+    const pattern = accentPattern || [];
+    const strongCount = pattern.filter((t) => t === 'strong').length;
+    const accentCount = pattern.filter((t) => t === 'accent').length;
+    const total = strongCount + accentCount;
+    if (total === 0) return { accentSummary: 'No Accents', hasAccents: false };
+    if (strongCount > 0 && accentCount > 0) {
+      return { accentSummary: `${strongCount} Strong • ${accentCount} Accent`, hasAccents: true };
+    }
+    if (strongCount > 0) {
+      return {
+        accentSummary: `${strongCount} Strong Accent${strongCount > 1 ? 's' : ''}`,
+        hasAccents: true,
+      };
+    }
+    return {
+      accentSummary: `${accentCount} Medium Accent${accentCount > 1 ? 's' : ''}`,
+      hasAccents: true,
+    };
+  }, [accentPattern]);
 
   // Tempo descriptor
   const { tempoDescriptor, tempoTag } = useMemo(() => {
@@ -445,17 +509,19 @@ export function MetronomePanel({ onBack, onScroll, isAmoled: propIsAmoled }: Met
             </span>
             <div className="flex items-center gap-1.5">
               <span className="text-[9px] font-semibold text-slate-500 dark:text-zinc-400">
-                {accentBeat >= 0 ? `Accent Beat ${accentBeat + 1}` : 'No Accent'}
+                {accentSummary}
               </span>
-              {accentBeat >= 0 && <span className="w-1.5 h-1.5 rounded-full bg-[#007aff]" />}
+              {hasAccents && <span className="w-1.5 h-1.5 rounded-full bg-[#007aff]" />}
             </div>
           </div>
 
-          {/* Visual Pulsing Cells */}
+          {/* Visual Pulsing Cells with 3-Tier Multi-Accents */}
           <div className={`grid gap-2 py-1 ${beatGridColsClass}`}>
             {Array.from({ length: beatsCount }).map((_, idx) => {
               const isCurrent = isPlaying && activeBeat === idx;
-              const isAccentBeat = accentBeat === idx;
+              const accentType = (accentPattern && accentPattern[idx]) || 'normal';
+              const isStrong = accentType === 'strong';
+              const isAccent = accentType === 'accent';
               const isCompact = beatsCount > 6;
 
               if (isCurrent) {
@@ -463,21 +529,27 @@ export function MetronomePanel({ onBack, onScroll, isAmoled: propIsAmoled }: Met
                   <button
                     key={idx}
                     type="button"
-                    onClick={() => setAccentBeat(accentBeat === idx ? -1 : idx)}
+                    onClick={() => cycleBeatAccent(idx)}
                     className={`${isCompact ? 'h-10' : 'h-12'} rounded-xl flex flex-col items-center justify-center font-manrope font-extrabold relative overflow-hidden pulse-active cursor-pointer ${
-                      isAccentBeat
-                        ? 'bg-[#007aff] text-white shadow-[0_4px_14px_rgba(0,122,255,0.35)]'
-                        : 'bg-blue-500 text-white shadow-[0_4px_14px_rgba(0,122,255,0.25)]'
+                      isStrong
+                        ? 'bg-[#007aff] text-white shadow-[0_4px_14px_rgba(0,122,255,0.4)]'
+                        : isAccent
+                          ? 'bg-sky-500 text-white shadow-[0_4px_14px_rgba(14,165,233,0.35)]'
+                          : 'bg-blue-600 text-white shadow-[0_4px_14px_rgba(0,122,255,0.2)]'
                     }`}
                   >
                     <span className={`${isCompact ? 'text-base' : 'text-lg'} leading-none`}>
                       {idx + 1}
                     </span>
                     <span className="text-[8px] font-bold tracking-widest uppercase opacity-90">
-                      {isAccentBeat ? 'ACCENT' : 'NORMAL'}
+                      {isStrong ? 'STRONG' : isAccent ? 'ACCENT' : 'NORMAL'}
                     </span>
-                    {isAccentBeat && (
-                      <span className="absolute top-1 right-1.5 w-1.5 h-1.5 rounded-full bg-white" />
+                    {(isStrong || isAccent) && (
+                      <span
+                        className={`absolute top-1 right-1.5 w-1.5 h-1.5 rounded-full ${
+                          isStrong ? 'bg-white' : 'bg-white/80'
+                        }`}
+                      />
                     )}
                   </button>
                 );
@@ -487,15 +559,19 @@ export function MetronomePanel({ onBack, onScroll, isAmoled: propIsAmoled }: Met
                 <button
                   key={idx}
                   type="button"
-                  onClick={() => setAccentBeat(accentBeat === idx ? -1 : idx)}
+                  onClick={() => cycleBeatAccent(idx)}
                   className={`${isCompact ? 'h-10' : 'h-12'} rounded-xl border flex flex-col items-center justify-center font-manrope font-bold transition cursor-pointer relative ${
-                    isAccentBeat
+                    isStrong
                       ? isAmoled
-                        ? 'bg-[#007aff]/20 text-[#007aff] border-[#007aff] hover:bg-[#007aff]/30'
-                        : 'bg-blue-50/70 dark:bg-blue-950/30 text-[#007aff] border-[#007aff]/60 hover:bg-blue-100/80 dark:hover:bg-blue-900/40'
-                      : isAmoled
-                        ? 'bg-[#0a0a0c] text-zinc-300 border-white/10 hover:bg-white/10'
-                        : 'bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 border-slate-200/80 dark:border-zinc-700 hover:bg-slate-200 dark:hover:bg-zinc-700'
+                        ? 'bg-[#007aff]/25 text-[#007aff] border-[#007aff] hover:bg-[#007aff]/35'
+                        : 'bg-blue-50/80 dark:bg-blue-950/40 text-[#007aff] border-[#007aff] hover:bg-blue-100 dark:hover:bg-blue-900/50 shadow-xs'
+                      : isAccent
+                        ? isAmoled
+                          ? 'bg-sky-500/20 text-sky-400 border-sky-500/70 hover:bg-sky-500/30'
+                          : 'bg-sky-50 dark:bg-sky-950/30 text-sky-600 dark:text-sky-400 border-sky-400/60 dark:border-sky-600/60 hover:bg-sky-100 dark:hover:bg-sky-900/40'
+                        : isAmoled
+                          ? 'bg-[#0a0a0c] text-zinc-300 border-white/10 hover:bg-white/10'
+                          : 'bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 border-slate-200/80 dark:border-zinc-700 hover:bg-slate-200 dark:hover:bg-zinc-700'
                   }`}
                 >
                   <span className={`${isCompact ? 'text-base' : 'text-lg'} leading-none`}>
@@ -503,15 +579,20 @@ export function MetronomePanel({ onBack, onScroll, isAmoled: propIsAmoled }: Met
                   </span>
                   <span
                     className={`text-[8px] ${
-                      isAccentBeat
-                        ? 'font-bold text-[#007aff]'
-                        : 'font-medium text-slate-400 dark:text-zinc-500'
+                      isStrong
+                        ? 'font-extrabold text-[#007aff]'
+                        : isAccent
+                          ? 'font-bold text-sky-500 dark:text-sky-400'
+                          : 'font-medium text-slate-400 dark:text-zinc-500'
                     }`}
                   >
-                    {isAccentBeat ? 'ACCENT' : 'NORMAL'}
+                    {isStrong ? 'STRONG' : isAccent ? 'ACCENT' : 'NORMAL'}
                   </span>
-                  {isAccentBeat && (
+                  {isStrong && (
                     <span className="absolute top-1 right-1.5 w-1.5 h-1.5 rounded-full bg-[#007aff]" />
+                  )}
+                  {isAccent && (
+                    <span className="absolute top-1 right-1.5 w-1.5 h-1.5 rounded-full bg-sky-400" />
                   )}
                 </button>
               );
@@ -628,14 +709,88 @@ export function MetronomePanel({ onBack, onScroll, isAmoled: propIsAmoled }: Met
               </button>
             </div>
 
-            <div className="flex flex-col items-center cursor-pointer select-none">
-              <span className="text-7xl sm:text-8xl font-black font-manrope tracking-tighter text-[#0e0e0e] dark:text-zinc-100 leading-none font-tabular-nums">
-                {isPlaying && tempoRamp.enabled ? effectiveBpm : bpm}
-              </span>
-              <span className="text-[11px] font-extrabold tracking-widest text-[#007aff] uppercase font-manrope mt-1">
-                BPM
-              </span>
-            </div>
+            {isEditingBpm ? (
+              <div className="flex flex-col items-center justify-center min-h-[90px] py-0.5">
+                <div className="flex items-center gap-2">
+                  <input
+                    ref={bpmInputRef}
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    value={bpmInputValue}
+                    onChange={(e) => setBpmInputValue(e.target.value.replace(/[^0-9]/g, ''))}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleSaveBpmEdit();
+                      } else if (e.key === 'Escape') {
+                        e.preventDefault();
+                        handleCancelBpmEdit();
+                      }
+                    }}
+                    className={`w-28 text-center text-5xl font-black font-manrope rounded-xl py-1 px-2 border-2 border-[#007aff] outline-none ${
+                      isAmoled
+                        ? 'bg-[#111] text-white'
+                        : 'bg-white dark:bg-zinc-800 text-[#0e0e0e] dark:text-zinc-100 shadow-inner'
+                    }`}
+                    placeholder="BPM"
+                    maxLength={3}
+                  />
+                  <span className="text-[11px] font-extrabold tracking-widest text-[#007aff] uppercase font-manrope">
+                    BPM
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5 mt-2">
+                  <button
+                    type="button"
+                    onClick={handleCancelBpmEdit}
+                    className={`px-3 py-1 text-xs font-bold rounded-lg border ${
+                      isAmoled
+                        ? 'bg-[#18181b] border-white/15 text-zinc-400 hover:bg-white/10'
+                        : 'bg-slate-100 dark:bg-zinc-800 border-slate-200 dark:border-zinc-700 text-slate-600 dark:text-zinc-400 hover:bg-slate-200'
+                    } transition cursor-pointer`}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSaveBpmEdit}
+                    className="px-3.5 py-1 text-xs font-bold rounded-lg bg-[#007aff] text-white shadow-xs hover:bg-[#0066d6] transition cursor-pointer"
+                  >
+                    Set BPM
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div
+                onClick={handleStartBpmEdit}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    handleStartBpmEdit();
+                  }
+                }}
+                className={`flex flex-col items-center select-none ${
+                  isTempoLocked
+                    ? 'cursor-not-allowed'
+                    : 'cursor-pointer hover:opacity-90 active:scale-98 transition'
+                }`}
+                title={isTempoLocked ? 'Tempo is locked' : 'Tap to enter BPM directly'}
+                aria-label={isTempoLocked ? 'Tempo is locked' : 'Tap to enter BPM directly'}
+              >
+                <span className="text-7xl sm:text-8xl font-black font-manrope tracking-tighter text-[#0e0e0e] dark:text-zinc-100 leading-none font-tabular-nums">
+                  {isPlaying && tempoRamp.enabled ? effectiveBpm : bpm}
+                </span>
+                <span className="text-[11px] font-extrabold tracking-widest text-[#007aff] uppercase font-manrope mt-1 flex items-center gap-1">
+                  BPM
+                  {!isTempoLocked && (
+                    <span className="material-symbols-outlined text-[13px] opacity-60">edit</span>
+                  )}
+                </span>
+              </div>
+            )}
 
             <div className="flex items-center gap-1 sm:gap-1.5">
               <button
@@ -752,7 +907,7 @@ export function MetronomePanel({ onBack, onScroll, isAmoled: propIsAmoled }: Met
               </span>
               {isTempoLocked ? 'TEMPO LOCKED' : 'TAP TEMPO'}{' '}
               <span className="text-[10px] text-slate-400 dark:text-zinc-500 font-normal">
-                {isTempoLocked ? '(Unlock below to adjust)' : '(Tap 4 times)'}
+                {isTempoLocked ? '(Unlock below to adjust)' : '(Tap to set tempo)'}
               </span>
             </button>
           </div>

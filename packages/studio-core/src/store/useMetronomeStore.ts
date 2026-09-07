@@ -1,10 +1,12 @@
 import { create } from 'zustand';
 import {
   metronomeAudioEngine,
+  getBeatsPerMeasure,
   type MetronomeTimeSignature,
   type MetronomeSubdivision,
   type MetronomeSoundId,
   type MetronomeTempoRampConfig,
+  type MetronomeAccentType,
 } from '../lib/audio/metronomeAudio';
 import { mediaSessionCoordinator } from '../lib/audio/mediaSessionCoordinator';
 
@@ -19,6 +21,7 @@ export interface MetronomePreset {
   countInEnabled: boolean;
   countInBars?: number; // 0, 1, 2, 3
   accentBeat?: number; // 0-indexed measure beat (0 = Beat 1)
+  accentPattern?: MetronomeAccentType[]; // Full measure accent pattern
   tempoRamp?: MetronomeTempoRampConfig; // Optional integrated tempo ramp configuration
   isFactory?: boolean; // Immutable factory preset flag
   icon?: string;
@@ -115,6 +118,7 @@ export function checkPresetMatchesConfig(
     subdivision: MetronomeSubdivision;
     sound: MetronomeSoundId;
     accentBeat: number;
+    accentPattern?: MetronomeAccentType[];
     countInEnabled: boolean;
     countInBars?: number;
     tempoRamp: MetronomeTempoRampConfig;
@@ -124,7 +128,16 @@ export function checkPresetMatchesConfig(
   if (preset.timeSignature !== config.timeSignature) return false;
   if (preset.subdivision !== config.subdivision) return false;
   if (preset.sound !== config.sound) return false;
-  if ((preset.accentBeat ?? 0) !== (config.accentBeat ?? 0)) return false;
+
+  if (preset.accentPattern && config.accentPattern) {
+    if (preset.accentPattern.length !== config.accentPattern.length) return false;
+    for (let i = 0; i < preset.accentPattern.length; i++) {
+      if (preset.accentPattern[i] !== config.accentPattern[i]) return false;
+    }
+  } else if ((preset.accentBeat ?? 0) !== (config.accentBeat ?? 0)) {
+    return false;
+  }
+
   if (Boolean(preset.countInEnabled) !== Boolean(config.countInEnabled)) return false;
 
   const presetRampEnabled = Boolean(preset.tempoRamp?.enabled);
@@ -146,6 +159,7 @@ export function findMatchingPresetId(
     subdivision: MetronomeSubdivision;
     sound: MetronomeSoundId;
     accentBeat: number;
+    accentPattern?: MetronomeAccentType[];
     countInEnabled: boolean;
     countInBars?: number;
     tempoRamp: MetronomeTempoRampConfig;
@@ -221,6 +235,7 @@ export interface MetronomeState {
   subdivision: MetronomeSubdivision;
   sound: MetronomeSoundId;
   accentBeat: number; // 0 to N-1 (default 0 for Beat 1)
+  accentPattern: MetronomeAccentType[]; // Multi-accent pattern per measure
   volume: number; // 0 - 100
   isMuted: boolean;
   countInEnabled: boolean;
@@ -270,6 +285,9 @@ export interface MetronomeState {
   setSubdivision: (sub: MetronomeSubdivision) => void;
   setSound: (sound: MetronomeSoundId) => void;
   setAccentBeat: (beatIndex: number) => void;
+  setAccentPattern: (pattern: MetronomeAccentType[]) => void;
+  setBeatAccent: (beatIndex: number, type: MetronomeAccentType) => void;
+  cycleBeatAccent: (beatIndex: number) => void;
   setVolume: (volume: number) => void;
   toggleMute: () => void;
   toggleCountIn: () => void;
@@ -323,12 +341,24 @@ export const useMetronomeStore = create<MetronomeState>((set, get) => {
   const initialCountInVoice = stored?.countInVoiceEnabled ?? true;
   const initialTempoLocked = stored?.isTempoLocked ?? false;
 
+  const initialBeatsCount = getBeatsPerMeasure(initialSig);
+  const defaultPattern: MetronomeAccentType[] = Array(initialBeatsCount).fill('normal');
+  if (initialAccent >= 0 && initialAccent < initialBeatsCount) {
+    defaultPattern[initialAccent] = 'strong';
+  } else if (initialAccent !== -1) {
+    defaultPattern[0] = 'strong';
+  }
+  const initialAccentPattern: MetronomeAccentType[] =
+    Array.isArray(stored?.accentPattern) && stored.accentPattern.length === initialBeatsCount
+      ? stored.accentPattern
+      : defaultPattern;
+
   // Configure audio engine with initial settings
   metronomeAudioEngine.setBpm(initialBpm);
   metronomeAudioEngine.setTimeSignature(initialSig);
   metronomeAudioEngine.setSubdivision(initialSub);
   metronomeAudioEngine.setSound(initialSound);
-  metronomeAudioEngine.setAccentBeat(initialAccent);
+  metronomeAudioEngine.setAccentPattern(initialAccentPattern);
   metronomeAudioEngine.setVolume(initialVol / 100);
   metronomeAudioEngine.setCountIn(initialCountInBars > 0, initialCountInBars, initialCountInVoice);
 
@@ -475,6 +505,7 @@ export const useMetronomeStore = create<MetronomeState>((set, get) => {
     subdivision?: MetronomeSubdivision;
     sound?: MetronomeSoundId;
     accentBeat?: number;
+    accentPattern?: MetronomeAccentType[];
     countInEnabled?: boolean;
     countInBars?: number;
     tempoRamp?: MetronomeTempoRampConfig;
@@ -487,6 +518,8 @@ export const useMetronomeStore = create<MetronomeState>((set, get) => {
       subdivision: patch.subdivision !== undefined ? patch.subdivision : current.subdivision,
       sound: patch.sound !== undefined ? patch.sound : current.sound,
       accentBeat: patch.accentBeat !== undefined ? patch.accentBeat : current.accentBeat,
+      accentPattern:
+        patch.accentPattern !== undefined ? patch.accentPattern : current.accentPattern,
       countInEnabled:
         patch.countInEnabled !== undefined
           ? patch.countInEnabled
@@ -507,6 +540,7 @@ export const useMetronomeStore = create<MetronomeState>((set, get) => {
       sound: s.sound,
       volume: s.volume,
       accentBeat: s.accentBeat,
+      accentPattern: s.accentPattern,
       countInEnabled: s.countInEnabled,
       countInBars: s.countInBars,
       countInVoiceEnabled: s.countInVoiceEnabled,
@@ -520,6 +554,7 @@ export const useMetronomeStore = create<MetronomeState>((set, get) => {
     subdivision: initialSub,
     sound: initialSound,
     accentBeat: initialAccent,
+    accentPattern: initialAccentPattern,
     volume: initialVol,
     isMuted: false,
     countInEnabled: initialCountInBars > 0,
@@ -607,17 +642,19 @@ export const useMetronomeStore = create<MetronomeState>((set, get) => {
 
     setTimeSignature: (sig: MetronomeTimeSignature) => {
       metronomeAudioEngine.setTimeSignature(sig);
-      const currentAccent = get().accentBeat;
-      const maxBeat = metronomeAudioEngine.getBeatsPerMeasure() - 1;
-      const validAccent = currentAccent > maxBeat ? 0 : currentAccent;
-      if (validAccent !== currentAccent) {
-        metronomeAudioEngine.setAccentBeat(validAccent);
-      }
+      const nextPattern = metronomeAudioEngine.accentPattern;
+      const nextAccent = metronomeAudioEngine.accentBeat;
       const nextActivePresetId = evaluatePresetMatch({
         timeSignature: sig,
-        accentBeat: validAccent,
+        accentBeat: nextAccent,
+        accentPattern: nextPattern,
       });
-      set({ timeSignature: sig, accentBeat: validAccent, activePresetId: nextActivePresetId });
+      set({
+        timeSignature: sig,
+        accentPattern: nextPattern,
+        accentBeat: nextAccent,
+        activePresetId: nextActivePresetId,
+      });
       persistSettings();
       syncMediaSession(get().isPlaying);
     },
@@ -638,20 +675,62 @@ export const useMetronomeStore = create<MetronomeState>((set, get) => {
       syncMediaSession(get().isPlaying);
     },
 
+    setAccentPattern: (pattern: MetronomeAccentType[]) => {
+      metronomeAudioEngine.setAccentPattern(pattern);
+      const nextPattern = metronomeAudioEngine.accentPattern;
+      const nextAccent = metronomeAudioEngine.accentBeat;
+      const nextActivePresetId = evaluatePresetMatch({
+        accentBeat: nextAccent,
+        accentPattern: nextPattern,
+      });
+      set({
+        accentPattern: nextPattern,
+        accentBeat: nextAccent,
+        activePresetId: nextActivePresetId,
+      });
+      persistSettings();
+      syncMediaSession(get().isPlaying);
+    },
+
+    setBeatAccent: (beatIndex: number, type: MetronomeAccentType) => {
+      metronomeAudioEngine.setBeatAccent(beatIndex, type);
+      const nextPattern = metronomeAudioEngine.accentPattern;
+      const nextAccent = metronomeAudioEngine.accentBeat;
+      const nextActivePresetId = evaluatePresetMatch({
+        accentBeat: nextAccent,
+        accentPattern: nextPattern,
+      });
+      set({
+        accentPattern: nextPattern,
+        accentBeat: nextAccent,
+        activePresetId: nextActivePresetId,
+      });
+      persistSettings();
+      syncMediaSession(get().isPlaying);
+    },
+
+    cycleBeatAccent: (beatIndex: number) => {
+      const currentPattern = get().accentPattern;
+      const current = currentPattern[beatIndex] || 'normal';
+      // Cycle: normal -> accent -> strong -> normal
+      const nextType: MetronomeAccentType =
+        current === 'normal' ? 'accent' : current === 'accent' ? 'strong' : 'normal';
+      get().setBeatAccent(beatIndex, nextType);
+    },
+
     setAccentBeat: (beatIndex: number) => {
-      if (beatIndex < 0) {
-        metronomeAudioEngine.setAccentBeat(-1);
-        const nextActivePresetId = evaluatePresetMatch({ accentBeat: -1 });
-        set({ accentBeat: -1, activePresetId: nextActivePresetId });
-        persistSettings();
-        syncMediaSession(get().isPlaying);
-        return;
-      }
-      const maxBeat = metronomeAudioEngine.getBeatsPerMeasure() - 1;
-      const clamped = Math.max(0, Math.min(maxBeat, Math.round(beatIndex)));
-      metronomeAudioEngine.setAccentBeat(clamped);
-      const nextActivePresetId = evaluatePresetMatch({ accentBeat: clamped });
-      set({ accentBeat: clamped, activePresetId: nextActivePresetId });
+      metronomeAudioEngine.setAccentBeat(beatIndex);
+      const nextPattern = metronomeAudioEngine.accentPattern;
+      const nextAccent = metronomeAudioEngine.accentBeat;
+      const nextActivePresetId = evaluatePresetMatch({
+        accentBeat: nextAccent,
+        accentPattern: nextPattern,
+      });
+      set({
+        accentBeat: nextAccent,
+        accentPattern: nextPattern,
+        activePresetId: nextActivePresetId,
+      });
       persistSettings();
       syncMediaSession(get().isPlaying);
     },
@@ -709,20 +788,42 @@ export const useMetronomeStore = create<MetronomeState>((set, get) => {
     tapTempo: () => {
       if (get().isTempoLocked) return;
       const now = performance.now();
-      tapTimes.push(now);
-      if (tapTimes.length > 4) tapTimes.shift();
 
+      // Reset sequence if more than 2000ms pause between taps
+      if (tapTimes.length > 0 && now - tapTimes[tapTimes.length - 1] > 2000) {
+        tapTimes.length = 0;
+      }
+
+      // Touch-noise debounce: ignore taps faster than 70ms (< 857 BPM physical tap bounce)
+      if (tapTimes.length > 0 && now - tapTimes[tapTimes.length - 1] < 70) {
+        return;
+      }
+
+      tapTimes.push(now);
+      // Keep up to 7 taps (6 intervals) for responsive yet stable tracking
+      if (tapTimes.length > 7) tapTimes.shift();
+
+      // 2 taps immediately calculate an initial tempo!
       if (tapTimes.length >= 2) {
         const intervals: number[] = [];
         for (let i = 1; i < tapTimes.length; i++) {
           intervals.push(tapTimes[i] - tapTimes[i - 1]);
         }
-        const avg = intervals.reduce((a, b) => a + b, 0) / intervals.length;
-        if (avg > 0) {
-          const calculatedBpm = Math.round(60000 / avg);
-          if (calculatedBpm >= 40 && calculatedBpm <= 280) {
-            get().setBpm(calculatedBpm);
-          }
+
+        // Weighted rolling average: recent intervals get slightly higher weight
+        let weightedSum = 0;
+        let totalWeight = 0;
+        for (let i = 0; i < intervals.length; i++) {
+          const weight = 1 + (i / Math.max(1, intervals.length - 1)) * 0.5;
+          weightedSum += intervals[i] * weight;
+          totalWeight += weight;
+        }
+
+        const avgInterval = weightedSum / totalWeight;
+        if (avgInterval > 0) {
+          const calculatedBpm = Math.round(60000 / avgInterval);
+          const clampedBpm = Math.max(40, Math.min(280, calculatedBpm));
+          get().setBpm(clampedBpm);
         }
       }
     },
@@ -737,7 +838,20 @@ export const useMetronomeStore = create<MetronomeState>((set, get) => {
       metronomeAudioEngine.setSubdivision(preset.subdivision);
       metronomeAudioEngine.setSound(preset.sound);
       metronomeAudioEngine.setVolume(preset.volume / 100);
-      metronomeAudioEngine.setAccentBeat(preset.accentBeat ?? 0);
+
+      const beatsCount = getBeatsPerMeasure(preset.timeSignature);
+      let pattern: MetronomeAccentType[];
+      if (Array.isArray(preset.accentPattern) && preset.accentPattern.length === beatsCount) {
+        pattern = [...preset.accentPattern];
+      } else {
+        pattern = Array(beatsCount).fill('normal');
+        const acc = preset.accentBeat ?? 0;
+        if (acc >= 0 && acc < beatsCount) {
+          pattern[acc] = 'strong';
+        }
+      }
+      metronomeAudioEngine.setAccentPattern(pattern);
+
       const countInEnabled = preset.countInEnabled ?? true;
       const countInBars = preset.countInBars ?? (countInEnabled ? 1 : 0);
       metronomeAudioEngine.setCountIn(countInEnabled, countInBars, get().countInVoiceEnabled);
@@ -754,7 +868,8 @@ export const useMetronomeStore = create<MetronomeState>((set, get) => {
         subdivision: preset.subdivision,
         sound: preset.sound,
         volume: preset.volume,
-        accentBeat: preset.accentBeat ?? 0,
+        accentBeat: preset.accentBeat ?? pattern.findIndex((t) => t !== 'normal'),
+        accentPattern: pattern,
         countInEnabled,
         countInBars,
         tempoRamp: nextRamp,
@@ -782,6 +897,10 @@ export const useMetronomeStore = create<MetronomeState>((set, get) => {
         volume: isObject && nameOrData.volume !== undefined ? nameOrData.volume : s.volume,
         accentBeat:
           isObject && nameOrData.accentBeat !== undefined ? nameOrData.accentBeat : s.accentBeat,
+        accentPattern:
+          isObject && nameOrData.accentPattern
+            ? [...nameOrData.accentPattern]
+            : [...s.accentPattern],
         countInEnabled:
           isObject && nameOrData.countInEnabled !== undefined
             ? nameOrData.countInEnabled
@@ -819,6 +938,7 @@ export const useMetronomeStore = create<MetronomeState>((set, get) => {
             sound: s.sound,
             volume: s.volume,
             accentBeat: s.accentBeat,
+            accentPattern: [...s.accentPattern],
             countInEnabled: s.countInEnabled,
             countInBars: s.countInBars,
             tempoRamp: s.tempoRamp.enabled ? { ...s.tempoRamp } : undefined,
@@ -851,7 +971,8 @@ export const useMetronomeStore = create<MetronomeState>((set, get) => {
         if (updates.subdivision !== undefined) get().setSubdivision(updates.subdivision);
         if (updates.sound !== undefined) get().setSound(updates.sound);
         if (updates.volume !== undefined) get().setVolume(updates.volume);
-        if (updates.accentBeat !== undefined) get().setAccentBeat(updates.accentBeat);
+        if (updates.accentPattern !== undefined) get().setAccentPattern(updates.accentPattern);
+        else if (updates.accentBeat !== undefined) get().setAccentBeat(updates.accentBeat);
         if (updates.countInEnabled !== undefined || updates.countInBars !== undefined) {
           const countInBars = updates.countInBars ?? (updates.countInEnabled ? 1 : 0);
           const countInEnabled = updates.countInEnabled ?? countInBars > 0;

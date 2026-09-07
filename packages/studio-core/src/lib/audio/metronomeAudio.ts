@@ -35,10 +35,13 @@ export interface MetronomeTempoRampConfig {
   holdFinalBpm?: boolean; // Whether target BPM persists after ramp completion (default true)
 }
 
+export type MetronomeAccentType = 'normal' | 'accent' | 'strong';
+
 export interface MetronomeBeatEvent {
   beatIndex: number;
   subdivisionIndex: number;
   isAccent: boolean;
+  accentType: MetronomeAccentType;
   isCountIn: boolean;
   countInNumber?: number; // Beat number during count-in: 1, 2, 3, 4
   countInBar?: number; // 1-indexed bar number during multi-bar count-in: 1, 2, 3
@@ -54,6 +57,7 @@ export interface MetronomeAudioConfig {
   subdivision: MetronomeSubdivision;
   sound: MetronomeSoundId;
   accentBeat?: number;
+  accentPattern?: MetronomeAccentType[];
   volume: number; // 0 to 1
   isMuted: boolean;
   countInEnabled: boolean;
@@ -119,6 +123,7 @@ export class MetronomeAudioEngine {
   private _subdivision: MetronomeSubdivision = '1/16';
   private _sound: MetronomeSoundId = 'woodblock';
   private _accentBeat: number = 0;
+  private _accentPattern: MetronomeAccentType[] = ['strong', 'normal', 'normal', 'normal'];
   private _volume: number = 0.85;
   private _isMuted: boolean = false;
   private _countInEnabled: boolean = true;
@@ -226,16 +231,21 @@ export class MetronomeAudioEngine {
       'rimshot',
     ];
     for (const s of sounds) {
-      this._soundBuffers.set(`${s}-accent`, this.synthesizeBuffer(s, true));
-      this._soundBuffers.set(`${s}-normal`, this.synthesizeBuffer(s, false));
-      this._soundBuffers.set(`${s}-sub`, this.synthesizeBuffer(s, false, true));
+      this._soundBuffers.set(`${s}-strong`, this.synthesizeBuffer(s, 'strong'));
+      this._soundBuffers.set(`${s}-accent`, this.synthesizeBuffer(s, 'accent'));
+      this._soundBuffers.set(`${s}-normal`, this.synthesizeBuffer(s, 'normal'));
+      this._soundBuffers.set(`${s}-sub`, this.synthesizeBuffer(s, 'normal', true));
     }
     // Dedicated count-in sound
     this._soundBuffers.set('count-in-high', this.synthesizeCountInBuffer(true));
     this._soundBuffers.set('count-in-low', this.synthesizeCountInBuffer(false));
   }
 
-  private synthesizeBuffer(sound: MetronomeSoundId, isAccent: boolean, isSub = false): AudioBuffer {
+  private synthesizeBuffer(
+    sound: MetronomeSoundId,
+    accentType: MetronomeAccentType | boolean,
+    isSub = false
+  ): AudioBuffer {
     const ctx = this._ctx!;
     const sampleRate = ctx.sampleRate;
     const duration =
@@ -260,18 +270,23 @@ export class MetronomeAudioEngine {
     const buffer = ctx.createBuffer(1, length, sampleRate);
     const data = buffer.getChannelData(0);
 
-    const gainMult = isSub ? 0.35 : isAccent ? 1.0 : 0.68;
+    const resolvedType: MetronomeAccentType =
+      typeof accentType === 'boolean' ? (accentType ? 'strong' : 'normal') : accentType;
+
+    const isStrong = resolvedType === 'strong';
+    const isMedAccent = resolvedType === 'accent';
+    const gainMult = isSub ? 0.35 : isStrong ? 1.0 : isMedAccent ? 0.84 : 0.68;
 
     switch (sound) {
       case 'woodblock':
       case 'cowbell': {
         // Dual-resonant cavity wood strike with fast impact transient
-        const f1 = isAccent ? 1520 : 1080;
-        const f2 = isAccent ? 2300 : 1650;
+        const f1 = isStrong ? 1680 : isMedAccent ? 1360 : 1080;
+        const f2 = isStrong ? 2500 : isMedAccent ? 2000 : 1650;
         for (let i = 0; i < length; i++) {
           const t = i / sampleRate;
           const env = Math.exp(-t * 90);
-          const noise = (Math.random() * 2 - 1) * Math.exp(-t * 800) * 0.25;
+          const noise = (Math.random() * 2 - 1) * Math.exp(-t * 800) * (isStrong ? 0.35 : 0.25);
           const tone =
             Math.sin(2 * Math.PI * f1 * t) * 0.65 + Math.sin(2 * Math.PI * f2 * t) * 0.35;
           data[i] = (tone + noise) * env * gainMult;
@@ -280,8 +295,8 @@ export class MetronomeAudioEngine {
       }
       case 'click': {
         // Crisp acoustic wooden stick transient with sharp attack
-        const f1 = isAccent ? 2900 : 2250;
-        const f2 = isAccent ? 4200 : 3400;
+        const f1 = isStrong ? 3600 : isMedAccent ? 2900 : 2250;
+        const f2 = isStrong ? 5200 : isMedAccent ? 4200 : 3400;
         for (let i = 0; i < length; i++) {
           const t = i / sampleRate;
           const env = Math.exp(-t * 160);
@@ -295,8 +310,8 @@ export class MetronomeAudioEngine {
       case 'sidestick':
       case 'rimshot': {
         // Crisp maple drumstick cross-stick across metal snare rim
-        const f1 = isAccent ? 1950 : 1520;
-        const f2 = isAccent ? 3200 : 2650;
+        const f1 = isStrong ? 2450 : isMedAccent ? 1950 : 1520;
+        const f2 = isStrong ? 3900 : isMedAccent ? 3200 : 2650;
         for (let i = 0; i < length; i++) {
           const t = i / sampleRate;
           const env = Math.exp(-t * 110);
@@ -310,8 +325,8 @@ export class MetronomeAudioEngine {
       case 'drystick':
       case 'tick': {
         // Ultra-dry, close-mic'd high-velocity hickory drumstick tip strike with zero resonance
-        const f1 = isAccent ? 3400 : 2600;
-        const f2 = isAccent ? 5800 : 4500;
+        const f1 = isStrong ? 4300 : isMedAccent ? 3400 : 2600;
+        const f2 = isStrong ? 7200 : isMedAccent ? 5800 : 4500;
         for (let i = 0; i < length; i++) {
           const t = i / sampleRate;
           const env = Math.exp(-t * 220);
@@ -324,8 +339,8 @@ export class MetronomeAudioEngine {
       }
       case 'studioclick': {
         // Reference studio master click: defined low-mid body punch with sharp attack transient
-        const f1 = isAccent ? 2200 : 1650;
-        const f2 = isAccent ? 4400 : 3300;
+        const f1 = isStrong ? 2850 : isMedAccent ? 2200 : 1650;
+        const f2 = isStrong ? 5600 : isMedAccent ? 4400 : 3300;
         for (let i = 0; i < length; i++) {
           const t = i / sampleRate;
           const env = Math.exp(-t * 140);
@@ -337,8 +352,8 @@ export class MetronomeAudioEngine {
       }
       case 'rimclick': {
         // Vintage snare hoop rim click: acoustic wood body + focused metallic rim ping
-        const f1 = isAccent ? 2500 : 1900;
-        const f2 = isAccent ? 5200 : 4100;
+        const f1 = isStrong ? 3200 : isMedAccent ? 2500 : 1900;
+        const f2 = isStrong ? 6400 : isMedAccent ? 5200 : 4100;
         for (let i = 0; i < length; i++) {
           const t = i / sampleRate;
           const env = Math.exp(-t * 120);
@@ -350,7 +365,7 @@ export class MetronomeAudioEngine {
       }
       case 'digital': {
         // Subtle, minimalist electronic click with smooth Hann envelope
-        const f = isAccent ? 2200 : 1350;
+        const f = isStrong ? 2800 : isMedAccent ? 2000 : 1350;
         const envDur = 0.024;
         for (let i = 0; i < length; i++) {
           const t = i / sampleRate;
@@ -365,7 +380,7 @@ export class MetronomeAudioEngine {
       }
       case 'soft': {
         // Warm, rounded non-fatiguing practice click
-        const f = isAccent ? 880 : 640;
+        const f = isStrong ? 1100 : isMedAccent ? 880 : 640;
         for (let i = 0; i < length; i++) {
           const t = i / sampleRate;
           const attack = Math.min(1, t / 0.003);
@@ -376,7 +391,7 @@ export class MetronomeAudioEngine {
       }
       case 'shaker': {
         // Clean acoustic shaker: shaped high-frequency grain burst with tight envelope
-        const fCenter = isAccent ? 7200 : 5800;
+        const fCenter = isStrong ? 8500 : isMedAccent ? 7200 : 5800;
         for (let i = 0; i < length; i++) {
           const t = i / sampleRate;
           const env = Math.exp(-t * 130);
@@ -388,8 +403,8 @@ export class MetronomeAudioEngine {
       }
       case 'claves': {
         // High-density Latin hardwood claves strike: resonant ping with wooden click
-        const f1 = isAccent ? 2950 : 2450;
-        const f2 = isAccent ? 5400 : 4600;
+        const f1 = isStrong ? 3500 : isMedAccent ? 2950 : 2450;
+        const f2 = isStrong ? 6200 : isMedAccent ? 5400 : 4600;
         for (let i = 0; i < length; i++) {
           const t = i / sampleRate;
           const env = Math.exp(-t * 95);
@@ -625,6 +640,7 @@ export class MetronomeAudioEngine {
       const isCountIn = this._inCountIn;
 
       let isAccent = false;
+      let accentType: MetronomeAccentType = 'normal';
       let countInNumber: number | undefined = undefined;
       let countInBar: number | undefined = undefined;
       let countInTotalBars: number | undefined = undefined;
@@ -636,17 +652,20 @@ export class MetronomeAudioEngine {
         countInBar = currentBar;
         countInTotalBars = this._countInBars;
         const isHigh = beatInBar === 1;
+        accentType = isHigh ? 'strong' : 'normal';
+        isAccent = isHigh;
 
         // 1. Schedule count-in click (high pitch on Beat 1 of each bar)
-        this.scheduleAudioPulse(beatTime, false, false, true, isHigh);
+        this.scheduleAudioPulse(beatTime, accentType, false, true, isHigh);
 
         // 2. Schedule spoken voice count-in if enabled
         if (this._countInVoiceEnabled) {
           this.scheduleVoicePulse(beatTime, beatInBar);
         }
       } else {
-        isAccent = this._accentBeat >= 0 && this._currentMeasureBeat === this._accentBeat;
-        this.scheduleAudioPulse(beatTime, isAccent, false, false, false);
+        accentType = this._accentPattern[this._currentMeasureBeat] || 'normal';
+        isAccent = accentType !== 'normal';
+        this.scheduleAudioPulse(beatTime, accentType, false, false, false);
       }
 
       const currentBpm = this.computeEffectiveBpm(beatTime, this._measureIndex);
@@ -659,6 +678,7 @@ export class MetronomeAudioEngine {
         beatIndex: isCountIn ? countInNumber! - 1 : this._currentMeasureBeat,
         subdivisionIndex: 0,
         isAccent,
+        accentType,
         isCountIn,
         countInNumber,
         countInBar,
@@ -672,11 +692,12 @@ export class MetronomeAudioEngine {
       if (!isCountIn && subsPerBeat > 1) {
         for (let subIdx = 1; subIdx < subsPerBeat; subIdx++) {
           const subTime = beatTime + subIdx * subInterval;
-          this.scheduleAudioPulse(subTime, false, true, false, false);
+          this.scheduleAudioPulse(subTime, 'normal', true, false, false);
           this._scheduledEvents.push({
             beatIndex: this._currentMeasureBeat,
             subdivisionIndex: subIdx,
             isAccent: false,
+            accentType: 'normal',
             isCountIn: false,
             time: subTime,
             effectiveBpm: Math.round(currentBpm),
@@ -747,7 +768,7 @@ export class MetronomeAudioEngine {
 
   private scheduleAudioPulse(
     time: number,
-    isAccent: boolean,
+    accentType: MetronomeAccentType | boolean,
     isSub: boolean,
     isCountIn: boolean,
     countInHigh: boolean
@@ -760,12 +781,14 @@ export class MetronomeAudioEngine {
     } else if (isSub) {
       bufferKey = `${this._sound}-sub`;
     } else {
-      bufferKey = isAccent ? `${this._sound}-accent` : `${this._sound}-normal`;
+      const resolvedType: MetronomeAccentType =
+        typeof accentType === 'boolean' ? (accentType ? 'strong' : 'normal') : accentType;
+      bufferKey = `${this._sound}-${resolvedType}`;
     }
 
     let buffer = this._soundBuffers.get(bufferKey);
     if (!buffer) {
-      buffer = this.synthesizeBuffer(this._sound, isAccent, isSub);
+      buffer = this.synthesizeBuffer(this._sound, accentType, isSub);
       this._soundBuffers.set(bufferKey, buffer);
     }
 
@@ -829,10 +852,28 @@ export class MetronomeAudioEngine {
   public setTimeSignature(sig: MetronomeTimeSignature) {
     if (this._timeSignature === sig) return;
     this._timeSignature = sig;
-    const maxBeat = this.getBeatsPerMeasure() - 1;
+    const newBeatsCount = this.getBeatsPerMeasure();
+    const maxBeat = newBeatsCount - 1;
+
     if (this._accentBeat > maxBeat) {
       this._accentBeat = 0;
+      const newPattern: MetronomeAccentType[] = Array(newBeatsCount).fill('normal');
+      newPattern[0] = 'strong';
+      this._accentPattern = newPattern;
+    } else if (this._accentBeat === -1) {
+      this._accentPattern = Array(newBeatsCount).fill('normal');
+    } else {
+      const newPattern: MetronomeAccentType[] = [];
+      for (let i = 0; i < newBeatsCount; i++) {
+        newPattern.push(this._accentPattern[i] || (i === this._accentBeat ? 'strong' : 'normal'));
+      }
+      if (newPattern[this._accentBeat] === 'normal') {
+        newPattern[this._accentBeat] = 'strong';
+      }
+      this._accentPattern = newPattern;
+      this._accentBeat = this._accentPattern.findIndex((t) => t !== 'normal');
     }
+
     if (this._isPlaying && this._ctx) {
       const now = this._ctx.currentTime;
       this._t0 = Math.max(this._nextBeatTime, now + 0.01);
@@ -843,16 +884,48 @@ export class MetronomeAudioEngine {
   }
 
   public setAccentBeat(beatIndex: number) {
+    const beatsPerMeasure = this.getBeatsPerMeasure();
     if (beatIndex < 0) {
       this._accentBeat = -1;
+      this._accentPattern = Array(beatsPerMeasure).fill('normal');
       return;
     }
-    const maxBeat = this.getBeatsPerMeasure() - 1;
-    this._accentBeat = Math.max(0, Math.min(maxBeat, Math.round(beatIndex)));
+    const maxBeat = beatsPerMeasure - 1;
+    const clamped = Math.max(0, Math.min(maxBeat, Math.round(beatIndex)));
+    this._accentBeat = clamped;
+    const pattern: MetronomeAccentType[] = Array(beatsPerMeasure).fill('normal');
+    pattern[clamped] = 'strong';
+    this._accentPattern = pattern;
   }
 
   public get accentBeat(): number {
     return this._accentBeat;
+  }
+
+  public get accentPattern(): MetronomeAccentType[] {
+    return [...this._accentPattern];
+  }
+
+  public setAccentPattern(pattern: MetronomeAccentType[]) {
+    const beatsPerMeasure = this.getBeatsPerMeasure();
+    const newPattern: MetronomeAccentType[] = [];
+    for (let i = 0; i < beatsPerMeasure; i++) {
+      const val = pattern[i];
+      if (val === 'strong' || val === 'accent' || val === 'normal') {
+        newPattern.push(val);
+      } else {
+        newPattern.push(i === 0 ? 'strong' : 'normal');
+      }
+    }
+    this._accentPattern = newPattern;
+    this._accentBeat = this._accentPattern.findIndex((t) => t !== 'normal');
+  }
+
+  public setBeatAccent(beatIndex: number, type: MetronomeAccentType) {
+    const beatsPerMeasure = this.getBeatsPerMeasure();
+    if (beatIndex < 0 || beatIndex >= beatsPerMeasure) return;
+    this._accentPattern[beatIndex] = type;
+    this._accentBeat = this._accentPattern.findIndex((t) => t !== 'normal');
   }
 
   public setSubdivision(sub: MetronomeSubdivision) {

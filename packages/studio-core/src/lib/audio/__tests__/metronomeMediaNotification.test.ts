@@ -170,6 +170,7 @@ describe('Drumex Metronome: Audio Engine & Media Notification State Architecture
       subdivision: '1/16',
       sound: 'woodblock',
       accentBeat: 0,
+      accentPattern: ['strong', 'normal', 'normal', 'normal'],
       volume: 85,
       isPlaying: false,
       activePresetId: null,
@@ -1041,11 +1042,11 @@ describe('Drumex Metronome: Audio Engine & Media Notification State Architecture
         engine.setSound(snd);
         expect(engine.sound).toBe(snd);
 
-        // Verify buffers exist in map
-        const normKey = `${snd}-normal`;
-        const accentKey = `${snd}-accent`;
-        expect((engine as any)._soundBuffers.has(normKey)).toBe(true);
-        expect((engine as any)._soundBuffers.has(accentKey)).toBe(true);
+        // Verify all 4 buffer tiers exist in map
+        expect((engine as any)._soundBuffers.has(`${snd}-strong`)).toBe(true);
+        expect((engine as any)._soundBuffers.has(`${snd}-accent`)).toBe(true);
+        expect((engine as any)._soundBuffers.has(`${snd}-normal`)).toBe(true);
+        expect((engine as any)._soundBuffers.has(`${snd}-sub`)).toBe(true);
       }
 
       engine.stop();
@@ -1071,6 +1072,113 @@ describe('Drumex Metronome: Audio Engine & Media Notification State Architecture
       expect(mockMediaSession.metadata?.album).toBe('Drumex Metronome');
 
       store.stop();
+    });
+
+    it('Area 4: Multi-Accent Pattern System supports 3 tiers and cycling across diverse meters', () => {
+      const store = useMetronomeStore.getState();
+      store.setTimeSignature('4/4');
+
+      // Default 4/4 has ['strong', 'normal', 'normal', 'normal']
+      expect(store.accentPattern).toEqual(['strong', 'normal', 'normal', 'normal']);
+
+      // cycleBeatAccent on Beat 2 (index 1): normal -> accent
+      store.cycleBeatAccent(1);
+      expect(useMetronomeStore.getState().accentPattern).toEqual([
+        'strong',
+        'accent',
+        'normal',
+        'normal',
+      ]);
+
+      // cycleBeatAccent on Beat 2 again: accent -> strong
+      store.cycleBeatAccent(1);
+      expect(useMetronomeStore.getState().accentPattern).toEqual([
+        'strong',
+        'strong',
+        'normal',
+        'normal',
+      ]);
+
+      // cycleBeatAccent on Beat 2 again: strong -> normal
+      store.cycleBeatAccent(1);
+      expect(useMetronomeStore.getState().accentPattern).toEqual([
+        'strong',
+        'normal',
+        'normal',
+        'normal',
+      ]);
+
+      // Complex odd meter 7/8
+      store.setTimeSignature('7/8');
+      expect(useMetronomeStore.getState().accentPattern.length).toBe(7);
+      expect(metronomeAudioEngine.accentPattern.length).toBe(7);
+
+      // Set multi-accent pattern for 2+2+3 Balkan groove
+      store.setAccentPattern([
+        'strong',
+        'normal',
+        'accent',
+        'normal',
+        'accent',
+        'normal',
+        'normal',
+      ]);
+      expect(useMetronomeStore.getState().accentPattern).toEqual([
+        'strong',
+        'normal',
+        'accent',
+        'normal',
+        'accent',
+        'normal',
+        'normal',
+      ]);
+      expect(metronomeAudioEngine.accentPattern).toEqual([
+        'strong',
+        'normal',
+        'accent',
+        'normal',
+        'accent',
+        'normal',
+        'normal',
+      ]);
+    });
+
+    it('Area 5: Robust Tap Tempo calculates instantly on 2 taps, rejects touch-noise, and supports high BPM', () => {
+      const store = useMetronomeStore.getState();
+      const perfNowSpy = vi.spyOn(performance, 'now');
+
+      // Start fresh after pause > 2000ms
+      let simulatedTime = 10000;
+      perfNowSpy.mockImplementation(() => simulatedTime);
+
+      // Tap 1 at t=10000
+      store.tapTempo();
+
+      // Tap 2 at t=10500 (interval = 500ms -> 120 BPM)
+      simulatedTime = 10500;
+      store.tapTempo();
+      expect(useMetronomeStore.getState().bpm).toBe(120);
+
+      // Tap 3 at t=11000 (interval = 500ms -> remains 120 BPM)
+      simulatedTime = 11000;
+      store.tapTempo();
+      expect(useMetronomeStore.getState().bpm).toBe(120);
+
+      // Test high-tempo tapping above 220 BPM up to 240 BPM (interval = 250ms)
+      // Long pause (> 2000ms) to trigger sequence reset
+      simulatedTime = 15000;
+      store.tapTempo(); // Tap 1 of new sequence
+
+      simulatedTime = 15250; // 250ms later -> 240 BPM
+      store.tapTempo();
+      expect(useMetronomeStore.getState().bpm).toBe(240);
+
+      // Test touch-noise rejection: tap within 50ms should be ignored (< 70ms threshold)
+      simulatedTime = 15280; // Only 30ms later
+      store.tapTempo();
+      expect(useMetronomeStore.getState().bpm).toBe(240); // BPM unchanged!
+
+      perfNowSpy.mockRestore();
     });
   });
 });
