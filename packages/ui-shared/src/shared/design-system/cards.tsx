@@ -30,7 +30,7 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(
     const motionProps = interactive
       ? {
           whileHover: isHoverable
-            ? { scale: 1.012, y: -2, boxShadow: '0 8px 24px rgba(0, 0, 0, 0.20)' }
+            ? { scale: 1.012, y: -2, boxShadow: 'var(--shadow-surface-raised)' }
             : undefined,
           whileTap: { scale: 0.985, y: 0 },
           transition: SpringPresets.soft,
@@ -108,7 +108,7 @@ export const BentoCard = forwardRef<HTMLDivElement, BentoCardProps>(
       interactive || onClick
         ? {
             whileHover: isHoverable
-              ? { scale: 1.015, y: -2, boxShadow: '0 8px 24px rgba(0, 0, 0, 0.20)' }
+              ? { scale: 1.015, y: -2, boxShadow: 'var(--shadow-surface-raised)' }
               : undefined,
             whileTap: { scale: 0.985, y: 0 },
             transition: SpringPresets.soft,

@@ -142,7 +142,7 @@ export default function GroovexPreferences() {
     backgroundColor: cardBg,
     borderRadius: 24,
     padding: '20px',
-    boxShadow: isLight ? '0 2px 12px rgba(0,0,0,0.03)' : '0 4px 20px rgba(0,0,0,0.22)',
+    boxShadow: 'var(--shadow-surface-raised)',
     border: cardBorder,
   };
 

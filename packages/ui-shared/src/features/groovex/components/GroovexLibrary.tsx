@@ -379,7 +379,7 @@ export default function GroovexLibrary() {
                   fontSize: '12px',
                   fontWeight: 700,
                   cursor: 'pointer',
-                  boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
+                  boxShadow: 'var(--shadow-pill)',
                   transition: 'all 0.15s ease',
                 }}
               >
@@ -738,9 +738,7 @@ function StitchSongCard({
         backgroundColor: isLight ? '#ffffff' : 'var(--app-surface)',
         border: '1px solid var(--c-border, rgba(0, 0, 0, 0.08))',
         borderRadius: '24px', // rounded-3xl
-        boxShadow: isLight
-          ? '0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02)'
-          : '0 2px 6px rgba(0, 0, 0, 0.25)',
+        boxShadow: 'var(--shadow-surface-soft)',
         cursor: 'pointer',
         boxSizing: 'border-box',
         width: '100%',
@@ -1004,6 +1002,7 @@ function FilterChip({
           : 'var(--app-surface-subtle, rgba(0,0,0,0.04))',
         color: active ? '#ffffff' : 'var(--c-text-secondary)',
         border: active ? '1px solid transparent' : '1px solid var(--c-border, rgba(0,0,0,0.06))',
+        boxShadow: active ? 'var(--shadow-control-raised)' : 'var(--shadow-pill)',
         cursor: 'pointer',
         fontSize: '11px',
         fontWeight: 700,

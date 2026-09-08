@@ -602,10 +602,11 @@ export function MetronomePanel({ onBack, onScroll, isAmoled: propIsAmoled }: Met
       >
         {/* 1. BEAT TRACKER STRIP */}
         <section
+          style={{ boxShadow: 'var(--shadow-surface-soft)' }}
           className={`${
             isAmoled
-              ? 'bg-black border-white/15 shadow-none'
-              : 'bg-white dark:bg-zinc-900 border-slate-200/80 dark:border-zinc-800 shadow-[0_4px_16px_rgba(0,0,0,0.03)]'
+              ? 'bg-black border-white/15'
+              : 'bg-white dark:bg-zinc-900 border-slate-200/80 dark:border-zinc-800'
           } rounded-2xl p-3 border flex flex-col gap-2`}
         >
           <div className="flex items-center justify-between px-1">
@@ -743,10 +744,11 @@ export function MetronomePanel({ onBack, onScroll, isAmoled: propIsAmoled }: Met
 
         {/* 2. GIANT BPM DISPLAY & CONTROLS */}
         <section
+          style={{ boxShadow: 'var(--shadow-surface-raised)' }}
           className={`${
             isAmoled
-              ? 'bg-black border-white/15 shadow-none'
-              : 'bg-white dark:bg-zinc-900 border-slate-200/80 dark:border-zinc-800 shadow-[0_8px_28px_rgba(0,0,0,0.04)]'
+              ? 'bg-black border-white/15'
+              : 'bg-white dark:bg-zinc-900 border-slate-200/80 dark:border-zinc-800'
           } rounded-3xl p-5 border flex flex-col items-center text-center relative overflow-hidden`}
         >
           {/* Tempo Description & Status */}
@@ -778,6 +780,7 @@ export function MetronomePanel({ onBack, onScroll, isAmoled: propIsAmoled }: Met
                 aria-label="Decrease BPM by 5"
                 disabled={isTempoLocked}
                 onClick={() => adjustBpm(-5)}
+                style={{ boxShadow: 'var(--shadow-pill)' }}
                 className={`w-9 h-9 rounded-full ${
                   isAmoled
                     ? 'bg-[#0a0a0c] text-zinc-300 border-white/10'
@@ -797,11 +800,12 @@ export function MetronomePanel({ onBack, onScroll, isAmoled: propIsAmoled }: Met
                 aria-label="Decrease BPM by 1"
                 disabled={isTempoLocked}
                 onClick={() => adjustBpm(-1)}
+                style={{ boxShadow: 'var(--shadow-pill)' }}
                 className={`w-11 h-11 rounded-full ${
                   isAmoled
                     ? 'bg-[#0a0a0c] text-zinc-100 border-white/10'
                     : 'bg-slate-100 dark:bg-zinc-800 text-slate-800 dark:text-zinc-100 border-slate-200 dark:border-zinc-700'
-                } flex items-center justify-center shadow-xs border transition ${
+                } flex items-center justify-center border transition ${
                   isTempoLocked
                     ? 'opacity-40 cursor-not-allowed'
                     : isAmoled
@@ -905,11 +909,12 @@ export function MetronomePanel({ onBack, onScroll, isAmoled: propIsAmoled }: Met
                 aria-label="Increase BPM by 1"
                 disabled={isTempoLocked}
                 onClick={() => adjustBpm(1)}
+                style={{ boxShadow: 'var(--shadow-pill)' }}
                 className={`w-11 h-11 rounded-full ${
                   isAmoled
                     ? 'bg-[#0a0a0c] text-zinc-100 border-white/10'
                     : 'bg-slate-100 dark:bg-zinc-800 text-slate-800 dark:text-zinc-100 border-slate-200 dark:border-zinc-700'
-                } flex items-center justify-center shadow-xs border transition ${
+                } flex items-center justify-center border transition ${
                   isTempoLocked
                     ? 'opacity-40 cursor-not-allowed'
                     : isAmoled
@@ -924,6 +929,7 @@ export function MetronomePanel({ onBack, onScroll, isAmoled: propIsAmoled }: Met
                 aria-label="Increase BPM by 5"
                 disabled={isTempoLocked}
                 onClick={() => adjustBpm(5)}
+                style={{ boxShadow: 'var(--shadow-pill)' }}
                 className={`w-9 h-9 rounded-full ${
                   isAmoled
                     ? 'bg-[#0a0a0c] text-zinc-300 border-white/10'
@@ -995,11 +1001,15 @@ export function MetronomePanel({ onBack, onScroll, isAmoled: propIsAmoled }: Met
               aria-label="Tap Tempo"
               disabled={isTempoLocked}
               onClick={tapTempo}
-              className={`w-full py-2.5 px-4 rounded-xl ${
+              style={{
+                borderRadius: '9999px',
+                boxShadow: 'var(--shadow-control-raised)',
+              }}
+              className={`w-full py-2.5 px-4 rounded-full ${
                 isAmoled
                   ? 'bg-[#0a0a0c] border-white/10 text-zinc-200'
                   : 'bg-slate-50 dark:bg-zinc-800 border-slate-200/90 dark:border-zinc-700 text-slate-800 dark:text-zinc-200'
-              } border flex items-center justify-center gap-2 font-manrope font-bold text-xs tracking-tight shadow-xs transition ${
+              } border flex items-center justify-center gap-2 font-manrope font-bold text-xs tracking-tight transition ${
                 isTempoLocked
                   ? 'opacity-40 cursor-not-allowed'
                   : isAmoled
@@ -1025,10 +1035,11 @@ export function MetronomePanel({ onBack, onScroll, isAmoled: propIsAmoled }: Met
         <section className="grid grid-cols-2 gap-2.5">
           {/* Time Signature */}
           <div
+            style={{ boxShadow: 'var(--shadow-surface-soft)' }}
             className={`${
               isAmoled
-                ? 'bg-black border-white/15 shadow-none'
-                : 'bg-white dark:bg-zinc-900 border-slate-200/80 dark:border-zinc-800 shadow-xs'
+                ? 'bg-black border-white/15'
+                : 'bg-white dark:bg-zinc-900 border-slate-200/80 dark:border-zinc-800'
             } rounded-2xl p-3 border flex flex-col justify-between`}
           >
             <div className="flex items-center justify-between mb-2">
@@ -1083,10 +1094,11 @@ export function MetronomePanel({ onBack, onScroll, isAmoled: propIsAmoled }: Met
 
           {/* Subdivision */}
           <div
+            style={{ boxShadow: 'var(--shadow-surface-soft)' }}
             className={`${
               isAmoled
-                ? 'bg-black border-white/15 shadow-none'
-                : 'bg-white dark:bg-zinc-900 border-slate-200/80 dark:border-zinc-800 shadow-xs'
+                ? 'bg-black border-white/15'
+                : 'bg-white dark:bg-zinc-900 border-slate-200/80 dark:border-zinc-800'
             } rounded-2xl p-3 border flex flex-col justify-between`}
           >
             <div className="flex items-center justify-between mb-2">
@@ -1259,10 +1271,11 @@ export function MetronomePanel({ onBack, onScroll, isAmoled: propIsAmoled }: Met
 
         {/* 5. TEMPO LOCK / BPM HOLD (Drumex Modernized Presentation) */}
         <section
+          style={{ boxShadow: 'var(--shadow-surface-soft)' }}
           className={`${
             isAmoled
-              ? 'bg-black border-white/15 shadow-none'
-              : 'bg-white dark:bg-zinc-900 border-slate-200/80 dark:border-zinc-800 shadow-xs'
+              ? 'bg-black border-white/15'
+              : 'bg-white dark:bg-zinc-900 border-slate-200/80 dark:border-zinc-800'
           } rounded-2xl p-3.5 border flex items-center justify-between transition-all duration-200`}
         >
           <div className="flex items-center gap-2.5 min-w-0">
@@ -1334,11 +1347,12 @@ export function MetronomePanel({ onBack, onScroll, isAmoled: propIsAmoled }: Met
       >
         <aside
           aria-label="Metronome quick controls"
+          style={{ boxShadow: 'var(--shadow-surface-raised)' }}
           className={`pointer-events-auto ${
             isAmoled
               ? 'bg-black/95 border-white/15'
               : 'bg-white/95 dark:bg-zinc-900/95 border-slate-200/80 dark:border-zinc-800'
-          } backdrop-blur-md rounded-full px-2.5 py-1.5 shadow-[0_4px_24px_rgba(0,0,0,0.12)] border flex items-center transition-all duration-200 ease-out`}
+          } backdrop-blur-md rounded-full px-2.5 py-1.5 border flex items-center transition-all duration-200 ease-out`}
         >
           {bottomBarMode === 'volume' ? (
             /* Volume Configuration Morphed Mode */

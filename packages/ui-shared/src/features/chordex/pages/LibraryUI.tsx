@@ -61,7 +61,7 @@ export function RelatedPlayBtn({
         border: '1px solid var(--c-border)',
         cursor: 'pointer',
         padding: 0,
-        boxShadow: playing ? '0 0 10px var(--c-accent-from, #679cff)' : 'none',
+        boxShadow: playing ? 'var(--shadow-control-raised)' : 'var(--shadow-pill)',
       }}
     >
       <span
@@ -1544,6 +1544,9 @@ export function LibraryMainView({ state }: { state: any }) {
                         border: isSelected
                           ? '1px solid transparent'
                           : '1px solid var(--c-border, #E3E6EB)',
+                        boxShadow: isSelected
+                          ? 'var(--shadow-control-raised)'
+                          : 'var(--shadow-pill)',
                       }}
                     >
                       {root}
@@ -1862,6 +1865,7 @@ export function LibraryMainView({ state }: { state: any }) {
                       backgroundColor: 'var(--surface-card-bg, #ffffff)',
                       borderColor: 'var(--c-border, #E3E6EB)',
                       color: 'var(--c-text-primary, #111827)',
+                      boxShadow: 'var(--shadow-control-raised)',
                     }}
                     data-purpose="expand-toggle"
                   >

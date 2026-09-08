@@ -121,32 +121,31 @@
 .bento-card:hover {
   background: var(--c-surface-high);
 }
+.bento-card {
+  box-shadow: var(--shadow-surface-soft);
+}
 :root.light .bento-card {
-  box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.04);
+  box-shadow: var(--shadow-surface-soft);
 }
 .shadow-soft-card {
-  box-shadow:
-    0 4px 20px -2px rgba(0, 0, 0, 0.25),
-    0 2px 6px -1px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-surface-soft);
 }
 :root.light .shadow-soft-card {
-  box-shadow:
-    0 4px 20px -2px rgba(0, 0, 0, 0.04),
-    0 2px 6px -1px rgba(0, 0, 0, 0.02);
+  box-shadow: var(--shadow-surface-soft);
 }
 :root.amoled .shadow-soft-card {
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06);
+  box-shadow: var(--shadow-surface-soft);
 }
 .shadow-fret-dot {
   box-shadow: 0 0 10px 1px var(--studio-accent-glow, rgba(37, 99, 235, 0.45));
 }
 .fretboard-recess {
   background-color: var(--c-surface-lowest);
-  box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.45);
+  box-shadow: var(--shadow-inset-soft);
   position: relative;
 }
 :root.light .fretboard-recess {
-  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--shadow-inset-soft);
 }
 .fret-line {
   position: absolute;

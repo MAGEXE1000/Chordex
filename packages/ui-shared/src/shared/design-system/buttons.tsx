@@ -52,7 +52,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       fullWidth = false,
       icon,
       ripple = false,
-      isPill = false,
+      isPill = true,
       children,
       style,
       className = '',
@@ -346,7 +346,7 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
       icon,
       variant = 'secondary',
       size = 'md',
-      shape = 'squircle',
+      shape = 'circle',
       loading = false,
       disabled,
       style,
@@ -694,7 +694,7 @@ export const ActionButton: React.FC<ActionButtonProps> = ({
     let bg = 'var(--c-surface-low)';
     let border = '1px solid var(--c-border)';
     let color = 'var(--c-text-primary)';
-    const shadow = 'var(--elevation-low)';
+    const shadow = 'var(--shadow-control-raised, var(--elevation-low))';
 
     if (variant === 'delete') {
       if (confirmingDelete) {
@@ -726,7 +726,7 @@ export const ActionButton: React.FC<ActionButtonProps> = ({
       whileHover={
         isButtonDisabled || reduce || !canHover
           ? undefined
-          : { scale: 1.02, boxShadow: '0 6px 16px rgba(0,0,0,0.25)', y: -1 }
+          : { scale: 1.02, boxShadow: 'var(--shadow-surface-soft)', y: -1 }
       }
       whileTap={isButtonDisabled || reduce ? undefined : { scale: 0.96 }}
       transition={SpringPresets.soft}
@@ -738,7 +738,7 @@ export const ActionButton: React.FC<ActionButtonProps> = ({
         background: bg,
         border: border,
         color: color,
-        borderRadius: '14px',
+        borderRadius: '9999px',
         padding: '8px 14px',
         cursor: isButtonDisabled ? 'not-allowed' : 'pointer',
         outline: 'none',

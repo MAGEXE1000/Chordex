@@ -1503,9 +1503,7 @@ export default function GroovexPlayer() {
                 display: 'flex',
                 flexDirection: 'column',
                 gap: 12,
-                boxShadow: isLight
-                  ? '0 2px 8px rgba(0, 0, 0, 0.03)'
-                  : '0 4px 14px rgba(0, 0, 0, 0.25)',
+                boxShadow: 'var(--shadow-surface-soft)',
               }}
             >
               <div
@@ -2096,9 +2094,7 @@ export default function GroovexPlayer() {
                 : isAmoled
                   ? '1px solid #1a1a1a'
                   : '1px solid rgba(255,255,255,0.08)',
-              boxShadow: isLight
-                ? '0 10px 30px -4px rgba(15, 23, 42, 0.04), 0 2px 8px -2px rgba(15, 23, 42, 0.02)'
-                : 'none',
+              boxShadow: 'var(--shadow-surface-raised)',
               animation: 'gxFadeSlideUp 400ms cubic-bezier(0.16, 1, 0.3, 1) forwards',
             }}
           >

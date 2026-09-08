@@ -69,9 +69,8 @@ export function HubAppGrid() {
             background: 'var(--surface-topbar-bg, rgba(255, 255, 255, 0.04))',
             borderRadius: 20,
             padding: 16,
-            border: '1px solid rgba(255, 255, 255, 0.08)',
-            boxShadow:
-              '0 8px 24px rgba(0, 0, 0, 0.20), inset 0 1px 1.5px rgba(255, 255, 255, 0.12)',
+            border: '1px solid var(--c-border, rgba(255, 255, 255, 0.08))',
+            boxShadow: 'var(--shadow-surface-raised)',
             backdropFilter: 'var(--surface-topbar-blur, blur(24px) saturate(180%))',
             WebkitBackdropFilter: 'var(--surface-topbar-blur, blur(24px) saturate(180%))',
             cursor: 'pointer',

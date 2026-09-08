@@ -1341,7 +1341,7 @@ export default function StudioHub() {
                                     style={{
                                       width: '52px',
                                       height: '52px',
-                                      borderRadius: '16px',
+                                      borderRadius: '9999px',
                                       background: isLight
                                         ? 'linear-gradient(160deg, rgba(255, 255, 255, 0.90) 0%, rgba(240, 244, 255, 0.75) 100%)'
                                         : 'linear-gradient(160deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%)',
@@ -1350,9 +1350,7 @@ export default function StudioHub() {
                                         : '1px solid rgba(255, 255, 255, 0.12)',
                                       backdropFilter: 'blur(24px) saturate(180%)',
                                       WebkitBackdropFilter: 'blur(24px) saturate(180%)',
-                                      boxShadow: isLight
-                                        ? '0 6px 20px rgba(0, 0, 0, 0.06), inset 0 1.5px 2px rgba(255, 255, 255, 0.95), 0 2px 6px rgba(0, 0, 0, 0.03)'
-                                        : '0 8px 24px rgba(0, 0, 0, 0.28), inset 0 1px 1.5px rgba(255, 255, 255, 0.20), 0 2px 8px rgba(0, 0, 0, 0.18)',
+                                      boxShadow: 'var(--shadow-control-raised)',
                                       display: 'flex',
                                       alignItems: 'center',
                                       justifyContent: 'center',
@@ -1464,7 +1462,7 @@ export default function StudioHub() {
                                   style={{
                                     width: '52px',
                                     height: '52px',
-                                    borderRadius: '16px',
+                                    borderRadius: '9999px',
                                     background: 'rgba(255, 255, 255, 0.02)',
                                     border: '1.5px dashed rgba(255, 255, 255, 0.20)',
                                     display: 'flex',
@@ -1602,9 +1600,7 @@ export default function StudioHub() {
                                 justifyContent: 'space-between',
                                 backdropFilter: 'var(--surface-float-blur)',
                                 WebkitBackdropFilter: 'var(--surface-float-blur)',
-                                boxShadow: isLight
-                                  ? '0 4px 16px rgba(0, 0, 0, 0.04), inset 0 1px 1px rgba(255, 255, 255, 0.8)'
-                                  : '0 8px 24px rgba(0, 0, 0, 0.20), inset 0 1px 1px rgba(255, 255, 255, 0.10)',
+                                boxShadow: 'var(--shadow-surface-raised)',
                                 overflow: 'hidden',
                               }}
                               className="sc-module-card group"
