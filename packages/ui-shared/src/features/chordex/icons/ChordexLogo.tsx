@@ -1,23 +1,23 @@
+import livexSymbolUrl from '../../../assets/livex-symbol.png';
+
 export function StudioLogo({ size = 14 }: { size?: number }) {
-  /* Studio — sine wave mark, matches app icon */
+  /* Studio / Livex — approved abstract symbol mark */
   return (
-    <svg
+    <img
+      src={livexSymbolUrl}
+      alt="Livex"
       width={size}
       height={size}
-      viewBox="0 0 512 512"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      style={{ display: 'block', flexShrink: 0 }}
-    >
-      <path
-        d="M 72 256 C 128 60 192 60 256 256 S 384 452 440 256"
-        stroke="currentColor"
-        strokeWidth="44"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        fill="none"
-      />
-    </svg>
+      className="dark:filter-none dark:opacity-100 filter brightness-0 opacity-85 select-none pointer-events-none"
+      style={{
+        display: 'block',
+        flexShrink: 0,
+        width: size,
+        height: size,
+        objectFit: 'contain',
+      }}
+      draggable={false}
+    />
   );
 }
 

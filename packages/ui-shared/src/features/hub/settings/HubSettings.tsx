@@ -3437,6 +3437,10 @@ export function HubSettings({
       { key: 'vocalex', label: 'Vocalex', node: <VocalexLogo size={34} /> },
     ];
 
+    const isAmoled =
+      settings.amoledMode ||
+      (typeof document !== 'undefined' && document.documentElement.classList.contains('amoled'));
+
     const heroCardStyle: React.CSSProperties = isWebDesktop
       ? {
           background: 'transparent',
@@ -3450,6 +3454,7 @@ export function HubSettings({
         }
       : {
           ...cardStyle,
+          background: isAmoled ? '#000000' : cardStyle.background,
           padding: 'var(--space-6) var(--space-5)',
           display: 'flex',
           flexDirection: 'column',
