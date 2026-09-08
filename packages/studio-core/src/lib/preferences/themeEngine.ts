@@ -229,9 +229,12 @@ export function applyThemeTokens(settings: any) {
     );
     root.style.setProperty(
       '--font-body',
-      "'Inter Tight', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+      "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
     );
-    root.style.setProperty('--font-label', "'Inter', sans-serif");
+    root.style.setProperty(
+      '--font-label',
+      "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+    );
 
     const sizes = {
       small: { base: '13px', sm: '11px', xs: '9px', lg: '16px', xl: '20px', hero: '2.2rem' },

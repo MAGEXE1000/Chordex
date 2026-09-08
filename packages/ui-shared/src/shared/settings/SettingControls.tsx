@@ -139,7 +139,7 @@ export function SegmentedControl<T extends string | number>({
         display: 'flex',
         position: 'relative',
         border: '1px solid var(--track, var(--c-border))',
-        boxShadow: 'inset 0 1px 2px rgba(0, 0, 0, 0.20)',
+        boxShadow: 'var(--shadow-inset-soft, inset 0 1px 2px rgba(0, 0, 0, 0.20))',
       }}
     >
       {options.map((opt) => {
@@ -152,7 +152,7 @@ export function SegmentedControl<T extends string | number>({
             onClick={() => onChange(opt.value)}
             className="relative outline-none cursor-pointer"
             style={{
-              padding: '6px 14px',
+              padding: '7px 15px',
               borderRadius: '9999px',
               fontFamily: 'var(--type-body-font, var(--studio-font-body, "Inter", sans-serif))',
               fontSize: '12px',
@@ -181,8 +181,7 @@ export function SegmentedControl<T extends string | number>({
                   borderRadius: '9999px',
                   background: `linear-gradient(135deg, ${accentFrom}, ${accentTo})`,
                   zIndex: -1,
-                  boxShadow:
-                    '0 2px 8px rgba(0, 0, 0, 0.22), inset 0 1px 1px rgba(255, 255, 255, 0.40)',
+                  boxShadow: 'var(--shadow-control-raised, 0 2px 8px rgba(0, 0, 0, 0.22))',
                 }}
               />
             )}
@@ -227,15 +226,14 @@ export function BentoSettingCard({
         width: '100%',
         padding: '14px 16px',
         background: 'var(--surface-card-bg, rgba(255, 255, 255, 0.03))',
-        border: '1px solid var(--track, var(--c-border))',
+        border: '1px solid var(--c-border, rgba(128, 128, 128, 0.12))',
         borderRadius: 'var(--radius-card, 16px)',
         cursor: 'pointer',
         textAlign: 'left',
         boxSizing: 'border-box',
         backdropFilter: 'var(--surface-float-blur)',
         WebkitBackdropFilter: 'var(--surface-float-blur)',
-        boxShadow:
-          'var(--surface-card-shadow, 0 8px 24px rgba(0, 0, 0, 0.16)), var(--surface-card-inset, inset 0 1px 1px rgba(255, 255, 255, 0.08))',
+        boxShadow: 'var(--shadow-surface-raised, var(--surface-card-shadow))',
         position: 'relative',
         overflow: 'hidden',
       }}
@@ -580,15 +578,14 @@ export function SettingSection({
       </span>
       <div
         style={{
-          border: '1px solid var(--track, var(--c-border))',
+          border: '1px solid var(--c-border, rgba(128, 128, 128, 0.12))',
           backgroundColor: 'var(--surface-card-bg, rgba(255, 255, 255, 0.03))',
           borderRadius: 'var(--radius-card, 16px)',
           overflow: 'hidden',
           position: 'relative',
           backdropFilter: 'var(--surface-topbar-blur, blur(20px) saturate(180%))',
           WebkitBackdropFilter: 'var(--surface-topbar-blur, blur(20px) saturate(180%))',
-          boxShadow:
-            'var(--surface-card-shadow, 0 8px 24px rgba(0, 0, 0, 0.16)), var(--surface-card-inset, inset 0 1px 1px rgba(255, 255, 255, 0.08))',
+          boxShadow: 'var(--shadow-surface-raised, 0 8px 24px rgba(0, 0, 0, 0.16))',
         }}
       >
         {/* Top Specular Rim */}

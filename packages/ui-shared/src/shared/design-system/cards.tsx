@@ -48,9 +48,8 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(
             : 'var(--surface-card-bg, var(--c-surface-mid))',
           border: accentBorder
             ? `1.5px solid var(--c-accent-from, #7c3aed)`
-            : `1px solid var(--track, var(--c-border))`,
-          boxShadow:
-            'var(--surface-card-shadow, var(--elevation-low)), var(--surface-card-inset, inset 0 1px 0 rgba(255, 255, 255, 0.08))',
+            : `1px solid var(--c-border, rgba(128, 128, 128, 0.12))`,
+          boxShadow: 'var(--shadow-surface-raised, var(--surface-card-shadow))',
           backdropFilter: glass ? 'var(--surface-topbar-blur, blur(16px))' : 'none',
           WebkitBackdropFilter: glass ? 'var(--surface-topbar-blur, blur(16px))' : 'none',
           cursor: interactive ? 'pointer' : 'default',
@@ -122,7 +121,7 @@ export const BentoCard = forwardRef<HTMLDivElement, BentoCardProps>(
         onClick={onClick}
         style={{
           background: 'var(--surface-topbar-bg)',
-          border: '1px solid var(--track, var(--c-border))',
+          border: '1px solid var(--c-border, rgba(128, 128, 128, 0.12))',
           borderRadius: 'var(--radius-card, 16px)',
           padding: 'var(--card-pad, 16px)',
           display: 'flex',
@@ -131,8 +130,7 @@ export const BentoCard = forwardRef<HTMLDivElement, BentoCardProps>(
           minHeight: 96,
           backdropFilter: 'var(--surface-float-blur)',
           WebkitBackdropFilter: 'var(--surface-float-blur)',
-          boxShadow:
-            'var(--surface-card-shadow, var(--surface-topbar-shadow)), var(--surface-card-inset, inset 0 1px 0 rgba(255, 255, 255, 0.08))',
+          boxShadow: 'var(--shadow-surface-raised, var(--surface-topbar-shadow))',
           position: 'relative',
           overflow: 'hidden',
           boxSizing: 'border-box',
@@ -283,13 +281,13 @@ export function Surface({
     <div
       style={{
         backgroundColor: getBg(),
-        border: `1px solid var(--track, var(--c-border))`,
+        border: '1px solid var(--c-border, rgba(128, 128, 128, 0.12))',
         backdropFilter: glass ? 'blur(20px) saturate(180%)' : 'none',
         WebkitBackdropFilter: glass ? 'blur(20px) saturate(180%)' : 'none',
         color: 'var(--c-text-primary)',
         boxShadow: glass
-          ? 'var(--surface-deep-shadow, 0 8px 24px rgba(0, 0, 0, 0.16)), var(--surface-deep-inset, inset 0 1px 0 rgba(255, 255, 255, 0.08))'
-          : 'var(--elevation-low)',
+          ? 'var(--shadow-surface-raised, 0 8px 24px rgba(0, 0, 0, 0.16))'
+          : 'var(--shadow-surface-soft, var(--elevation-low))',
         transition: 'background-color 200ms ease, border-color 200ms ease, color 200ms ease',
         borderRadius: 'var(--radius-major, 18px)',
         ...style,

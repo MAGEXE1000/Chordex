@@ -400,18 +400,31 @@
   --strong: var(--c-text-primary);
   --track: var(--c-border);
 
+  /* ── Canonical Soft Layered Shadow System (Dark Mode SSOT) ── */
+  --shadow-surface-raised:
+    0 8px 24px -4px rgba(0, 0, 0, 0.45), 0 2px 8px -2px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  --shadow-surface-soft:
+    0 4px 16px -2px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  --shadow-control-raised:
+    0 4px 12px -2px rgba(0, 0, 0, 0.35), 0 1px 3px rgba(0, 0, 0, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  --shadow-control-pressed: inset 0 2px 6px rgba(0, 0, 0, 0.45), inset 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-pill: 0 2px 8px -1px rgba(0, 0, 0, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.09);
+  --shadow-inset-soft: inset 0 1px 3px rgba(0, 0, 0, 0.35);
+
   /* ── Layered Surface Elevation & Specular Depth ── */
   --surface-card-bg: var(--c-surface-mid);
-  --surface-card-shadow: 0 2px 10px rgba(0, 0, 0, 0.22);
+  --surface-card-shadow: var(--shadow-surface-soft);
   --surface-card-inset: inset 0 1px 0 rgba(255, 255, 255, 0.08);
   --surface-card-highlight: 0 0 0 1px rgba(255, 255, 255, 0.05);
 
   --surface-deep-bg: var(--c-surface-high);
-  --surface-deep-shadow: 0 8px 24px rgba(0, 0, 0, 0.32);
+  --surface-deep-shadow: var(--shadow-surface-raised);
   --surface-deep-inset: inset 0 1px 0 rgba(255, 255, 255, 0.1);
 
   --btn-surface-bg: var(--c-surface-high);
-  --btn-surface-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  --btn-surface-shadow: var(--shadow-control-raised);
   --btn-surface-inset: inset 0 1px 1px rgba(255, 255, 255, 0.16);
 }
 
@@ -572,17 +585,29 @@ h4,
   --hub-card-icon-border: rgba(255, 255, 255, 0.08);
   --control-track-bg: rgba(0, 0, 0, 0.65);
 
+  /* ── Canonical Soft Layered Shadow System (AMOLED Mode) ── */
+  --shadow-surface-raised:
+    0 0 0 1px rgba(255, 255, 255, 0.08), 0 8px 24px rgba(0, 0, 0, 0.8),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  --shadow-surface-soft: 0 0 0 1px rgba(255, 255, 255, 0.06), 0 4px 16px rgba(0, 0, 0, 0.7);
+  --shadow-control-raised:
+    0 0 0 1px rgba(255, 255, 255, 0.1), 0 2px 8px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  --shadow-control-pressed: inset 0 2px 6px rgba(0, 0, 0, 0.9);
+  --shadow-pill: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 2px 8px rgba(0, 0, 0, 0.5);
+  --shadow-inset-soft: inset 0 1px 3px rgba(0, 0, 0, 0.8);
+
   --surface-card-bg: #000000;
-  --surface-card-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
+  --surface-card-shadow: var(--shadow-surface-soft);
   --surface-card-inset: inset 0 1px 0 rgba(255, 255, 255, 0.06);
   --surface-card-highlight: 0 0 0 1px rgba(255, 255, 255, 0.06);
 
   --surface-deep-bg: #080808;
-  --surface-deep-shadow: 0 8px 28px rgba(0, 0, 0, 0.7);
+  --surface-deep-shadow: var(--shadow-surface-raised);
   --surface-deep-inset: inset 0 1px 0 rgba(255, 255, 255, 0.08);
 
   --btn-surface-bg: #0d0d0d;
-  --btn-surface-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  --btn-surface-shadow: var(--shadow-control-raised);
   --btn-surface-inset: inset 0 1px 1px rgba(255, 255, 255, 0.14);
 }
 
@@ -669,17 +694,35 @@ h4,
   --hub-card-icon-border: rgba(0, 0, 0, 0.06);
   --control-track-bg: rgba(0, 0, 0, 0.07);
 
+  /* ── Canonical Soft Layered Shadow System (Light Mode) ──
+     Derived from design reference: soft diffuse light highlight (-4px -4px) + gentle directional dark component (+4px +8px) */
+  --shadow-surface-raised:
+    -6px -6px 18px rgba(255, 255, 255, 0.85), 6px 10px 24px rgba(13, 39, 80, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  --shadow-surface-soft:
+    -3px -3px 10px rgba(255, 255, 255, 0.8), 3px 6px 16px rgba(13, 39, 80, 0.06);
+  --shadow-control-raised:
+    -3px -3px 8px rgba(255, 255, 255, 0.9), 3px 5px 12px rgba(13, 39, 80, 0.07),
+    inset 0 1px 0 rgba(255, 255, 255, 1);
+  --shadow-control-pressed:
+    inset 2px 2px 5px rgba(13, 39, 80, 0.08), inset -2px -2px 5px rgba(255, 255, 255, 0.85);
+  --shadow-pill:
+    -2px -2px 6px rgba(255, 255, 255, 0.9), 2px 4px 10px rgba(13, 39, 80, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  --shadow-inset-soft:
+    inset 0 1px 3px rgba(13, 39, 80, 0.08), inset 0 -1px 2px rgba(255, 255, 255, 0.8);
+
   --surface-card-bg: #ffffff;
-  --surface-card-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  --surface-card-shadow: var(--shadow-surface-soft);
   --surface-card-inset: inset 0 1px 0 rgba(255, 255, 255, 0.9);
   --surface-card-highlight: 0 0 0 1px rgba(0, 0, 0, 0.04);
 
   --surface-deep-bg: #ffffff;
-  --surface-deep-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+  --surface-deep-shadow: var(--shadow-surface-raised);
   --surface-deep-inset: inset 0 1px 0 rgba(255, 255, 255, 1);
 
   --btn-surface-bg: rgba(0, 0, 0, 0.04);
-  --btn-surface-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --btn-surface-shadow: var(--shadow-control-raised);
   --btn-surface-inset: inset 0 1px 1px rgba(255, 255, 255, 0.9);
 }
 
@@ -712,6 +755,52 @@ html,
   width: 100%;
   height: 100%;
   pointer-events: auto;
+}
+
+/* ============================================================
+   Canonical Soft Pill & Surface Primitives
+   Soft tactile depth, comfortable touch targets, pill controls
+   ============================================================ */
+.studio-pill {
+  border-radius: 9999px;
+  box-shadow: var(--shadow-pill);
+  transition:
+    background-color var(--motion-duration-short, 180ms) ease,
+    box-shadow var(--motion-duration-short, 180ms) ease,
+    transform var(--motion-duration-short, 180ms) ease;
+}
+
+.studio-pill-raised {
+  border-radius: 9999px;
+  box-shadow: var(--shadow-control-raised);
+  transition:
+    background-color var(--motion-duration-short, 180ms) ease,
+    box-shadow var(--motion-duration-short, 180ms) ease,
+    transform var(--motion-duration-short, 180ms) ease;
+}
+
+.studio-pill-container {
+  border-radius: 9999px;
+  background: var(--control-track-bg);
+  box-shadow: var(--shadow-inset-soft);
+}
+
+.studio-surface-raised {
+  border-radius: var(--radius-major, 18px);
+  background: var(--surface-card-bg);
+  box-shadow: var(--shadow-surface-raised);
+  transition:
+    background-color var(--motion-duration-short, 180ms) ease,
+    box-shadow var(--motion-duration-short, 180ms) ease;
+}
+
+.studio-surface-soft {
+  border-radius: var(--radius-card, 16px);
+  background: var(--surface-card-bg);
+  box-shadow: var(--shadow-surface-soft);
+  transition:
+    background-color var(--motion-duration-short, 180ms) ease,
+    box-shadow var(--motion-duration-short, 180ms) ease;
 }
 
 /* ============================================================

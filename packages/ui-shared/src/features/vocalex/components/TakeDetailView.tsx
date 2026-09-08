@@ -449,8 +449,8 @@ export default function TakeDetailView({
     : isAmoled
       ? '#000000'
       : 'var(--app-surface-low, rgba(255,255,255,0.04))';
-  const cardBorder = '1px solid var(--c-border, rgba(128,128,128,0.18))';
-  const cardShadow = isLight ? '0 1px 4px rgba(0,0,0,0.03)' : 'none';
+  const cardBorder = '1px solid var(--c-border, rgba(128,128,128,0.14))';
+  const cardShadow = 'var(--shadow-surface-raised)';
 
   return (
     <div

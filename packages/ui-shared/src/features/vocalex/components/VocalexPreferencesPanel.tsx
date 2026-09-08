@@ -205,19 +205,20 @@ export default function VocalexPreferencesPanel() {
                     type="button"
                     onClick={() => handleSetRefPitch(hz)}
                     style={{
-                      padding: '4px 8px',
-                      borderRadius: 6,
-                      fontSize: 11,
+                      padding: '5px 10px',
+                      borderRadius: 9999,
+                      fontSize: 11.5,
                       fontFamily: 'var(--studio-font-mono)',
-                      fontWeight: 600,
+                      fontWeight: 700,
                       cursor: 'pointer',
                       border: isSelected
                         ? `1px solid ${acc.from}`
-                        : '1px solid var(--c-border, rgba(128,128,128,0.2))',
+                        : '1px solid var(--c-border, rgba(128,128,128,0.18))',
                       background: isSelected
-                        ? `${acc.from}22`
-                        : 'var(--control-track-bg, rgba(0, 0, 0, 0.28))',
-                      color: isSelected ? acc.from : 'var(--c-text-secondary, #acabaa)',
+                        ? `${acc.from}20`
+                        : 'var(--control-track-bg, rgba(0, 0, 0, 0.15))',
+                      color: isSelected ? acc.from : 'var(--c-text-secondary)',
+                      boxShadow: isSelected ? 'var(--shadow-control-raised)' : 'none',
                       transition: 'all 150ms ease',
                     }}
                   >
@@ -231,12 +232,13 @@ export default function VocalexPreferencesPanel() {
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  background: 'var(--control-track-bg, rgba(0, 0, 0, 0.28))',
-                  border: '1px solid var(--track, var(--c-border))',
-                  borderRadius: 8,
-                  padding: '2px 4px',
+                  background: 'var(--control-track-bg, rgba(0, 0, 0, 0.18))',
+                  border: '1px solid var(--track, var(--c-border, rgba(128,128,128,0.15)))',
+                  borderRadius: 9999,
+                  padding: '3px 6px',
                   gap: 4,
                   marginLeft: 4,
+                  boxShadow: 'var(--shadow-inset-soft)',
                 }}
               >
                 <button
@@ -244,8 +246,8 @@ export default function VocalexPreferencesPanel() {
                   onClick={() => handleStepPitch(-1)}
                   disabled={refPitch <= 415}
                   style={{
-                    width: 26,
-                    height: 26,
+                    width: 28,
+                    height: 28,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -253,9 +255,10 @@ export default function VocalexPreferencesPanel() {
                     background: 'transparent',
                     color: refPitch <= 415 ? 'var(--c-border)' : 'var(--c-text-primary)',
                     cursor: refPitch <= 415 ? 'default' : 'pointer',
-                    borderRadius: 4,
+                    borderRadius: 9999,
                     fontSize: 14,
                     fontWeight: 700,
+                    transition: 'background 120ms ease',
                   }}
                   aria-label="Decrease reference pitch"
                 >
@@ -266,7 +269,7 @@ export default function VocalexPreferencesPanel() {
                     fontFamily: 'var(--studio-font-mono)',
                     fontSize: 13,
                     fontWeight: 700,
-                    minWidth: 46,
+                    minWidth: 48,
                     textAlign: 'center',
                     color: 'var(--c-text-primary)',
                   }}
@@ -278,8 +281,8 @@ export default function VocalexPreferencesPanel() {
                   onClick={() => handleStepPitch(1)}
                   disabled={refPitch >= 466}
                   style={{
-                    width: 26,
-                    height: 26,
+                    width: 28,
+                    height: 28,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -287,9 +290,10 @@ export default function VocalexPreferencesPanel() {
                     background: 'transparent',
                     color: refPitch >= 466 ? 'var(--c-border)' : 'var(--c-text-primary)',
                     cursor: refPitch >= 466 ? 'default' : 'pointer',
-                    borderRadius: 4,
+                    borderRadius: 9999,
                     fontSize: 14,
                     fontWeight: 700,
+                    transition: 'background 120ms ease',
                   }}
                   aria-label="Increase reference pitch"
                 >

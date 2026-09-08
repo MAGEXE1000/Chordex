@@ -38,24 +38,26 @@ export default function CoachPanel({ active = true }: { active?: boolean }) {
           boxSizing: 'border-box',
         }}
       >
-        {/* 1. Compact Vocalex Sub-Tab Switcher */}
+        {/* 1. Compact Vocalex Sub-Tab Switcher (Pill-Based) */}
         <div
           style={{
             display: 'flex',
             justifyContent: 'center',
-            marginBottom: '6px',
+            marginBottom: '8px',
           }}
         >
           <div
+            className="studio-pill-container"
             style={{
               position: 'relative',
               display: 'flex',
               width: '100%',
-              maxWidth: 340,
-              background: isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.06)',
+              maxWidth: 320,
+              background: 'var(--control-track-bg, rgba(0,0,0,0.06))',
               padding: 3,
               borderRadius: 9999,
-              border: '1px solid var(--c-border, rgba(128,128,128,0.15))',
+              border: '1px solid var(--c-border, rgba(128,128,128,0.12))',
+              boxShadow: 'var(--shadow-inset-soft, inset 0 1px 2px rgba(0,0,0,0.15))',
               userSelect: 'none',
               boxSizing: 'border-box',
             }}
@@ -73,10 +75,10 @@ export default function CoachPanel({ active = true }: { active?: boolean }) {
                   ? '#ffffff'
                   : activeVis.amoledMode
                     ? '#18181b'
-                    : 'rgba(255,255,255,0.12)',
+                    : 'var(--surface-card-bg, rgba(255,255,255,0.14))',
                 borderRadius: 9999,
                 transition: 'transform 260ms cubic-bezier(0.16, 1, 0.3, 1)',
-                boxShadow: isLight ? '0 2px 8px rgba(0,0,0,0.08)' : '0 2px 8px rgba(0,0,0,0.3)',
+                boxShadow: 'var(--shadow-control-raised, 0 2px 8px rgba(0,0,0,0.25))',
                 zIndex: 0,
               }}
             />
@@ -90,9 +92,9 @@ export default function CoachPanel({ active = true }: { active?: boolean }) {
                 flex: 1,
                 height: 34,
                 borderRadius: 9999,
-                fontWeight: 700,
+                fontWeight: 600,
                 fontSize: 13,
-                fontFamily: 'var(--studio-font-display)',
+                fontFamily: 'var(--studio-font-body)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -114,9 +116,7 @@ export default function CoachPanel({ active = true }: { active?: boolean }) {
               >
                 query_stats
               </span>
-              <span>
-                {vt.tabMonitor || (settings.language === 'es' ? 'Monitor de Voz' : 'Vocal Monitor')}
-              </span>
+              <span>{settings.language === 'es' ? 'Monitor' : 'Monitor'}</span>
             </button>
 
             <button
@@ -128,9 +128,9 @@ export default function CoachPanel({ active = true }: { active?: boolean }) {
                 flex: 1,
                 height: 34,
                 borderRadius: 9999,
-                fontWeight: 700,
+                fontWeight: 600,
                 fontSize: 13,
-                fontFamily: 'var(--studio-font-display)',
+                fontFamily: 'var(--studio-font-body)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -152,10 +152,7 @@ export default function CoachPanel({ active = true }: { active?: boolean }) {
               >
                 school
               </span>
-              <span>
-                {vt.tabExercises ||
-                  (settings.language === 'es' ? 'Ejercicios Vocales' : 'Vocal Exercises')}
-              </span>
+              <span>{settings.language === 'es' ? 'Ejercicios' : 'Exercises'}</span>
             </button>
           </div>
         </div>

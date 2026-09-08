@@ -281,14 +281,15 @@ export default function PitchPanel({ active: panelActive = true }: { active?: bo
         flexDirection: 'column',
         alignItems: 'center',
         padding:
-          '0 16px calc(var(--bottom-nav-height, 68px) + env(safe-area-inset-bottom, 16px) + 16px)',
+          '0 16px calc(var(--bottom-nav-height, 68px) + env(safe-area-inset-bottom, 16px) + 24px)',
         gap: 0,
         minHeight: '100%',
         boxSizing: 'border-box',
       }}
     >
-      {/* ── Main Tuner Card ── */}
+      {/* ── Main Tuner Card (Soft Raised Surface) ── */}
       <div
+        className="studio-surface-raised"
         style={{
           width: '100%',
           maxWidth: 360,
@@ -296,11 +297,11 @@ export default function PitchPanel({ active: panelActive = true }: { active?: bo
             ? '#ffffff'
             : activeVis.amoledMode
               ? '#000000'
-              : 'var(--app-surface-low, rgba(255,255,255,0.04))',
-          border: '1px solid var(--c-border, rgba(128,128,128,0.15))',
-          borderRadius: 20,
-          padding: '16px 18px 14px',
-          boxShadow: isLight ? '0 8px 24px -4px rgba(0,0,0,0.05)' : 'none',
+              : 'var(--surface-card-bg, rgba(255,255,255,0.03))',
+          border: '1px solid var(--c-border, rgba(128,128,128,0.12))',
+          borderRadius: 24,
+          padding: '18px 18px 16px',
+          boxShadow: 'var(--shadow-surface-raised, 0 8px 24px -4px rgba(0,0,0,0.12))',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
@@ -497,18 +498,20 @@ export default function PitchPanel({ active: panelActive = true }: { active?: bo
               )}
             </div>
 
-            {/* Status Pill */}
+            {/* Status Pill (Soft Floating Pill) */}
             <div style={{ marginTop: 6, display: 'flex', justifyContent: 'center' }}>
               {active ? (
                 <div
+                  className="studio-pill"
                   style={{
                     display: 'inline-flex',
                     alignItems: 'center',
                     gap: 6,
-                    padding: '4px 14px',
+                    padding: '5px 16px',
                     borderRadius: 9999,
                     background: `${statusColor}18`,
                     border: `1px solid ${statusColor}33`,
+                    boxShadow: 'var(--shadow-pill)',
                     color: statusColor,
                     fontFamily: 'var(--studio-font-mono)',
                     fontSize: 11.5,
@@ -531,14 +534,16 @@ export default function PitchPanel({ active: panelActive = true }: { active?: bo
                 </div>
               ) : listening ? (
                 <div
+                  className="studio-pill"
                   style={{
                     display: 'inline-flex',
                     alignItems: 'center',
                     gap: 6,
-                    padding: '4px 14px',
+                    padding: '5px 16px',
                     borderRadius: 9999,
-                    background: 'var(--app-surface-low, rgba(255,255,255,0.04))',
+                    background: 'var(--control-track-bg, rgba(255,255,255,0.04))',
                     border: '1px solid var(--c-border, rgba(128,128,128,0.12))',
+                    boxShadow: 'var(--shadow-pill)',
                     color: 'var(--c-text-secondary)',
                     fontFamily: 'var(--studio-font-mono)',
                     fontSize: 11,
@@ -558,14 +563,16 @@ export default function PitchPanel({ active: panelActive = true }: { active?: bo
                 </div>
               ) : (
                 <div
+                  className="studio-pill"
                   style={{
                     display: 'inline-flex',
                     alignItems: 'center',
                     gap: 6,
-                    padding: '4px 14px',
+                    padding: '5px 16px',
                     borderRadius: 9999,
-                    background: 'var(--app-surface-low, rgba(255,255,255,0.04))',
+                    background: 'var(--control-track-bg, rgba(255,255,255,0.04))',
                     border: '1px solid var(--c-border, rgba(128,128,128,0.12))',
+                    boxShadow: 'var(--shadow-pill)',
                     color: 'var(--c-text-secondary)',
                     fontFamily: 'var(--studio-font-mono)',
                     fontSize: 11,
@@ -590,14 +597,15 @@ export default function PitchPanel({ active: panelActive = true }: { active?: bo
             width: '100%',
             marginTop: 10,
             paddingTop: 12,
-            borderTop: '1px solid var(--c-border, rgba(128,128,128,0.12))',
+            borderTop: '1px solid var(--c-border, rgba(128,128,128,0.10))',
           }}
         >
           <div
             style={{
-              background: 'var(--app-surface-low, rgba(128,128,128,0.04))',
-              border: '1px solid var(--c-border, rgba(128,128,128,0.12))',
-              borderRadius: 14,
+              background: 'var(--control-track-bg, rgba(128,128,128,0.04))',
+              border: '1px solid var(--c-border, rgba(128,128,128,0.10))',
+              borderRadius: 16,
+              boxShadow: 'var(--shadow-inset-soft, inset 0 1px 2px rgba(0,0,0,0.06))',
               padding: '10px 12px',
               display: 'flex',
               flexDirection: 'column',
@@ -647,9 +655,10 @@ export default function PitchPanel({ active: panelActive = true }: { active?: bo
 
           <div
             style={{
-              background: 'var(--app-surface-low, rgba(128,128,128,0.04))',
-              border: '1px solid var(--c-border, rgba(128,128,128,0.12))',
-              borderRadius: 14,
+              background: 'var(--control-track-bg, rgba(128,128,128,0.04))',
+              border: '1px solid var(--c-border, rgba(128,128,128,0.10))',
+              borderRadius: 16,
+              boxShadow: 'var(--shadow-inset-soft, inset 0 1px 2px rgba(0,0,0,0.06))',
               padding: '10px 12px',
               display: 'flex',
               flexDirection: 'column',
@@ -796,8 +805,9 @@ export default function PitchPanel({ active: panelActive = true }: { active?: bo
           onClick={handleReset}
           disabled={history.length === 0 && !result}
           style={{
-            height: 46,
-            borderRadius: 14,
+            height: 48,
+            borderRadius: 9999,
+            padding: '0 16px',
             background: isLight
               ? '#ffffff'
               : activeVis.amoledMode
@@ -814,7 +824,7 @@ export default function PitchPanel({ active: panelActive = true }: { active?: bo
             gap: 6,
             cursor: history.length === 0 && !result ? 'default' : 'pointer',
             opacity: history.length === 0 && !result ? 0.45 : 1,
-            boxShadow: isLight ? '0 1px 3px rgba(0,0,0,0.04)' : 'none',
+            boxShadow: 'var(--shadow-control-raised)',
             transition: 'all 150ms ease',
           }}
         >
@@ -832,8 +842,9 @@ export default function PitchPanel({ active: panelActive = true }: { active?: bo
           type="button"
           onClick={listening ? stopListening : startListening}
           style={{
-            height: 46,
-            borderRadius: 14,
+            height: 48,
+            borderRadius: 9999,
+            padding: '0 22px',
             background: listening ? '#ef4444' : accent.from,
             border: 'none',
             color: '#ffffff',
@@ -847,9 +858,9 @@ export default function PitchPanel({ active: panelActive = true }: { active?: bo
             gap: 8,
             cursor: 'pointer',
             boxShadow: listening
-              ? '0 4px 16px rgba(239, 68, 68, 0.28)'
-              : `0 4px 16px ${accent.from}33`,
-            transition: 'all 180ms ease',
+              ? '0 4px 18px rgba(239, 68, 68, 0.35)'
+              : 'var(--shadow-control-raised), 0 4px 16px rgba(0, 122, 255, 0.25)',
+            transition: 'all 180ms cubic-bezier(0.16, 1, 0.3, 1)',
           }}
         >
           <span className="material-symbols-outlined" style={{ fontSize: 20 }}>

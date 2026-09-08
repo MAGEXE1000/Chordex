@@ -275,7 +275,7 @@ export default function TakesPanel() {
         flexDirection: 'column',
         alignItems: 'center',
         padding:
-          '0 16px calc(var(--bottom-nav-height, 68px) + env(safe-area-inset-bottom, 16px) + 16px)',
+          '0 16px calc(var(--bottom-nav-height, 68px) + env(safe-area-inset-bottom, 16px) + 24px)',
         minHeight: '100%',
         boxSizing: 'border-box',
       }}
@@ -302,19 +302,20 @@ export default function TakesPanel() {
         >
           {/* Segmented Filter Chip */}
           <div
+            className="studio-pill"
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: 6,
+              gap: 7,
               background: isLight
                 ? '#ffffff'
                 : isAmoled
                   ? '#000000'
                   : 'var(--app-surface-low, rgba(255,255,255,0.05))',
-              padding: '4px 10px',
-              borderRadius: 14,
+              padding: '6px 14px',
+              borderRadius: 9999,
               border: '1px solid var(--c-border, rgba(128,128,128,0.18))',
-              boxShadow: isLight ? '0 1px 3px rgba(0,0,0,0.03)' : 'none',
+              boxShadow: 'var(--shadow-pill)',
             }}
           >
             <span
@@ -343,7 +344,7 @@ export default function TakesPanel() {
                 fontSize: 11,
                 color: 'var(--studio-accent, #007aff)',
                 background: 'rgba(var(--studio-accent-rgb, 0,122,255), 0.12)',
-                padding: '1px 6px',
+                padding: '2px 8px',
                 borderRadius: 9999,
               }}
             >
@@ -354,18 +355,19 @@ export default function TakesPanel() {
           {/* Primary Action: New Take Button */}
           <Button
             variant="primary"
+            isPill={true}
             onClick={handleCreateNewProject}
             style={{
               background: 'var(--studio-accent, #007aff)',
               color: '#ffffff',
-              borderRadius: 14,
-              padding: '8px 14px',
+              borderRadius: 9999,
+              padding: '8px 18px',
               fontWeight: 700,
               fontSize: 12.5,
               display: 'flex',
               alignItems: 'center',
               gap: 6,
-              boxShadow: '0 4px 14px 0 rgba(0, 122, 255, 0.25)',
+              boxShadow: 'var(--shadow-control-raised), 0 4px 14px rgba(0, 122, 255, 0.25)',
               border: 'none',
               cursor: 'pointer',
               flexShrink: 0,
@@ -391,13 +393,13 @@ export default function TakesPanel() {
                     ? '#000000'
                     : 'var(--app-surface-low, rgba(255,255,255,0.04))',
                 borderRadius: 24,
-                border: '1px solid var(--c-border, rgba(128,128,128,0.18))',
+                border: '1px solid var(--c-border, rgba(128,128,128,0.16))',
                 padding: '36px 20px 28px',
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
                 textAlign: 'center',
-                boxShadow: isLight ? '0 2px 10px rgba(0,0,0,0.03)' : 'none',
+                boxShadow: 'var(--shadow-surface-raised)',
                 animation: 'tp-fade-up 350ms cubic-bezier(0.22,1,0.36,1) both',
               }}
             >
@@ -487,19 +489,20 @@ export default function TakesPanel() {
 
               <Button
                 variant="primary"
+                isPill={true}
                 onClick={handleCreateNewProject}
                 style={{
                   marginTop: 18,
                   background: 'var(--studio-accent, #007aff)',
                   color: '#ffffff',
-                  borderRadius: 14,
-                  padding: '9px 18px',
+                  borderRadius: 9999,
+                  padding: '9px 20px',
                   fontWeight: 700,
                   fontSize: 13,
                   display: 'flex',
                   alignItems: 'center',
                   gap: 6,
-                  boxShadow: '0 4px 14px 0 rgba(0, 122, 255, 0.25)',
+                  boxShadow: 'var(--shadow-control-raised), 0 4px 14px 0 rgba(0, 122, 255, 0.25)',
                   border: 'none',
                   cursor: 'pointer',
                 }}
@@ -605,19 +608,20 @@ export default function TakesPanel() {
                     : isAmoled
                       ? '#000000'
                       : 'var(--app-surface-low, rgba(255,255,255,0.04))',
-                  borderRadius: 16,
-                  border: '1px solid var(--c-border, rgba(128,128,128,0.15))',
-                  padding: '12px 14px',
+                  borderRadius: 18,
+                  border: '1px solid var(--c-border, rgba(128,128,128,0.14))',
+                  padding: '14px 16px',
                   display: 'flex',
                   alignItems: 'flex-start',
                   gap: 12,
+                  boxShadow: 'var(--shadow-surface-soft)',
                 }}
               >
                 <div
                   style={{
-                    width: 32,
-                    height: 32,
-                    borderRadius: 10,
+                    width: 34,
+                    height: 34,
+                    borderRadius: 12,
                     background: 'rgba(var(--studio-accent-rgb, 0,122,255), 0.12)',
                     display: 'flex',
                     alignItems: 'center',
@@ -628,7 +632,7 @@ export default function TakesPanel() {
                 >
                   <span
                     className="material-symbols-outlined"
-                    style={{ fontSize: 18, color: 'var(--studio-accent, #007aff)' }}
+                    style={{ fontSize: 19, color: 'var(--studio-accent, #007aff)' }}
                   >
                     headphones
                   </span>
@@ -669,19 +673,20 @@ export default function TakesPanel() {
                     : isAmoled
                       ? '#000000'
                       : 'var(--app-surface-low, rgba(255,255,255,0.04))',
-                  borderRadius: 16,
-                  border: '1px solid var(--c-border, rgba(128,128,128,0.15))',
-                  padding: '12px 14px',
+                  borderRadius: 18,
+                  border: '1px solid var(--c-border, rgba(128,128,128,0.14))',
+                  padding: '14px 16px',
                   display: 'flex',
                   alignItems: 'flex-start',
                   gap: 12,
+                  boxShadow: 'var(--shadow-surface-soft)',
                 }}
               >
                 <div
                   style={{
-                    width: 32,
-                    height: 32,
-                    borderRadius: 10,
+                    width: 34,
+                    height: 34,
+                    borderRadius: 12,
                     background: 'rgba(16, 185, 129, 0.12)',
                     display: 'flex',
                     alignItems: 'center',
@@ -794,21 +799,17 @@ function TakeListItem({
           : isAmoled
             ? '#000000'
             : 'var(--app-surface-low, rgba(255,255,255,0.04))',
-        borderRadius: 16,
-        padding: '12px 14px',
+        borderRadius: 20,
+        padding: '14px 16px',
         display: 'flex',
         alignItems: 'center',
         gap: 12,
         border: `1px solid ${
-          isPlaying ? 'var(--studio-accent, #007aff)' : 'var(--c-border, rgba(128,128,128,0.18))'
+          isPlaying ? 'var(--studio-accent, #007aff)' : 'var(--c-border, rgba(128,128,128,0.14))'
         }`,
         cursor: 'pointer',
-        boxShadow: isPlaying
-          ? '0 4px 16px rgba(0,122,255,0.15)'
-          : isLight
-            ? '0 1px 4px rgba(0,0,0,0.03)'
-            : 'none',
-        transition: 'all 180ms ease',
+        boxShadow: isPlaying ? '0 4px 18px rgba(0,122,255,0.22)' : 'var(--shadow-surface-soft)',
+        transition: 'all 180ms cubic-bezier(0.16, 1, 0.3, 1)',
         animation: `tp-fade-up 350ms cubic-bezier(0.22,1,0.36,1) ${index * 35}ms both`,
       }}
     >
@@ -822,12 +823,13 @@ function TakeListItem({
             onOpen();
           }}
           style={{
-            width: 40,
-            height: 40,
-            borderRadius: '50%',
+            width: 42,
+            height: 42,
+            borderRadius: 9999,
             background: 'rgba(var(--studio-accent-rgb, 0,122,255), 0.12)',
             color: 'var(--studio-accent, #007aff)',
             border: 'none',
+            boxShadow: 'var(--shadow-control-raised)',
             cursor: 'pointer',
             flexShrink: 0,
             display: 'flex',
@@ -852,14 +854,17 @@ function TakeListItem({
           aria-label={isPlaying ? 'Pause take' : 'Play take'}
           onClick={onTogglePlay}
           style={{
-            width: 40,
-            height: 40,
-            borderRadius: '50%',
+            width: 42,
+            height: 42,
+            borderRadius: 9999,
             background: isPlaying
               ? 'var(--studio-accent, #007aff)'
               : 'rgba(var(--studio-accent-rgb, 0,122,255), 0.10)',
             color: isPlaying ? '#ffffff' : 'var(--studio-accent, #007aff)',
             border: 'none',
+            boxShadow: isPlaying
+              ? '0 4px 14px rgba(0, 122, 255, 0.35)'
+              : 'var(--shadow-control-raised)',
             cursor: 'pointer',
             flexShrink: 0,
             display: 'flex',
@@ -926,8 +931,8 @@ function TakeListItem({
                 fontWeight: 700,
                 color: 'var(--studio-accent, #007aff)',
                 background: 'rgba(var(--studio-accent-rgb, 0,122,255), 0.12)',
-                padding: '2px 6px',
-                borderRadius: 6,
+                padding: '2px 8px',
+                borderRadius: 9999,
                 letterSpacing: '0.04em',
               }}
             >
@@ -969,7 +974,7 @@ function TakeListItem({
 
       {/* Action Buttons: Export & Delete */}
       <div
-        style={{ display: 'flex', alignItems: 'center', gap: 2, flexShrink: 0 }}
+        style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Export .wav (only if recorded) */}
@@ -979,18 +984,18 @@ function TakeListItem({
             aria-label="Export take"
             onClick={onExport}
             style={{
-              width: 32,
-              height: 32,
-              borderRadius: 8,
+              width: 34,
+              height: 34,
+              borderRadius: 9999,
               background: 'transparent',
               border: 'none',
               color: 'var(--c-text-secondary)',
-              opacity: 0.7,
+              opacity: 0.75,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              transition: 'opacity 150ms ease',
+              transition: 'opacity 150ms ease, background 150ms ease',
             }}
             title="Export audio (.wav)"
           >
@@ -1006,18 +1011,18 @@ function TakeListItem({
           aria-label="Delete take"
           onClick={() => setConfirming(true)}
           style={{
-            width: 32,
-            height: 32,
-            borderRadius: 8,
+            width: 34,
+            height: 34,
+            borderRadius: 9999,
             background: 'transparent',
             border: 'none',
             color: 'var(--c-text-secondary)',
-            opacity: 0.7,
+            opacity: 0.75,
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            transition: 'opacity 150ms ease',
+            transition: 'opacity 150ms ease, background 150ms ease',
           }}
           title={t.vocalex.deleteTake}
         >

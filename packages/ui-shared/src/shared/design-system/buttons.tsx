@@ -38,6 +38,7 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
   fullWidth?: boolean;
   icon?: string | React.ReactNode;
   ripple?: boolean;
+  isPill?: boolean;
 }
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
@@ -51,6 +52,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       fullWidth = false,
       icon,
       ripple = false,
+      isPill = false,
       children,
       style,
       className = '',
@@ -131,8 +133,8 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       return {
         bg: 'var(--surface-topbar-bg)',
         text: 'var(--c-text-primary)',
-        border: 'var(--c-border)',
-        shadow: 'var(--elevation-low)',
+        border: '1px solid var(--c-border, rgba(128, 128, 128, 0.12))',
+        shadow: 'var(--shadow-control-raised, var(--elevation-low))',
       };
     };
 
@@ -147,7 +149,11 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
             : size === 'lg'
               ? 'var(--btn-size-lg, 46px)'
               : 'var(--btn-size-md, 42px)';
-        const rad = size === 'lg' ? 'var(--radius-card, 16px)' : 'var(--radius-compact, 12px)';
+        const rad = isPill
+          ? '50%'
+          : size === 'lg'
+            ? 'var(--radius-card, 16px)'
+            : 'var(--radius-compact, 12px)';
         return {
           height: boxSize,
           width: boxSize,
@@ -160,26 +166,26 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         return {
           height: 'var(--btn-size-sm, 38px)',
           width: fullWidth ? '100%' : undefined,
-          padding: '0 14px',
+          padding: isPill ? '0 18px' : '0 14px',
           fontSize: '13px',
-          borderRadius: 'var(--radius-compact, 12px)',
+          borderRadius: isPill ? '9999px' : 'var(--radius-compact, 12px)',
         };
       }
       if (size === 'lg') {
         return {
           height: 'var(--btn-size-lg, 46px)',
           width: fullWidth ? '100%' : undefined,
-          padding: '0 20px',
+          padding: isPill ? '0 24px' : '0 20px',
           fontSize: '15px',
-          borderRadius: 'var(--radius-card, 16px)',
+          borderRadius: isPill ? '9999px' : 'var(--radius-card, 16px)',
         };
       }
       return {
         height: 'var(--btn-size-md, 42px)',
         width: fullWidth ? '100%' : undefined,
-        padding: '0 16px',
+        padding: isPill ? '0 20px' : '0 16px',
         fontSize: '13.5px',
-        borderRadius: 'var(--radius-compact, 12px)',
+        borderRadius: isPill ? '9999px' : 'var(--radius-compact, 12px)',
       };
     };
 

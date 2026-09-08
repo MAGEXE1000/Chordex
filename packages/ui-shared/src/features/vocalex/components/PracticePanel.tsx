@@ -188,16 +188,12 @@ function TipCard({
           : isAmoled
             ? '#000000'
             : 'var(--app-surface-low, rgba(255,255,255,0.04))',
-        borderRadius: 16,
+        borderRadius: 18,
         padding: '16px 18px',
         cursor: 'pointer',
-        border: `1px solid ${expanded ? color + '44' : 'var(--c-border, rgba(128,128,128,0.15))'}`,
-        transition: 'all 200ms ease',
-        boxShadow: expanded
-          ? `0 4px 18px ${color}12`
-          : isLight
-            ? '0 1px 4px rgba(0,0,0,0.03)'
-            : 'none',
+        border: `1px solid ${expanded ? color + '44' : 'var(--c-border, rgba(128,128,128,0.14))'}`,
+        transition: 'all 200ms cubic-bezier(0.16, 1, 0.3, 1)',
+        boxShadow: expanded ? 'var(--shadow-surface-raised)' : 'var(--shadow-surface-soft)',
         animation: `pp-fade-up 350ms cubic-bezier(0.22,1,0.36,1) ${index * 45}ms both`,
       }}
     >
@@ -206,10 +202,13 @@ function TipCard({
           style={{
             fontFamily: 'var(--studio-font-mono)',
             fontWeight: 800,
-            fontSize: 13,
+            fontSize: 12,
             color: color,
-            opacity: expanded ? 1 : 0.65,
-            minWidth: 22,
+            background: `${color}16`,
+            borderRadius: 9999,
+            padding: '2px 8px',
+            minWidth: 20,
+            textAlign: 'center',
             transition: 'opacity 180ms ease',
           }}
         >
@@ -367,7 +366,7 @@ export default function PracticePanel() {
           flexDirection: 'column',
           alignItems: 'center',
           padding:
-            '0 16px calc(var(--bottom-nav-height, 68px) + env(safe-area-inset-bottom, 16px) + 16px)',
+            '0 16px calc(var(--bottom-nav-height, 68px) + env(safe-area-inset-bottom, 16px) + 24px)',
           minHeight: '100%',
           boxSizing: 'border-box',
           animation:
@@ -394,9 +393,9 @@ export default function PracticePanel() {
               type="button"
               onClick={goBack}
               style={{
-                width: 38,
-                height: 38,
-                borderRadius: '50%',
+                width: 40,
+                height: 40,
+                borderRadius: 9999,
                 background: isLight
                   ? '#ffffff'
                   : isAmoled
@@ -409,7 +408,7 @@ export default function PracticePanel() {
                 justifyContent: 'center',
                 cursor: 'pointer',
                 flexShrink: 0,
-                boxShadow: isLight ? '0 1px 3px rgba(0,0,0,0.06)' : 'none',
+                boxShadow: 'var(--shadow-control-raised)',
                 transition: 'all 150ms ease',
               }}
             >
@@ -420,9 +419,9 @@ export default function PracticePanel() {
 
             <div
               style={{
-                width: 38,
-                height: 38,
-                borderRadius: 12,
+                width: 40,
+                height: 40,
+                borderRadius: 14,
                 background: `${section.color}18`,
                 border: `1px solid ${section.color}30`,
                 display: 'flex',
@@ -458,9 +457,15 @@ export default function PracticePanel() {
               <span
                 style={{
                   fontFamily: 'var(--studio-font-mono)',
-                  fontSize: 11.5,
-                  fontWeight: 600,
+                  fontSize: 11,
+                  fontWeight: 700,
                   color: section.color,
+                  background: `${section.color}16`,
+                  border: `1px solid ${section.color}28`,
+                  borderRadius: 9999,
+                  padding: '2px 8px',
+                  display: 'inline-block',
+                  marginTop: 2,
                 }}
               >
                 {t.vocalex.tipsCount(section.tips.length)}
@@ -481,7 +486,7 @@ export default function PracticePanel() {
         flexDirection: 'column',
         alignItems: 'center',
         padding:
-          '0 16px calc(var(--bottom-nav-height, 68px) + env(safe-area-inset-bottom, 16px) + 16px)',
+          '0 16px calc(var(--bottom-nav-height, 68px) + env(safe-area-inset-bottom, 16px) + 24px)',
         minHeight: '100%',
         boxSizing: 'border-box',
       }}
@@ -514,15 +519,15 @@ export default function PracticePanel() {
                   : isAmoled
                     ? '#000000'
                     : 'var(--app-surface-low, rgba(255,255,255,0.04))',
-                borderRadius: 16,
-                padding: '14px 16px',
+                borderRadius: 20,
+                padding: '16px 18px',
                 cursor: 'pointer',
-                border: '1px solid var(--c-border, rgba(128,128,128,0.15))',
-                transition: 'all 180ms ease',
+                border: '1px solid var(--c-border, rgba(128,128,128,0.14))',
+                transition: 'all 180ms cubic-bezier(0.16, 1, 0.3, 1)',
                 display: 'flex',
                 alignItems: 'center',
                 gap: 14,
-                boxShadow: isLight ? '0 1px 4px rgba(0,0,0,0.03)' : 'none',
+                boxShadow: 'var(--shadow-surface-soft)',
                 animation: `pp-fade-up 350ms cubic-bezier(0.22,1,0.36,1) ${i * 40}ms both`,
               }}
             >
@@ -531,7 +536,7 @@ export default function PracticePanel() {
                 style={{
                   width: 48,
                   height: 48,
-                  borderRadius: 14,
+                  borderRadius: 16,
                   background: `${section.color}15`,
                   border: `1px solid ${section.color}28`,
                   display: 'flex',
@@ -556,7 +561,7 @@ export default function PracticePanel() {
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     gap: 8,
-                    marginBottom: 2,
+                    marginBottom: 3,
                   }}
                 >
                   <h2
@@ -578,8 +583,12 @@ export default function PracticePanel() {
                     style={{
                       fontFamily: 'var(--studio-font-mono)',
                       fontSize: 11,
-                      fontWeight: 600,
+                      fontWeight: 700,
                       color: section.color,
+                      background: `${section.color}16`,
+                      border: `1px solid ${section.color}28`,
+                      borderRadius: 9999,
+                      padding: '2px 8px',
                       flexShrink: 0,
                     }}
                   >
