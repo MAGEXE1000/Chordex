@@ -23,7 +23,7 @@ export default function CoachPanel({ active = true }: { active?: boolean }) {
       style={{
         display: 'flex',
         flexDirection: 'column',
-        height: '100%',
+        minHeight: '100%',
         boxSizing: 'border-box',
       }}
     >
@@ -36,6 +36,7 @@ export default function CoachPanel({ active = true }: { active?: boolean }) {
           padding:
             'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 8px) var(--page-header-inset-h, var(--page-inset-h, 20px)) 0',
           boxSizing: 'border-box',
+          flexShrink: 0,
         }}
       >
         {/* 1. Compact Vocalex Sub-Tab Switcher (Pill-Based) */}
@@ -187,11 +188,21 @@ export default function CoachPanel({ active = true }: { active?: boolean }) {
       </div>
 
       {/* View Content */}
-      <div style={{ flex: 1, position: 'relative' }}>
+      <div
+        style={{
+          flex: 1,
+          position: 'relative',
+          display: 'flex',
+          flexDirection: 'column',
+          minHeight: 0,
+        }}
+      >
         <div
           style={{
-            display: subView === 'pitch' ? 'block' : 'none',
-            height: '100%',
+            display: subView === 'pitch' ? 'flex' : 'none',
+            flexDirection: 'column',
+            flex: 1,
+            width: '100%',
           }}
         >
           <PitchPanel active={active && subView === 'pitch'} />

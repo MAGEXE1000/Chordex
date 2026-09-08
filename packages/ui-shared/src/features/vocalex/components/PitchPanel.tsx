@@ -280,678 +280,692 @@ export default function PitchPanel({ active: panelActive = true }: { active?: bo
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        padding:
-          '0 16px calc(var(--bottom-nav-height, 68px) + env(safe-area-inset-bottom, 16px) + 24px)',
-        gap: 0,
+        justifyContent: 'center',
+        flex: 1,
+        width: '100%',
         minHeight: '100%',
+        padding:
+          '12px 16px calc(var(--bottom-nav-height, 58px) + env(safe-area-inset-bottom, 14px) + 20px)',
+        gap: 0,
         boxSizing: 'border-box',
       }}
     >
-      {/* ── Main Tuner Card (Soft Raised Surface) ── */}
       <div
-        className="studio-surface-raised"
         style={{
           width: '100%',
           maxWidth: 360,
-          background: isLight
-            ? '#ffffff'
-            : activeVis.amoledMode
-              ? '#000000'
-              : 'var(--surface-card-bg, rgba(255,255,255,0.03))',
-          border: '1px solid var(--c-border, rgba(128,128,128,0.12))',
-          borderRadius: 24,
-          padding: '18px 18px 16px',
-          boxShadow: 'var(--shadow-surface-raised, 0 8px 24px -4px rgba(0,0,0,0.12))',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          boxSizing: 'border-box',
-          position: 'relative',
+          margin: 'auto 0',
         }}
       >
-        {/* Gauge Dial Presentation */}
+        {/* ── Main Tuner Card (Soft Raised Surface) ── */}
         <div
+          className="studio-surface-raised"
           style={{
-            position: 'relative',
-            width: 230,
-            height: 230,
+            width: '100%',
+            maxWidth: 360,
+            background: isLight
+              ? '#ffffff'
+              : activeVis.amoledMode
+                ? '#000000'
+                : 'var(--surface-card-bg, rgba(255,255,255,0.03))',
+            border: '1px solid var(--c-border, rgba(128,128,128,0.12))',
+            borderRadius: 24,
+            padding: '18px 18px 16px',
+            boxShadow: 'var(--shadow-surface-raised, 0 8px 24px -4px rgba(0,0,0,0.12))',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            justifyContent: 'center',
-            margin: '0 auto',
+            boxSizing: 'border-box',
+            position: 'relative',
           }}
         >
-          {/* Circular Arc & Cent Scale SVG Gauge */}
-          <svg
-            viewBox="0 0 240 240"
-            style={{
-              position: 'absolute',
-              inset: 0,
-              width: '100%',
-              height: '100%',
-              transform: 'rotate(-90deg)',
-            }}
-          >
-            {/* Background Track Arc */}
-            <circle
-              cx="120"
-              cy="120"
-              r="102"
-              fill="none"
-              stroke={isLight ? '#E5E7EB' : 'rgba(255,255,255,0.08)'}
-              strokeWidth="8"
-              strokeLinecap="round"
-              strokeDasharray="480 640"
-              strokeDashoffset="-80"
-            />
-            {/* In-Tune Sweet Spot Arc */}
-            <circle
-              cx="120"
-              cy="120"
-              r="102"
-              fill="none"
-              stroke="#10B981"
-              strokeWidth="8.5"
-              strokeLinecap="round"
-              strokeDasharray="75 640"
-              strokeDashoffset="-282"
-            />
-          </svg>
-
-          {/* Cent Scale Marks */}
+          {/* Gauge Dial Presentation */}
           <div
             style={{
-              position: 'absolute',
-              top: 14,
-              left: 16,
-              right: 16,
+              position: 'relative',
+              width: 230,
+              height: 230,
               display: 'flex',
-              justifyContent: 'space-between',
-              fontSize: 11,
-              fontFamily: 'var(--studio-font-mono)',
-              fontWeight: 600,
-              color: 'var(--c-text-secondary)',
-              pointerEvents: 'none',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto',
             }}
           >
-            <span style={{ opacity: 0.55 }}>-50</span>
-            <span style={{ opacity: 0.55, transform: 'translateX(-3px)' }}>-20</span>
-            <span
+            {/* Circular Arc & Cent Scale SVG Gauge */}
+            <svg
+              viewBox="0 0 240 240"
               style={{
-                fontSize: 12,
-                fontWeight: 800,
-                color:
-                  active && Math.abs(result!.cents) <= tolerance
-                    ? '#10B981'
-                    : 'var(--c-text-secondary)',
-                transform: 'translateY(-2px)',
-                transition: 'color 150ms ease',
+                position: 'absolute',
+                inset: 0,
+                width: '100%',
+                height: '100%',
+                transform: 'rotate(-90deg)',
               }}
             >
-              0
-            </span>
-            <span style={{ opacity: 0.55, transform: 'translateX(3px)' }}>+20</span>
-            <span style={{ opacity: 0.55 }}>+50</span>
+              {/* Background Track Arc */}
+              <circle
+                cx="120"
+                cy="120"
+                r="102"
+                fill="none"
+                stroke={isLight ? '#E5E7EB' : 'rgba(255,255,255,0.08)'}
+                strokeWidth="8"
+                strokeLinecap="round"
+                strokeDasharray="480 640"
+                strokeDashoffset="-80"
+              />
+              {/* In-Tune Sweet Spot Arc */}
+              <circle
+                cx="120"
+                cy="120"
+                r="102"
+                fill="none"
+                stroke="#10B981"
+                strokeWidth="8.5"
+                strokeLinecap="round"
+                strokeDasharray="75 640"
+                strokeDashoffset="-282"
+              />
+            </svg>
+
+            {/* Cent Scale Marks */}
+            <div
+              style={{
+                position: 'absolute',
+                top: 14,
+                left: 16,
+                right: 16,
+                display: 'flex',
+                justifyContent: 'space-between',
+                fontSize: 11,
+                fontFamily: 'var(--studio-font-mono)',
+                fontWeight: 600,
+                color: 'var(--c-text-secondary)',
+                pointerEvents: 'none',
+              }}
+            >
+              <span style={{ opacity: 0.55 }}>-50</span>
+              <span style={{ opacity: 0.55, transform: 'translateX(-3px)' }}>-20</span>
+              <span
+                style={{
+                  fontSize: 12,
+                  fontWeight: 800,
+                  color:
+                    active && Math.abs(result!.cents) <= tolerance
+                      ? '#10B981'
+                      : 'var(--c-text-secondary)',
+                  transform: 'translateY(-2px)',
+                  transition: 'color 150ms ease',
+                }}
+              >
+                0
+              </span>
+              <span style={{ opacity: 0.55, transform: 'translateX(3px)' }}>+20</span>
+              <span style={{ opacity: 0.55 }}>+50</span>
+            </div>
+
+            {/* Needle / Indicator Pointing Along Arc */}
+            <div
+              style={{
+                position: 'absolute',
+                inset: 0,
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'flex-start',
+                transform: `rotate(${needleRot}deg)`,
+                transformOrigin: '50% 50%',
+                pointerEvents: 'none',
+                transition: 'transform 90ms cubic-bezier(0.16, 1, 0.3, 1)',
+                zIndex: 2,
+              }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  marginTop: 8,
+                }}
+              >
+                <div
+                  style={{
+                    width: 12,
+                    height: 12,
+                    borderRadius: '50%',
+                    background: statusColor,
+                    boxShadow: `0 0 0 4px ${statusColor}26`,
+                    transition: 'background 150ms ease, box-shadow 150ms ease',
+                  }}
+                />
+                <div
+                  style={{
+                    width: 2.5,
+                    height: 14,
+                    borderRadius: 2,
+                    background: statusColor,
+                    marginTop: 2,
+                    transition: 'background 150ms ease',
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Central Note Display Hub */}
+            <div
+              style={{
+                position: 'relative',
+                zIndex: 1,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                textAlign: 'center',
+                marginTop: 10,
+              }}
+            >
+              <span
+                style={{
+                  fontFamily: 'var(--studio-font-mono)',
+                  fontSize: 10.5,
+                  fontWeight: 700,
+                  letterSpacing: '0.12em',
+                  textTransform: 'uppercase',
+                  color: 'var(--c-text-secondary)',
+                  marginBottom: 2,
+                }}
+              >
+                {t.vocalex.currentNote || (language === 'es' ? 'NOTA ACTUAL' : 'CURRENT NOTE')}
+              </span>
+
+              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center' }}>
+                <span
+                  style={{
+                    fontFamily: 'var(--studio-font-display)',
+                    fontSize: 62,
+                    fontWeight: 800,
+                    lineHeight: 1,
+                    letterSpacing: '-0.04em',
+                    color: active ? 'var(--c-text-primary)' : 'var(--c-text-secondary)',
+                    opacity: active ? 1 : 0.35,
+                    transition: 'color 180ms ease, opacity 180ms ease',
+                  }}
+                >
+                  {displayNoteName}
+                </span>
+                {active && (
+                  <span
+                    style={{
+                      fontFamily: 'var(--studio-font-mono)',
+                      fontSize: 30,
+                      fontWeight: 700,
+                      color: accent.from,
+                      marginLeft: 3,
+                      lineHeight: 1,
+                    }}
+                  >
+                    {result!.octave}
+                  </span>
+                )}
+              </div>
+
+              {/* Status Pill (Soft Floating Pill) */}
+              <div style={{ marginTop: 6, display: 'flex', justifyContent: 'center' }}>
+                {active ? (
+                  <div
+                    className="studio-pill"
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      padding: '5px 16px',
+                      borderRadius: 9999,
+                      background: `${statusColor}18`,
+                      border: `1px solid ${statusColor}33`,
+                      boxShadow: 'var(--shadow-pill)',
+                      color: statusColor,
+                      fontFamily: 'var(--studio-font-mono)',
+                      fontSize: 11.5,
+                      fontWeight: 700,
+                      letterSpacing: '0.04em',
+                    }}
+                  >
+                    <span
+                      style={{
+                        width: 6,
+                        height: 6,
+                        borderRadius: '50%',
+                        background: statusColor,
+                      }}
+                    />
+                    <span>
+                      {statusLabel} • {result!.cents >= 0 ? '+' : ''}
+                      {result!.cents.toFixed(1)} ct
+                    </span>
+                  </div>
+                ) : listening ? (
+                  <div
+                    className="studio-pill"
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      padding: '5px 16px',
+                      borderRadius: 9999,
+                      background: 'var(--control-track-bg, rgba(255,255,255,0.04))',
+                      border: '1px solid var(--c-border, rgba(128,128,128,0.12))',
+                      boxShadow: 'var(--shadow-pill)',
+                      color: 'var(--c-text-secondary)',
+                      fontFamily: 'var(--studio-font-mono)',
+                      fontSize: 11,
+                      fontWeight: 600,
+                      letterSpacing: '0.04em',
+                    }}
+                  >
+                    <span
+                      style={{
+                        width: 6,
+                        height: 6,
+                        borderRadius: '50%',
+                        background: accent.from,
+                      }}
+                    />
+                    <span>{language === 'es' ? 'ESCUCHANDO...' : 'LISTENING...'}</span>
+                  </div>
+                ) : (
+                  <div
+                    className="studio-pill"
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      padding: '5px 16px',
+                      borderRadius: 9999,
+                      background: 'var(--control-track-bg, rgba(255,255,255,0.04))',
+                      border: '1px solid var(--c-border, rgba(128,128,128,0.12))',
+                      boxShadow: 'var(--shadow-pill)',
+                      color: 'var(--c-text-secondary)',
+                      fontFamily: 'var(--studio-font-mono)',
+                      fontSize: 11,
+                      fontWeight: 600,
+                      letterSpacing: '0.04em',
+                      opacity: 0.65,
+                    }}
+                  >
+                    <span>{language === 'es' ? 'LISTO' : 'READY'}</span>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
 
-          {/* Needle / Indicator Pointing Along Arc */}
+          {/* ── Core Readouts (Frequency & Deviation) ── */}
           <div
             style={{
-              position: 'absolute',
-              inset: 0,
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr',
+              gap: 10,
+              width: '100%',
+              marginTop: 10,
+              paddingTop: 12,
+              borderTop: '1px solid var(--c-border, rgba(128,128,128,0.10))',
+            }}
+          >
+            <div
+              style={{
+                background: 'var(--control-track-bg, rgba(128,128,128,0.04))',
+                border: '1px solid var(--c-border, rgba(128,128,128,0.10))',
+                borderRadius: 16,
+                boxShadow: 'var(--shadow-inset-soft, inset 0 1px 2px rgba(0,0,0,0.06))',
+                padding: '10px 12px',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                textAlign: 'center',
+              }}
+            >
+              <span
+                style={{
+                  fontFamily: 'var(--studio-font-mono)',
+                  fontSize: 10.5,
+                  fontWeight: 700,
+                  color: 'var(--c-text-secondary)',
+                  letterSpacing: '0.08em',
+                  textTransform: 'uppercase',
+                }}
+              >
+                {t.vocalex.frequency || (language === 'es' ? 'Frecuencia' : 'Frequency')}
+              </span>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 2, marginTop: 3 }}>
+                <span
+                  style={{
+                    fontFamily: 'var(--studio-font-mono)',
+                    fontSize: 19,
+                    fontWeight: 700,
+                    color: active ? 'var(--c-text-primary)' : 'var(--c-text-secondary)',
+                    opacity: active ? 1 : 0.4,
+                  }}
+                >
+                  {active ? result!.frequency.toFixed(1) : '—'}
+                </span>
+                <span
+                  style={{
+                    fontFamily: 'var(--studio-font-mono)',
+                    fontSize: 11,
+                    fontWeight: 500,
+                    color: 'var(--c-text-secondary)',
+                    opacity: active ? 0.75 : 0.4,
+                    marginLeft: 1,
+                  }}
+                >
+                  Hz
+                </span>
+              </div>
+            </div>
+
+            <div
+              style={{
+                background: 'var(--control-track-bg, rgba(128,128,128,0.04))',
+                border: '1px solid var(--c-border, rgba(128,128,128,0.10))',
+                borderRadius: 16,
+                boxShadow: 'var(--shadow-inset-soft, inset 0 1px 2px rgba(0,0,0,0.06))',
+                padding: '10px 12px',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                textAlign: 'center',
+              }}
+            >
+              <span
+                style={{
+                  fontFamily: 'var(--studio-font-mono)',
+                  fontSize: 10.5,
+                  fontWeight: 700,
+                  color: 'var(--c-text-secondary)',
+                  letterSpacing: '0.08em',
+                  textTransform: 'uppercase',
+                }}
+              >
+                {t.vocalex.precision || (language === 'es' ? 'Precisión' : 'Accuracy')}
+              </span>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 2, marginTop: 3 }}>
+                <span
+                  style={{
+                    fontFamily: 'var(--studio-font-mono)',
+                    fontSize: 19,
+                    fontWeight: 700,
+                    color: active ? statusColor : 'var(--c-text-secondary)',
+                    opacity: active ? 1 : 0.4,
+                  }}
+                >
+                  {active
+                    ? `${Math.max(0, Math.min(100, 100 - (Math.abs(result!.cents) / 50) * 100)).toFixed(1)}`
+                    : '—'}
+                </span>
+                <span
+                  style={{
+                    fontFamily: 'var(--studio-font-mono)',
+                    fontSize: 11,
+                    fontWeight: 500,
+                    color: active ? statusColor : 'var(--c-text-secondary)',
+                    opacity: active ? 0.8 : 0.4,
+                    marginLeft: 1,
+                  }}
+                >
+                  %
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* ── Real Pitch History / Stability Strip ── */}
+          <div
+            style={{
+              width: '100%',
+              marginTop: 10,
               display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'flex-start',
-              transform: `rotate(${needleRot}deg)`,
-              transformOrigin: '50% 50%',
-              pointerEvents: 'none',
-              transition: 'transform 90ms cubic-bezier(0.16, 1, 0.3, 1)',
-              zIndex: 2,
+              flexDirection: 'column',
+              gap: 5,
             }}
           >
             <div
               style={{
                 display: 'flex',
-                flexDirection: 'column',
+                justifyContent: 'space-between',
                 alignItems: 'center',
-                marginTop: 8,
               }}
             >
-              <div
-                style={{
-                  width: 12,
-                  height: 12,
-                  borderRadius: '50%',
-                  background: statusColor,
-                  boxShadow: `0 0 0 4px ${statusColor}26`,
-                  transition: 'background 150ms ease, box-shadow 150ms ease',
-                }}
-              />
-              <div
-                style={{
-                  width: 2.5,
-                  height: 14,
-                  borderRadius: 2,
-                  background: statusColor,
-                  marginTop: 2,
-                  transition: 'background 150ms ease',
-                }}
-              />
-            </div>
-          </div>
-
-          {/* Central Note Display Hub */}
-          <div
-            style={{
-              position: 'relative',
-              zIndex: 1,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              textAlign: 'center',
-              marginTop: 10,
-            }}
-          >
-            <span
-              style={{
-                fontFamily: 'var(--studio-font-mono)',
-                fontSize: 10.5,
-                fontWeight: 700,
-                letterSpacing: '0.12em',
-                textTransform: 'uppercase',
-                color: 'var(--c-text-secondary)',
-                marginBottom: 2,
-              }}
-            >
-              {t.vocalex.currentNote || (language === 'es' ? 'NOTA ACTUAL' : 'CURRENT NOTE')}
-            </span>
-
-            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center' }}>
               <span
                 style={{
-                  fontFamily: 'var(--studio-font-display)',
-                  fontSize: 62,
-                  fontWeight: 800,
-                  lineHeight: 1,
-                  letterSpacing: '-0.04em',
-                  color: active ? 'var(--c-text-primary)' : 'var(--c-text-secondary)',
-                  opacity: active ? 1 : 0.35,
-                  transition: 'color 180ms ease, opacity 180ms ease',
+                  fontFamily: 'var(--studio-font-mono)',
+                  fontSize: 9.5,
+                  fontWeight: 700,
+                  color: 'var(--c-text-secondary)',
+                  letterSpacing: '0.1em',
+                  textTransform: 'uppercase',
                 }}
               >
-                {displayNoteName}
+                {language === 'es' ? 'Estabilidad de Tono' : 'Pitch Stability'}
               </span>
-              {active && (
-                <span
-                  style={{
-                    fontFamily: 'var(--studio-font-mono)',
-                    fontSize: 30,
-                    fontWeight: 700,
-                    color: accent.from,
-                    marginLeft: 3,
-                    lineHeight: 1,
-                  }}
-                >
-                  {result!.octave}
-                </span>
-              )}
+              <span
+                style={{
+                  fontFamily: 'var(--studio-font-mono)',
+                  fontSize: 9.5,
+                  fontWeight: 600,
+                  color: 'var(--c-text-secondary)',
+                  opacity: 0.6,
+                }}
+              >
+                {active ? `${history.length} pts` : '—'}
+              </span>
             </div>
 
-            {/* Status Pill (Soft Floating Pill) */}
-            <div style={{ marginTop: 6, display: 'flex', justifyContent: 'center' }}>
-              {active ? (
-                <div
-                  className="studio-pill"
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 6,
-                    padding: '5px 16px',
-                    borderRadius: 9999,
-                    background: `${statusColor}18`,
-                    border: `1px solid ${statusColor}33`,
-                    boxShadow: 'var(--shadow-pill)',
-                    color: statusColor,
-                    fontFamily: 'var(--studio-font-mono)',
-                    fontSize: 11.5,
-                    fontWeight: 700,
-                    letterSpacing: '0.04em',
-                  }}
-                >
-                  <span
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'flex-end',
+                justifyContent: 'space-between',
+                height: 22,
+                gap: 4,
+              }}
+            >
+              {Array.from({ length: 24 }, (_, i) => {
+                const entry = history.length > 0 ? history[history.length - 24 + i] : undefined;
+                let barH = 4;
+                let barBg = isLight ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.08)';
+
+                if (entry) {
+                  const absCents = Math.abs(entry.cents);
+                  barH = Math.max(12, Math.min(100, (1 - absCents / 50) * 100));
+                  barBg = centsToColor(entry.cents, tolerance);
+                }
+
+                return (
+                  <div
+                    key={i}
                     style={{
-                      width: 6,
-                      height: 6,
-                      borderRadius: '50%',
-                      background: statusColor,
+                      flex: 1,
+                      height: `${barH}%`,
+                      borderRadius: 2,
+                      background: barBg,
+                      transition: 'height 100ms ease, background 100ms ease',
                     }}
                   />
-                  <span>
-                    {statusLabel} • {result!.cents >= 0 ? '+' : ''}
-                    {result!.cents.toFixed(1)} ct
-                  </span>
-                </div>
-              ) : listening ? (
-                <div
-                  className="studio-pill"
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 6,
-                    padding: '5px 16px',
-                    borderRadius: 9999,
-                    background: 'var(--control-track-bg, rgba(255,255,255,0.04))',
-                    border: '1px solid var(--c-border, rgba(128,128,128,0.12))',
-                    boxShadow: 'var(--shadow-pill)',
-                    color: 'var(--c-text-secondary)',
-                    fontFamily: 'var(--studio-font-mono)',
-                    fontSize: 11,
-                    fontWeight: 600,
-                    letterSpacing: '0.04em',
-                  }}
-                >
-                  <span
-                    style={{
-                      width: 6,
-                      height: 6,
-                      borderRadius: '50%',
-                      background: accent.from,
-                    }}
-                  />
-                  <span>{language === 'es' ? 'ESCUCHANDO...' : 'LISTENING...'}</span>
-                </div>
-              ) : (
-                <div
-                  className="studio-pill"
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 6,
-                    padding: '5px 16px',
-                    borderRadius: 9999,
-                    background: 'var(--control-track-bg, rgba(255,255,255,0.04))',
-                    border: '1px solid var(--c-border, rgba(128,128,128,0.12))',
-                    boxShadow: 'var(--shadow-pill)',
-                    color: 'var(--c-text-secondary)',
-                    fontFamily: 'var(--studio-font-mono)',
-                    fontSize: 11,
-                    fontWeight: 600,
-                    letterSpacing: '0.04em',
-                    opacity: 0.65,
-                  }}
-                >
-                  <span>{language === 'es' ? 'LISTO' : 'READY'}</span>
-                </div>
-              )}
+                );
+              })}
             </div>
           </div>
         </div>
 
-        {/* ── Core Readouts (Frequency & Deviation) ── */}
+        {/* ── Primary Action Controls ── */}
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
+            gridTemplateColumns: '4fr 8fr',
             gap: 10,
             width: '100%',
-            marginTop: 10,
-            paddingTop: 12,
-            borderTop: '1px solid var(--c-border, rgba(128,128,128,0.10))',
-          }}
-        >
-          <div
-            style={{
-              background: 'var(--control-track-bg, rgba(128,128,128,0.04))',
-              border: '1px solid var(--c-border, rgba(128,128,128,0.10))',
-              borderRadius: 16,
-              boxShadow: 'var(--shadow-inset-soft, inset 0 1px 2px rgba(0,0,0,0.06))',
-              padding: '10px 12px',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              textAlign: 'center',
-            }}
-          >
-            <span
-              style={{
-                fontFamily: 'var(--studio-font-mono)',
-                fontSize: 10.5,
-                fontWeight: 700,
-                color: 'var(--c-text-secondary)',
-                letterSpacing: '0.08em',
-                textTransform: 'uppercase',
-              }}
-            >
-              {t.vocalex.frequency || (language === 'es' ? 'Frecuencia' : 'Frequency')}
-            </span>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: 2, marginTop: 3 }}>
-              <span
-                style={{
-                  fontFamily: 'var(--studio-font-mono)',
-                  fontSize: 19,
-                  fontWeight: 700,
-                  color: active ? 'var(--c-text-primary)' : 'var(--c-text-secondary)',
-                  opacity: active ? 1 : 0.4,
-                }}
-              >
-                {active ? result!.frequency.toFixed(1) : '—'}
-              </span>
-              <span
-                style={{
-                  fontFamily: 'var(--studio-font-mono)',
-                  fontSize: 11,
-                  fontWeight: 500,
-                  color: 'var(--c-text-secondary)',
-                  opacity: active ? 0.75 : 0.4,
-                  marginLeft: 1,
-                }}
-              >
-                Hz
-              </span>
-            </div>
-          </div>
-
-          <div
-            style={{
-              background: 'var(--control-track-bg, rgba(128,128,128,0.04))',
-              border: '1px solid var(--c-border, rgba(128,128,128,0.10))',
-              borderRadius: 16,
-              boxShadow: 'var(--shadow-inset-soft, inset 0 1px 2px rgba(0,0,0,0.06))',
-              padding: '10px 12px',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              textAlign: 'center',
-            }}
-          >
-            <span
-              style={{
-                fontFamily: 'var(--studio-font-mono)',
-                fontSize: 10.5,
-                fontWeight: 700,
-                color: 'var(--c-text-secondary)',
-                letterSpacing: '0.08em',
-                textTransform: 'uppercase',
-              }}
-            >
-              {t.vocalex.precision || (language === 'es' ? 'Precisión' : 'Accuracy')}
-            </span>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: 2, marginTop: 3 }}>
-              <span
-                style={{
-                  fontFamily: 'var(--studio-font-mono)',
-                  fontSize: 19,
-                  fontWeight: 700,
-                  color: active ? statusColor : 'var(--c-text-secondary)',
-                  opacity: active ? 1 : 0.4,
-                }}
-              >
-                {active
-                  ? `${Math.max(0, Math.min(100, 100 - (Math.abs(result!.cents) / 50) * 100)).toFixed(1)}`
-                  : '—'}
-              </span>
-              <span
-                style={{
-                  fontFamily: 'var(--studio-font-mono)',
-                  fontSize: 11,
-                  fontWeight: 500,
-                  color: active ? statusColor : 'var(--c-text-secondary)',
-                  opacity: active ? 0.8 : 0.4,
-                  marginLeft: 1,
-                }}
-              >
-                %
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* ── Real Pitch History / Stability Strip ── */}
-        <div
-          style={{
-            width: '100%',
-            marginTop: 10,
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 5,
-          }}
-        >
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-            }}
-          >
-            <span
-              style={{
-                fontFamily: 'var(--studio-font-mono)',
-                fontSize: 9.5,
-                fontWeight: 700,
-                color: 'var(--c-text-secondary)',
-                letterSpacing: '0.1em',
-                textTransform: 'uppercase',
-              }}
-            >
-              {language === 'es' ? 'Estabilidad de Tono' : 'Pitch Stability'}
-            </span>
-            <span
-              style={{
-                fontFamily: 'var(--studio-font-mono)',
-                fontSize: 9.5,
-                fontWeight: 600,
-                color: 'var(--c-text-secondary)',
-                opacity: 0.6,
-              }}
-            >
-              {active ? `${history.length} pts` : '—'}
-            </span>
-          </div>
-
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'flex-end',
-              justifyContent: 'space-between',
-              height: 22,
-              gap: 4,
-            }}
-          >
-            {Array.from({ length: 24 }, (_, i) => {
-              const entry = history.length > 0 ? history[history.length - 24 + i] : undefined;
-              let barH = 4;
-              let barBg = isLight ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.08)';
-
-              if (entry) {
-                const absCents = Math.abs(entry.cents);
-                barH = Math.max(12, Math.min(100, (1 - absCents / 50) * 100));
-                barBg = centsToColor(entry.cents, tolerance);
-              }
-
-              return (
-                <div
-                  key={i}
-                  style={{
-                    flex: 1,
-                    height: `${barH}%`,
-                    borderRadius: 2,
-                    background: barBg,
-                    transition: 'height 100ms ease, background 100ms ease',
-                  }}
-                />
-              );
-            })}
-          </div>
-        </div>
-      </div>
-
-      {/* ── Primary Action Controls ── */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: '4fr 8fr',
-          gap: 10,
-          width: '100%',
-          maxWidth: 360,
-          marginTop: 12,
-        }}
-      >
-        {/* Reset Button */}
-        <button
-          type="button"
-          onClick={handleReset}
-          disabled={history.length === 0 && !result}
-          style={{
-            height: 48,
-            borderRadius: 9999,
-            padding: '0 16px',
-            background: isLight
-              ? '#ffffff'
-              : activeVis.amoledMode
-                ? '#000000'
-                : 'var(--app-surface-low, rgba(255,255,255,0.04))',
-            border: '1px solid var(--c-border, rgba(128,128,128,0.18))',
-            color: 'var(--c-text-primary)',
-            fontFamily: 'var(--studio-font-display)',
-            fontWeight: 600,
-            fontSize: 13.5,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 6,
-            cursor: history.length === 0 && !result ? 'default' : 'pointer',
-            opacity: history.length === 0 && !result ? 0.45 : 1,
-            boxShadow: 'var(--shadow-control-raised)',
-            transition: 'all 150ms ease',
-          }}
-        >
-          <span
-            className="material-symbols-outlined"
-            style={{ fontSize: 19, color: 'var(--c-text-secondary)' }}
-          >
-            restart_alt
-          </span>
-          <span>{t.vocalex.reset || (language === 'es' ? 'Restablecer' : 'Reset')}</span>
-        </button>
-
-        {/* Primary Stop/Start Monitoring Button */}
-        <button
-          type="button"
-          onClick={listening ? stopListening : startListening}
-          style={{
-            height: 48,
-            borderRadius: 9999,
-            padding: '0 22px',
-            background: listening ? '#ef4444' : accent.from,
-            border: 'none',
-            color: '#ffffff',
-            fontFamily: 'var(--studio-font-display)',
-            fontWeight: 700,
-            fontSize: 14.5,
-            letterSpacing: '-0.01em',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 8,
-            cursor: 'pointer',
-            boxShadow: listening
-              ? '0 4px 18px rgba(239, 68, 68, 0.35)'
-              : 'var(--shadow-control-raised), 0 4px 16px rgba(0, 122, 255, 0.25)',
-            transition: 'all 180ms cubic-bezier(0.16, 1, 0.3, 1)',
-          }}
-        >
-          <span className="material-symbols-outlined" style={{ fontSize: 20 }}>
-            {listening ? 'mic_off' : 'mic'}
-          </span>
-          <span>
-            {listening
-              ? t.vocalex.tunerStop || (language === 'es' ? 'Detener Monitor' : 'Stop Monitoring')
-              : t.vocalex.tunerStart ||
-                (language === 'es' ? 'Iniciar Monitor' : 'Start Monitoring')}
-          </span>
-        </button>
-      </div>
-
-      {permError && (
-        <div
-          style={{
-            padding: '14px 16px',
-            borderRadius: 16,
-            marginTop: 16,
-            background: 'rgba(239,68,68,0.08)',
-            border: '1px solid rgba(239,68,68,0.2)',
-            color: '#ef4444',
-            fontSize: 12.5,
-            fontFamily: 'var(--studio-font-body)',
-            textAlign: 'center',
             maxWidth: 360,
-            width: '100%',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: 10,
-            boxSizing: 'border-box',
+            marginTop: 12,
           }}
         >
-          <span style={{ fontWeight: 500, lineHeight: 1.4 }}>
-            {permError.includes('NotAllowedError') ||
-            permError.includes('Permission denied') ||
-            permError.includes('denied')
-              ? t.vocalex.tunerMicRequired
-              : permError}
-          </span>
-          {Capacitor.isNativePlatform() ? (
-            <button
-              type="button"
-              onClick={async () => {
-                try {
-                  const { AppInstaller } = await import('@workspace/studio-core');
-                  await AppInstaller.openAppSettings();
-                } catch (e) {
-                  console.error('Failed to open app settings:', e);
-                }
-              }}
-              style={{
-                background: '#ef4444',
-                color: '#ffffff',
-                border: 'none',
-                borderRadius: 10,
-                padding: '8px 16px',
-                fontSize: 12,
-                fontWeight: 600,
-                fontFamily: 'var(--studio-font-display)',
-                cursor: 'pointer',
-              }}
+          {/* Reset Button */}
+          <button
+            type="button"
+            onClick={handleReset}
+            disabled={history.length === 0 && !result}
+            style={{
+              height: 48,
+              borderRadius: 9999,
+              padding: '0 16px',
+              background: isLight
+                ? '#ffffff'
+                : activeVis.amoledMode
+                  ? '#000000'
+                  : 'var(--app-surface-low, rgba(255,255,255,0.04))',
+              border: '1px solid var(--c-border, rgba(128,128,128,0.18))',
+              color: 'var(--c-text-primary)',
+              fontFamily: 'var(--studio-font-display)',
+              fontWeight: 600,
+              fontSize: 13.5,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 6,
+              cursor: history.length === 0 && !result ? 'default' : 'pointer',
+              opacity: history.length === 0 && !result ? 0.45 : 1,
+              boxShadow: 'var(--shadow-control-raised)',
+              transition: 'all 150ms ease',
+            }}
+          >
+            <span
+              className="material-symbols-outlined"
+              style={{ fontSize: 19, color: 'var(--c-text-secondary)' }}
             >
-              {language === 'es' ? 'Abrir Ajustes de la App' : 'Open App Settings'}
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={() => {
-                setPermError(null);
-                startListening();
-              }}
-              style={{
-                background: '#ef4444',
-                color: '#ffffff',
-                border: 'none',
-                borderRadius: 10,
-                padding: '8px 16px',
-                fontSize: 12,
-                fontWeight: 600,
-                fontFamily: 'var(--studio-font-display)',
-                cursor: 'pointer',
-              }}
-            >
-              {t.vocalex.tunerGrantStart}
-            </button>
-          )}
+              restart_alt
+            </span>
+            <span>{t.vocalex.reset || (language === 'es' ? 'Restablecer' : 'Reset')}</span>
+          </button>
+
+          {/* Primary Stop/Start Monitoring Button */}
+          <button
+            type="button"
+            onClick={listening ? stopListening : startListening}
+            style={{
+              height: 48,
+              borderRadius: 9999,
+              padding: '0 22px',
+              background: listening ? '#ef4444' : accent.from,
+              border: 'none',
+              color: '#ffffff',
+              fontFamily: 'var(--studio-font-display)',
+              fontWeight: 700,
+              fontSize: 14.5,
+              letterSpacing: '-0.01em',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
+              cursor: 'pointer',
+              boxShadow: listening
+                ? '0 4px 18px rgba(239, 68, 68, 0.35)'
+                : 'var(--shadow-control-raised), 0 4px 16px rgba(0, 122, 255, 0.25)',
+              transition: 'all 180ms cubic-bezier(0.16, 1, 0.3, 1)',
+            }}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: 20 }}>
+              {listening ? 'mic_off' : 'mic'}
+            </span>
+            <span>
+              {listening
+                ? t.vocalex.tunerStop || (language === 'es' ? 'Detener Monitor' : 'Stop Monitoring')
+                : t.vocalex.tunerStart ||
+                  (language === 'es' ? 'Iniciar Monitor' : 'Start Monitoring')}
+            </span>
+          </button>
         </div>
-      )}
+
+        {permError && (
+          <div
+            style={{
+              padding: '14px 16px',
+              borderRadius: 16,
+              marginTop: 16,
+              background: 'rgba(239,68,68,0.08)',
+              border: '1px solid rgba(239,68,68,0.2)',
+              color: '#ef4444',
+              fontSize: 12.5,
+              fontFamily: 'var(--studio-font-body)',
+              textAlign: 'center',
+              maxWidth: 360,
+              width: '100%',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 10,
+              boxSizing: 'border-box',
+            }}
+          >
+            <span style={{ fontWeight: 500, lineHeight: 1.4 }}>
+              {permError.includes('NotAllowedError') ||
+              permError.includes('Permission denied') ||
+              permError.includes('denied')
+                ? t.vocalex.tunerMicRequired
+                : permError}
+            </span>
+            {Capacitor.isNativePlatform() ? (
+              <button
+                type="button"
+                onClick={async () => {
+                  try {
+                    const { AppInstaller } = await import('@workspace/studio-core');
+                    await AppInstaller.openAppSettings();
+                  } catch (e) {
+                    console.error('Failed to open app settings:', e);
+                  }
+                }}
+                style={{
+                  background: '#ef4444',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: 10,
+                  padding: '8px 16px',
+                  fontSize: 12,
+                  fontWeight: 600,
+                  fontFamily: 'var(--studio-font-display)',
+                  cursor: 'pointer',
+                }}
+              >
+                {language === 'es' ? 'Abrir Ajustes de la App' : 'Open App Settings'}
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  setPermError(null);
+                  startListening();
+                }}
+                style={{
+                  background: '#ef4444',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: 10,
+                  padding: '8px 16px',
+                  fontSize: 12,
+                  fontWeight: 600,
+                  fontFamily: 'var(--studio-font-display)',
+                  cursor: 'pointer',
+                }}
+              >
+                {t.vocalex.tunerGrantStart}
+              </button>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
