@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.5.76';
-export const NATIVE_VERSION_CODE = 40576;
-export const WEB_VERSION = '4.5.76';
+export const NATIVE_VERSION = '4.5.77';
+export const NATIVE_VERSION_CODE = 40577;
+export const WEB_VERSION = '4.5.77';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -73,13 +73,13 @@ export const APP_VERSION_DATE = '8/12/2026';
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = '50db39e8';
+export const APP_COMMIT_SHA = 'cdf00746';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '9/8/2026, 8:18:01 PM CST';
+export const APP_BUILD_TIMESTAMP = '9/8/2026, 9:15:21 PM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -98,16 +98,14 @@ export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
     heading: 'Added',
     items: [
-      'Livex Branding & Adaptive Android Launcher: Updated application launcher icons across all density buckets (mdpi to xxxhdpi) and startup animation to the approved 2026 Livex visual identity.',
+      'Livex Brand Reveal Launch Animation: Engineered a genuine brand-building intro sequence where the Livex mark is physically constructed from its two organic geometric shapes (ascending stem petal and converging wing petal) with staggered cubic-bezier interpolation ([0.16, 1, 0.3, 1]), luminous ambient white bloom, authoritative settle hold, and seamless dissolve into the pre-mounted Hub DOM.',
     ],
   },
   {
     heading: 'Fixed',
     items: [
-      'Firebase Firestore Persistence Modernization: Migrated deprecated enableMultiTabIndexedDbPersistence to FirestoreSettings.localCache with persistentLocalCache and persistentMultipleTabManager, eliminating startup deprecation warnings while maintaining multi-tab persistence.',
-      'Vocalex Monitor Scale, Layout Rhythm & Typography: Calibrated pitch monitor scale and vertical composition rhythm to eliminate viewport clipping, and harmonized Preferences typography hierarchy.',
-      'Drumex Pattern Card Typography: Restored compact pattern card title typography hierarchy and visual weight alignment across pattern library views.',
-      'Startup Regression Verification: Restored studio-intro-done event dispatching and listener alignment in App.tsx, ensuring automated regression suites validate cleanly.',
+      'Android Adaptive Launcher Icon Safe-Zone Compliance: Replaced all launcher icon density mipmaps (mdpi, hdpi, xhdpi, xxhdpi, xxxhdpi) ensuring the mark is strictly contained within the 66dp safe zone on a 108dp canvas with pure AMOLED black (#000000) background. Completely eliminated the legacy double-squircle clipping defect in round icons and added transparent corner margins to legacy squircle badges.',
+      'AndroidManifest Activity Icon Bindings: Explicitly bound android:icon and android:roundIcon attributes to MainActivity in AndroidManifest.xml to prevent OEM launcher caching fallbacks to stale application icons.',
     ],
   },
 ];
@@ -119,6 +117,15 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.5.77',
+    date: '2026-09-08',
+    highlights: [
+      'Livex Brand Reveal Launch Animation: Engineered a genuine brand-building intro sequence where the Livex mark is physically constructed from its two organic geometric shapes (ascending stem petal and converging wing petal) with staggered cubic-bezier interpolation ([0.16, 1, 0.3, 1]), luminous ambient white bloom, authoritative settle hold, and seamless dissolve into the pre-mounted Hub DOM.',
+      'Android Adaptive Launcher Icon Safe-Zone Compliance: Replaced all launcher icon density mipmaps (mdpi, hdpi, xhdpi, xxhdpi, xxxhdpi) ensuring the mark is strictly contained within the 66dp safe zone on a 108dp canvas with pure AMOLED black (#000000) background. Completely eliminated the legacy double-squircle clipping defect in round icons and added transparent corner margins to legacy squircle badges.',
+      'AndroidManifest Activity Icon Bindings: Explicitly bound android:icon and android:roundIcon attributes to MainActivity in AndroidManifest.xml to prevent OEM launcher caching fallbacks to stale application icons.',
+    ],
+  },
   {
     version: '4.5.76',
     date: '2026-09-08',
@@ -212,18 +219,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'Full Theme Parity: Engineered pixel-perfect support for Light (#ffffff / #f8fafc), Dark (#0c0d10 / #16171b), and AMOLED (true #000000 / #08080a) themes with canonical surface blur tokens.',
       'Categorized Release Notes Engine: Release changelogs are dynamically classified into distinct, color-coded badges (NEW in emerald, AUDIO ENGINE in blue, FIXED & IMPROVED in amber) with automatic fallback for single-version manifests.',
       'End-to-End Pipeline Wiring: Connected real-time download progress events, graceful download cancellation, cryptographic SHA-256 verification, and native Android PackageInstaller handoff.',
-    ],
-  },
-  {
-    version: '4.5.67',
-    date: '2026-09-06',
-    highlights: [
-      'Signalsmith Stretch WASM AudioWorklet Integration: Integrated official C++ WebAssembly Signalsmith Stretch DSP engine running entirely within the Web Audio render thread for production multitrack stem transposition.',
-      'Native Android Media Controls: Implemented real native Android MediaSessionCompat and foreground playback service exposing playback controls to the Android notification shade, Quick Settings media carousel, lock screen, and Bluetooth devices across GrooveX, Drumex Beats, and Metronome.',
-      'Drumex Metronome Performance Mode: Automatically hides canonical bottom navigation in the Metronome tab to reclaim the lower viewport for compact performance controls.',
-      'Time & Tempo Preserving Transposition: Decoupled musical key transposition from playback speed—all audio sources run at strictly 1.0000x playback rate with 0 duration change and 0 BPM change across -12 to +12 semitones.',
-      'Percussion Stem Transposition Immunity: Percussion and drum stems (kick, snare, toms, hi-hats, cymbals, overheads, percussion) bypass pitch processing, keeping rhythm and transients 100% unaltered.',
-      "Sample-Exact Latency Lock: Calibrated drum delay to match Signalsmith Stretch's deterministic 120.00ms latency, achieving bit-exact phase synchronization (Δt = 0.000 ms) between drums and melodic stems with zero cumulative drift.",
     ],
   },
 ];
