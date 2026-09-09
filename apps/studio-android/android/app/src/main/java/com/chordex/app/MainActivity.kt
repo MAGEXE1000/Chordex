@@ -1,6 +1,8 @@
 package com.chordex.app
 
+import android.content.ComponentName
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.net.Uri
@@ -147,6 +149,7 @@ class MainActivity : BridgeActivity() {
         registerPlugin(AppInstallerPlugin::class.java)
         registerPlugin(NativeMediaPlugin::class.java)
         super.onCreate(savedInstanceState)
+        ensureLauncherAliasActive()
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -535,5 +538,23 @@ class MainActivity : BridgeActivity() {
             return true
         }
         return super.onKeyUp(keyCode, event)
+    }
+
+    private fun ensureLauncherAliasActive() {
+        try {
+            val pm = packageManager
+            val aliasComponent = ComponentName(this, "$packageName.MainActivityLivex")
+            val currentState = pm.getComponentEnabledSetting(aliasComponent)
+            if (currentState != PackageManager.COMPONENT_ENABLED_STATE_ENABLED) {
+                pm.setComponentEnabledSetting(
+                    aliasComponent,
+                    PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
+                    PackageManager.DONT_KILL_APP
+                )
+                android.util.Log.i("LivexLauncher", "Ensured launcher alias MainActivityLivex is enabled")
+            }
+        } catch (e: Exception) {
+            android.util.Log.w("LivexLauncher", "Could not verify/enable launcher alias: ${e.message}")
+        }
     }
 }

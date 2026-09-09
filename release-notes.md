@@ -1,11 +1,9 @@
-# Version 4.5.79
+# Version 4.5.80
 
-Release Date: 2026-09-08
+Release Date: 2026-09-09
 
 ### Fixed
 
-- Android Display Luminance & Contrast Restoration: Resolved the mobile display dimming problem by restoring canonical zinc text tokens (`--c-text-primary: #fafafa`, `--c-text-secondary: #a1a1aa`, `--c-text-muted: #71717a`) and registering matching `@property` initial values in `tokens.css`.
-- AMOLED Surface Contrast & Hierarchy: Elevated AMOLED surface and card background tokens above pure black (`--app-surface-low: #08080a`, `--app-surface: #101014`, `--app-surface-high: #16161c`, `--hub-card-bg: rgba(255, 255, 255, 0.04)`) while preserving pure `#000000` AMOLED panel shutoff, eliminating viewport black crush.
-- Early-Boot Inline Style Cleanup: Synchronized early boot head scripts in `apps/studio-android/index.html` and `apps/studio-web/index.html` with explicit text tokens and high-contrast surfaces, and added automatic inline style flushing in `themeEngine.ts`.
-- WebView Native Hardware Layer: Removed experimental offscreen Compose `layerBackdrop` wrapping in `MainActivity.kt`, restoring direct hardware layer rendering with native black window background.
-- Component Text Hierarchy & Navigation Contrast: Defined `--c-text-tertiary: var(--c-text-muted)` across the design token system and updated navigation icon/label colors to `var(--c-text-secondary)` for WCAG AA compliance.
+- Android Launcher Icon Cache Invalidation via Activity-Alias: Implemented MainActivityLivex activity alias with component rotation to bypass persistent OEM launcher icon caching (Samsung One UI, Pixel Launcher, etc.), forcing Android launchers to invalidate cached legacy icons and load the new metallic Livex logo fresh from the APK.
+- Adaptive Icon Monochrome Material You Theming: Added monochrome drawable bindings to ic_launcher.xml and ic_launcher_round.xml in mipmap-anydpi-v26 for Android 13+ themed icon support.
+- Runtime Component Assurance: Added ensureLauncherAliasActive() in MainActivity.kt to programmatically confirm that the new launcher alias component is in an enabled state.

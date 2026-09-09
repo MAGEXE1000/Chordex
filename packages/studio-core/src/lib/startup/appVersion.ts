@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.5.79';
-export const NATIVE_VERSION_CODE = 40579;
-export const WEB_VERSION = '4.5.79';
+export const NATIVE_VERSION = '4.5.80';
+export const NATIVE_VERSION_CODE = 40580;
+export const WEB_VERSION = '4.5.80';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -73,13 +73,13 @@ export const APP_VERSION_DATE = '8/12/2026';
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = '6e0d567e';
+export const APP_COMMIT_SHA = 'cc50a635';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '9/8/2026, 11:37:03 PM CST';
+export const APP_BUILD_TIMESTAMP = '9/9/2026, 9:54:09 AM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -98,11 +98,9 @@ export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
     heading: 'Fixed',
     items: [
-      'Android Display Luminance & Contrast Restoration: Resolved the mobile display dimming problem by restoring canonical zinc text tokens (`--c-text-primary: #fafafa`, `--c-text-secondary: #a1a1aa`, `--c-text-muted: #71717a`) and registering matching `@property` initial values in `tokens.css`.',
-      'AMOLED Surface Contrast & Hierarchy: Elevated AMOLED surface and card background tokens above pure black (`--app-surface-low: #08080a`, `--app-surface: #101014`, `--app-surface-high: #16161c`, `--hub-card-bg: rgba(255, 255, 255, 0.04)`) while preserving pure `#000000` AMOLED panel shutoff, eliminating viewport black crush.',
-      'Early-Boot Inline Style Cleanup: Synchronized early boot head scripts in `apps/studio-android/index.html` and `apps/studio-web/index.html` with explicit text tokens and high-contrast surfaces, and added automatic inline style flushing in `themeEngine.ts`.',
-      'WebView Native Hardware Layer: Removed experimental offscreen Compose `layerBackdrop` wrapping in `MainActivity.kt`, restoring direct hardware layer rendering with native black window background.',
-      'Component Text Hierarchy & Navigation Contrast: Defined `--c-text-tertiary: var(--c-text-muted)` across the design token system and updated navigation icon/label colors to `var(--c-text-secondary)` for WCAG AA compliance.',
+      'Android Launcher Icon Cache Invalidation via Activity-Alias: Implemented MainActivityLivex activity alias with component rotation to bypass persistent OEM launcher icon caching (Samsung One UI, Pixel Launcher, etc.), forcing Android launchers to invalidate cached legacy icons and load the new metallic Livex logo fresh from the APK.',
+      'Adaptive Icon Monochrome Material You Theming: Added monochrome drawable bindings to ic_launcher.xml and ic_launcher_round.xml in mipmap-anydpi-v26 for Android 13+ themed icon support.',
+      'Runtime Component Assurance: Added ensureLauncherAliasActive() in MainActivity.kt to programmatically confirm that the new launcher alias component is in an enabled state.',
     ],
   },
 ];
@@ -114,6 +112,15 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.5.80',
+    date: '2026-09-09',
+    highlights: [
+      'Android Launcher Icon Cache Invalidation via Activity-Alias: Implemented MainActivityLivex activity alias with component rotation to bypass persistent OEM launcher icon caching (Samsung One UI, Pixel Launcher, etc.), forcing Android launchers to invalidate cached legacy icons and load the new metallic Livex logo fresh from the APK.',
+      'Adaptive Icon Monochrome Material You Theming: Added monochrome drawable bindings to ic_launcher.xml and ic_launcher_round.xml in mipmap-anydpi-v26 for Android 13+ themed icon support.',
+      'Runtime Component Assurance: Added ensureLauncherAliasActive() in MainActivity.kt to programmatically confirm that the new launcher alias component is in an enabled state.',
+    ],
+  },
   {
     version: '4.5.79',
     date: '2026-09-08',
@@ -202,17 +209,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'Robust Rapid Tap Tempo Engine: Eliminated the 4-tap requirement. Two taps immediately calculate an authoritative tempo, with subsequent taps refining the estimate via a recency-weighted rolling average of up to 6 intervals. Includes a 70ms touch-noise debounce (< 857 BPM) removing any artificial tempo ceiling up to canonical 280 BPM, and automatic sequence reset after a > 2000ms pause.',
       'Beat Tracker Summary Badge: Real-time dynamic accent summary in the tracker strip header (e.g. 1 Strong • 2 Accent) with visual accent indicators.',
       'Tap Tempo Helper Label: Updated helper text from (Tap 4 times) to (Tap to set tempo).',
-    ],
-  },
-  {
-    version: '4.5.70',
-    date: '2026-09-06',
-    highlights: [
-      'Drumex Metronome True AMOLED Mode: Pure black (#000000) and elevated (#0a0a0c) surfaces across Beat Tracker, BPM Hero card, rhythm metrics, audio controls, floating dock, preset drawer, and all configuration modals.',
-      'Dynamic Preset Identity Tracking: Active preset selection immediately clears (activePresetId: null) when any defining parameter (BPM, time signature, subdivision, sound, accent, count-in, tempo ramp) is modified, and automatically restores when parameters match the saved preset definition.',
-      'Startup Preset Isolation: Clean default startup state on application restart with activePresetId: null while keeping saved presets library fully persistent.',
-      'Android Media Player Notification Metadata: Track title displays active preset name when a preset is active, or "Drumex Metronome" as fallback, with secondary metadata displaying BPM and time signature.',
-      'Android Media Notification Artwork Scaling: Reduced badge content scale to a compact 220x220 inner card centered on 512x512 canvas with generous black margins, preventing SystemUI notification shade crowding and control clipping.',
     ],
   },
 ];
