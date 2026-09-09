@@ -1,6 +1,6 @@
 {
   "name": "@workspace/studio-core",
-  "version": "4.5.74",
+  "version": "4.5.75",
   "private": true,
   "scripts": {
     "test": "vitest run",
