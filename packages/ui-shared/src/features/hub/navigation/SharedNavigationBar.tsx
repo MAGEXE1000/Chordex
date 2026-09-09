@@ -91,18 +91,18 @@ const NavigationItem = React.memo(
     const iconColor = isLight
       ? isActive
         ? '#2563eb'
-        : 'rgba(15, 23, 42, 0.45)'
+        : 'var(--c-text-secondary, rgba(15, 23, 42, 0.60))'
       : isActive
         ? 'var(--studio-accent-from, #60a5fa)'
-        : 'rgba(255, 255, 255, 0.45)';
+        : 'var(--c-text-secondary, rgba(255, 255, 255, 0.65))';
 
     const labelColor = isLight
       ? isActive
         ? '#2563eb'
-        : 'rgba(15, 23, 42, 0.50)'
+        : 'var(--c-text-secondary, rgba(15, 23, 42, 0.60))'
       : isActive
         ? 'var(--studio-accent-from, #60a5fa)'
-        : 'rgba(255, 255, 255, 0.45)';
+        : 'var(--c-text-secondary, rgba(255, 255, 255, 0.65))';
 
     return (
       <motion.button

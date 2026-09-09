@@ -131,7 +131,6 @@ export function HubAppGrid() {
                 color: 'var(--c-text-secondary)',
                 fontFamily: 'var(--studio-font-body)',
                 fontWeight: 500,
-                opacity: 0.82,
                 lineHeight: 1.3,
               }}
             >

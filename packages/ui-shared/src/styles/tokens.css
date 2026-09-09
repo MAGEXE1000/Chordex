@@ -238,17 +238,22 @@
 @property --c-text-primary {
   syntax: '<color>';
   inherits: true;
-  initial-value: #e7e5e4;
+  initial-value: #fafafa;
 }
 @property --c-text-secondary {
   syntax: '<color>';
   inherits: true;
-  initial-value: #acabaa;
+  initial-value: #a1a1aa;
 }
 @property --c-text-muted {
   syntax: '<color>';
   inherits: true;
-  initial-value: #484848;
+  initial-value: #71717a;
+}
+@property --c-text-tertiary {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #71717a;
 }
 
 :root {
@@ -284,11 +289,12 @@
   --c-surface-high: #151518;
   --c-surface-highest: #1a1a1f;
 
-  --c-text-primary: #e7e5e4;
-  --c-text-secondary: #acabaa;
-  --c-text-muted: #484848;
+  --c-text-primary: #fafafa;
+  --c-text-secondary: #a1a1aa;
+  --c-text-muted: #71717a;
+  --c-text-tertiary: var(--c-text-muted);
 
-  --c-border: rgba(255, 255, 255, 0.08);
+  --c-border: rgba(255, 255, 255, 0.12);
   --c-border-dashed: 1px dashed rgba(255, 255, 255, 0.16);
   --c-surface-glass-bg: rgba(20, 20, 25, 0.65);
   --c-surface-glass-blur: blur(16px);
@@ -553,35 +559,42 @@ h4,
 :root.amoled {
   --app-bg: #000000;
   --app-surface-lowest: #000000;
-  --app-surface-low: #030303;
-  --app-surface: #080808;
-  --app-surface-high: #0d0d0d;
-  --app-surface-highest: #121212;
+  --app-surface-low: #08080a;
+  --app-surface: #101014;
+  --app-surface-high: #16161c;
+  --app-surface-highest: #1f1f26;
   --app-surface-scrim: rgba(0, 0, 0, 0.85);
   --app-surface-scrim-opaque: rgba(0, 0, 0, 0.95);
   --app-surface-scrim-solid: #000000;
-  --c-bg-card: #000000;
+  --c-bg-card: #101014;
 
   --c-background: #000000;
   --c-surface-lowest: #000000;
-  --c-surface-low: #030303;
-  --c-surface-mid: #080808;
-  --c-surface-high: #0d0d0d;
-  --c-surface-highest: #121212;
+  --c-surface-low: #08080a;
+  --c-surface-mid: #101014;
+  --c-surface-high: #16161c;
+  --c-surface-highest: #1f1f26;
 
-  --c-surface-glass-bg: rgba(4, 4, 4, 0.88);
+  --c-text-primary: #fafafa;
+  --c-text-secondary: #a8a8b3;
+  --c-text-muted: #71717a;
+  --c-text-tertiary: var(--c-text-muted);
+
+  --c-border: rgba(255, 255, 255, 0.12);
+
+  --c-surface-glass-bg: rgba(16, 16, 20, 0.88);
   --sidebar-bg: rgba(0, 0, 0, 0.7);
   --sidebar-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
-  --popover-bg: rgba(0, 0, 0, 0.75);
+  --popover-bg: rgba(16, 16, 20, 0.85);
   --popover-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
   --profile-avatar-bg: rgba(255, 255, 255, 0.08);
   --profile-avatar-color: #ffffff;
   --profile-avatar-border: 0 0 0 1px rgba(255, 255, 255, 0.12);
-  --hub-card-bg: rgba(255, 255, 255, 0.01);
-  --hub-card-pressed-bg: rgba(255, 255, 255, 0.04);
-  --hub-card-border: rgba(255, 255, 255, 0.06);
-  --hub-card-icon-bg: rgba(255, 255, 255, 0.04);
-  --hub-card-icon-border: rgba(255, 255, 255, 0.08);
+  --hub-card-bg: rgba(255, 255, 255, 0.04);
+  --hub-card-pressed-bg: rgba(255, 255, 255, 0.08);
+  --hub-card-border: rgba(255, 255, 255, 0.1);
+  --hub-card-icon-bg: rgba(255, 255, 255, 0.08);
+  --hub-card-icon-border: rgba(255, 255, 255, 0.14);
   --control-track-bg: rgba(0, 0, 0, 0.65);
 
   /* ── Canonical Soft Layered Shadow System (AMOLED Mode) ── */
@@ -596,16 +609,16 @@ h4,
   --shadow-pill: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 2px 8px rgba(0, 0, 0, 0.5);
   --shadow-inset-soft: inset 0 1px 3px rgba(0, 0, 0, 0.8);
 
-  --surface-card-bg: #000000;
+  --surface-card-bg: #101014;
   --surface-card-shadow: var(--shadow-surface-soft);
   --surface-card-inset: inset 0 1px 0 rgba(255, 255, 255, 0.06);
   --surface-card-highlight: 0 0 0 1px rgba(255, 255, 255, 0.06);
 
-  --surface-deep-bg: #080808;
+  --surface-deep-bg: #08080a;
   --surface-deep-shadow: var(--shadow-surface-raised);
   --surface-deep-inset: inset 0 1px 0 rgba(255, 255, 255, 0.08);
 
-  --btn-surface-bg: #0d0d0d;
+  --btn-surface-bg: #16161c;
   --btn-surface-shadow: var(--shadow-control-raised);
   --btn-surface-inset: inset 0 1px 1px rgba(255, 255, 255, 0.14);
 }
@@ -664,6 +677,7 @@ h4,
   --c-text-primary: #18181b;
   --c-text-secondary: #52525b;
   --c-text-muted: #71717a;
+  --c-text-tertiary: var(--c-text-muted);
 
   --c-border: rgba(0, 0, 0, 0.08);
   --c-border-dashed: 1px dashed rgba(0, 0, 0, 0.16);
@@ -1851,8 +1865,8 @@ html[data-perf-mode='on'] *::after {
   --surface-glass-lens-shadow:
     0 4px 14px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.14);
   --surface-modal-bg: rgba(0, 0, 0, 0.75);
-  --surface-dialog-bg: var(--app-surface-high, #0d0d0d);
-  --surface-modal-surface: var(--app-surface-high, #0d0d0d);
+  --surface-dialog-bg: var(--app-surface-high, #16161c);
+  --surface-modal-surface: var(--app-surface-high, #16161c);
 }
 
 /* Light + AMOLED (pure-white) — inherits from :root.light */

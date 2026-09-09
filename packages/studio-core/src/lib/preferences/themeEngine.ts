@@ -72,6 +72,20 @@ export function applyThemeTokens(settings: any) {
     } else {
       root.classList.remove('amoled');
     }
+
+    // Flush any early-boot inline style properties so tokens.css class rules have full precedence
+    root.style.removeProperty('--c-background');
+    root.style.removeProperty('--app-bg');
+    root.style.removeProperty('--c-surface-lowest');
+    root.style.removeProperty('--c-surface-low');
+    root.style.removeProperty('--c-surface-mid');
+    root.style.removeProperty('--c-surface-high');
+    root.style.removeProperty('--c-surface-highest');
+    root.style.removeProperty('--c-text-primary');
+    root.style.removeProperty('--c-text-secondary');
+    root.style.removeProperty('--c-text-muted');
+    root.style.removeProperty('--c-text-tertiary');
+    root.style.removeProperty('--c-border');
   }
 
   // 2. Global Accent Color Tokens

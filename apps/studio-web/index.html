@@ -26,12 +26,17 @@
           if (isLight) {
             doc.classList.add('light');
             doc.classList.remove('dark');
+            doc.classList.remove('amoled');
             doc.style.setProperty('--c-background', '#f4f4f5');
+            doc.style.setProperty('--app-bg', '#f4f4f5');
             doc.style.setProperty('--c-surface-lowest', '#e4e4e7');
             doc.style.setProperty('--c-surface-low', '#ececed');
             doc.style.setProperty('--c-surface-mid', '#f4f4f5');
             doc.style.setProperty('--c-surface-high', '#fafafa');
             doc.style.setProperty('--c-surface-highest', '#ffffff');
+            doc.style.setProperty('--c-text-primary', '#18181b');
+            doc.style.setProperty('--c-text-secondary', '#52525b');
+            doc.style.setProperty('--c-text-muted', '#71717a');
             doc.style.setProperty('--c-border', 'rgba(0, 0, 0, 0.08)');
           } else {
             doc.classList.add('dark');
@@ -39,21 +44,30 @@
             if (isAmoled) {
               doc.classList.add('amoled');
               doc.style.setProperty('--c-background', '#000000');
+              doc.style.setProperty('--app-bg', '#000000');
               doc.style.setProperty('--c-surface-lowest', '#000000');
-              doc.style.setProperty('--c-surface-low', '#030303');
-              doc.style.setProperty('--c-surface-mid', '#080808');
-              doc.style.setProperty('--c-surface-high', '#0d0d0d');
-              doc.style.setProperty('--c-surface-highest', '#121212');
+              doc.style.setProperty('--c-surface-low', '#08080a');
+              doc.style.setProperty('--c-surface-mid', '#101014');
+              doc.style.setProperty('--c-surface-high', '#16161c');
+              doc.style.setProperty('--c-surface-highest', '#1f1f26');
+              doc.style.setProperty('--c-text-primary', '#fafafa');
+              doc.style.setProperty('--c-text-secondary', '#a8a8b3');
+              doc.style.setProperty('--c-text-muted', '#71717a');
+              doc.style.setProperty('--c-border', 'rgba(255, 255, 255, 0.12)');
             } else {
               doc.classList.remove('amoled');
               doc.style.setProperty('--c-background', '#09090b');
-              doc.style.setProperty('--c-surface-lowest', '#0e0e11');
-              doc.style.setProperty('--c-surface-low', '#131316');
-              doc.style.setProperty('--c-surface-mid', '#191a1e');
-              doc.style.setProperty('--c-surface-high', '#1f2025');
-              doc.style.setProperty('--c-surface-highest', '#25262c');
+              doc.style.setProperty('--app-bg', '#09090b');
+              doc.style.setProperty('--c-surface-lowest', '#0c0c0f');
+              doc.style.setProperty('--c-surface-low', '#0f0f12');
+              doc.style.setProperty('--c-surface-mid', '#111115');
+              doc.style.setProperty('--c-surface-high', '#151518');
+              doc.style.setProperty('--c-surface-highest', '#1a1a1f');
+              doc.style.setProperty('--c-text-primary', '#fafafa');
+              doc.style.setProperty('--c-text-secondary', '#a1a1aa');
+              doc.style.setProperty('--c-text-muted', '#71717a');
+              doc.style.setProperty('--c-border', 'rgba(255, 255, 255, 0.12)');
             }
-            doc.style.setProperty('--c-border', 'rgba(255, 255, 255, 0.08)');
           }
         } catch(e) {}
       })();
