@@ -1,6 +1,21 @@
 import { initializeApp, getApps, type FirebaseApp } from 'firebase/app';
-import { getAuth, type Auth, setPersistence, browserLocalPersistence, GoogleAuthProvider } from 'firebase/auth';
-import { getFirestore, initializeFirestore, enableMultiTabIndexedDbPersistence, type Firestore, enableNetwork as fsEnableNetwork, disableNetwork as fsDisableNetwork } from 'firebase/firestore';
+import {
+  getAuth,
+  type Auth,
+  setPersistence,
+  browserLocalPersistence,
+  GoogleAuthProvider,
+} from 'firebase/auth';
+import {
+  initializeFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager,
+  memoryLocalCache,
+  type Firestore,
+  type FirestoreSettings,
+  enableNetwork as fsEnableNetwork,
+  disableNetwork as fsDisableNetwork,
+} from 'firebase/firestore';
 import { getStorage, type FirebaseStorage } from 'firebase/storage';
 import bundledConfig from '../../../firebase.config.json';
 
@@ -40,7 +55,12 @@ export function hasEnableNetworkSucceeded(): boolean {
   return _lastEnableNetworkSuccess;
 }
 
-const env = (typeof import.meta !== 'undefined' && import.meta.env) ? import.meta.env : (typeof process !== 'undefined' ? process.env : {});
+const env =
+  typeof import.meta !== 'undefined' && import.meta.env
+    ? import.meta.env
+    : typeof process !== 'undefined'
+      ? process.env
+      : {};
 function pick(envValue: string | undefined, fallback: string | undefined): string | undefined {
   const v = (envValue ?? '').trim();
   return v ? v : fallback;
@@ -52,18 +72,21 @@ const config = {
   projectId: pick(env.VITE_FIREBASE_PROJECT_ID as string | undefined, bundledConfig.projectId),
   storageBucket: pick(
     env.VITE_FIREBASE_STORAGE_BUCKET as string | undefined,
-    bundledConfig.storageBucket,
+    bundledConfig.storageBucket
   ),
   messagingSenderId: pick(
     env.VITE_FIREBASE_MESSAGING_SENDER_ID as string | undefined,
-    bundledConfig.messagingSenderId,
+    bundledConfig.messagingSenderId
   ),
   appId: pick(env.VITE_FIREBASE_APP_ID as string | undefined, bundledConfig.appId),
-  databaseId: pick(env.VITE_FIREBASE_DATABASE_ID as string | undefined, (bundledConfig as any).databaseId),
+  databaseId: pick(
+    env.VITE_FIREBASE_DATABASE_ID as string | undefined,
+    (bundledConfig as any).databaseId
+  ),
 };
 
 export const isFirebaseConfigured = Boolean(
-  config.apiKey && config.authDomain && config.projectId && config.appId,
+  config.apiKey && config.authDomain && config.projectId && config.appId
 );
 
 let _app: FirebaseApp | null = null;
@@ -82,7 +105,7 @@ function init() {
     _initError = `Missing config fields`;
     return;
   }
-  
+
   if (!_firestoreReadyPromise) {
     _firestoreReadyPromise = new Promise<void>((resolve) => {
       _firestoreReadyResolver = resolve;
@@ -111,24 +134,40 @@ function init() {
     // CRITICAL: On Android/Capacitor (WebView), standard WebChannel streams often get blocked
     // or fail to connect (hanging permanently in 'disconnected' state).
     // Forcing experimentalForceLongPolling: true resolves this network transport limitation completely.
-    _db = config.databaseId
-      ? initializeFirestore(_app, { experimentalForceLongPolling: true }, config.databaseId)
-      : initializeFirestore(_app, { experimentalForceLongPolling: true });
-    console.log('[FirebaseInit] Firestore instance initialized (forced long polling enabled).');
+    // Use modern persistentLocalCache with persistentMultipleTabManager to enable multi-tab
+    // IndexedDB offline persistence directly at initialization time, replacing the deprecated
+    // enableMultiTabIndexedDbPersistence API while preserving identical offline and multi-tab cache semantics.
+    try {
+      const firestoreSettings: FirestoreSettings = {
+        experimentalForceLongPolling: true,
+        localCache: persistentLocalCache({
+          tabManager: persistentMultipleTabManager(),
+        }),
+      };
+      _db = config.databaseId
+        ? initializeFirestore(_app, firestoreSettings, config.databaseId)
+        : initializeFirestore(_app, firestoreSettings);
+      _persistenceEnabled = true;
+      console.log(
+        '[FirebaseInit] Firestore instance initialized (forced long polling & persistent multi-tab IndexedDB cache enabled).'
+      );
+    } catch (err: any) {
+      console.warn(
+        '[FirebaseInit] Persistent cache initialization failed, falling back to memoryLocalCache:',
+        err?.message || err
+      );
+      const fallbackSettings: FirestoreSettings = {
+        experimentalForceLongPolling: true,
+        localCache: memoryLocalCache(),
+      };
+      _db = config.databaseId
+        ? initializeFirestore(_app, fallbackSettings, config.databaseId)
+        : initializeFirestore(_app, fallbackSettings);
+      _persistenceEnabled = false;
+    }
 
-    // Enable offline persistence so reads don't fail with 'unavailable' during
-    // momentary network interruptions (especially on Android/Capacitor).
-    if (_db) {
-      console.log('[FirebaseInit] Enabling Firestore offline persistence...');
-      enableMultiTabIndexedDbPersistence(_db).then(() => {
-        console.log('[FirebaseInit] Firestore multi-tab IndexedDB persistence enabled successfully.');
-        _persistenceEnabled = true;
-        _firestoreReadyResolver();
-      }).catch((err) => {
-        console.warn('[FirebaseInit] Firestore offline persistence could not be enabled:', err.code || err.message, err);
-        _persistenceEnabled = false;
-        _firestoreReadyResolver();
-      });
+    if (_firestoreReadyResolver) {
+      _firestoreReadyResolver();
     }
     console.log('[FirebaseInit] Getting Storage instance...');
     _storage = getStorage(_app);
