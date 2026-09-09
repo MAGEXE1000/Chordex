@@ -96,7 +96,7 @@ export default function VocalexPreferencesPanel() {
         boxSizing: 'border-box',
         padding: '0 var(--page-header-inset-h, var(--page-inset-h, 20px))',
         paddingBottom:
-          'calc(var(--bottom-nav-height, 68px) + env(safe-area-inset-bottom, 16px) + 16px)',
+          'calc(var(--bottom-nav-height, 58px) + env(safe-area-inset-bottom, 14px) + 24px)',
       }}
     >
       <div style={{ maxWidth: 640, margin: '0 auto', width: '100%' }}>
@@ -108,8 +108,28 @@ export default function VocalexPreferencesPanel() {
               ? 'Configuración de afinación, audio y grabación'
               : 'Configure pitch detection, audio DSP, and recording behaviors.'
           }
+          disableTopInset={true}
           disableHorizontalPadding={true}
-          containerStyle={{ marginBottom: '8px' }}
+          titleStyle={{
+            fontFamily: 'var(--type-title-font, var(--studio-font-display))',
+            fontSize: 'var(--type-title-size, 22px)',
+            lineHeight: 'var(--type-title-lh, 28px)',
+            fontWeight: 'var(--type-title-weight, 700)',
+            letterSpacing: 'var(--type-title-tracking, -0.7px)',
+          }}
+          subtitleStyle={{
+            fontFamily: 'var(--type-meta-font, var(--studio-font-body))',
+            fontSize: 'var(--type-metadata-size, 12.5px)',
+            lineHeight: 'var(--type-metadata-lh, 16px)',
+            letterSpacing: 'var(--type-metadata-tracking, 0.15px)',
+            color: 'var(--c-text-secondary)',
+            marginTop: '2px',
+          }}
+          containerStyle={{
+            paddingTop: 'calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 12px)',
+            paddingBottom: '4px',
+            marginBottom: '10px',
+          }}
         />
 
         {/* Transient Feedback Banner */}

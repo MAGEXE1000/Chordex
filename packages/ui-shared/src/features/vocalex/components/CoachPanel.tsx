@@ -179,10 +179,25 @@ export default function CoachPanel({ active = true }: { active?: boolean }) {
           }
           disableTopInset={true}
           disableHorizontalPadding={true}
+          titleStyle={{
+            fontFamily: 'var(--type-title-font, var(--studio-font-display))',
+            fontSize: 'var(--type-title-size, 22px)',
+            lineHeight: 'var(--type-title-lh, 28px)',
+            fontWeight: 'var(--type-title-weight, 700)',
+            letterSpacing: 'var(--type-title-tracking, -0.7px)',
+          }}
+          subtitleStyle={{
+            fontFamily: 'var(--type-meta-font, var(--studio-font-body))',
+            fontSize: 'var(--type-metadata-size, 12.5px)',
+            lineHeight: 'var(--type-metadata-lh, 16px)',
+            letterSpacing: 'var(--type-metadata-tracking, 0.15px)',
+            color: 'var(--c-text-secondary)',
+            marginTop: '2px',
+          }}
           containerStyle={{
             paddingTop: '0px',
-            paddingBottom: '4px',
-            marginBottom: '8px',
+            paddingBottom: '2px',
+            marginBottom: '6px',
           }}
         />
       </div>
@@ -203,6 +218,8 @@ export default function CoachPanel({ active = true }: { active?: boolean }) {
             flexDirection: 'column',
             flex: 1,
             width: '100%',
+            height: '100%',
+            minHeight: 0,
           }}
         >
           <PitchPanel active={active && subView === 'pitch'} />
