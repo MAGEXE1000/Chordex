@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.5.81';
-export const NATIVE_VERSION_CODE = 40581;
-export const WEB_VERSION = '4.5.81';
+export const NATIVE_VERSION = '4.5.82';
+export const NATIVE_VERSION_CODE = 40582;
+export const WEB_VERSION = '4.5.82';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -73,13 +73,13 @@ export const APP_VERSION_DATE = '8/12/2026';
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = '751262f6';
+export const APP_COMMIT_SHA = '2733b7a9';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '9/9/2026, 12:25:05 PM CST';
+export const APP_BUILD_TIMESTAMP = '9/9/2026, 1:29:00 PM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -96,10 +96,21 @@ export interface ChangelogSection {
 
 export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
+    heading: 'Added',
+    items: [
+      'Three-State Startup Animation Engine: Engineered an appearance-aware launch sequence in `LaunchAnimationEngine.tsx` that dynamically adapts canvas background and branding elements across Light (`#ffffff`), Dark (`#141418`), and AMOLED (`#000000`) appearance modes.',
+    ],
+  },
+  {
+    heading: 'Improved',
+    items: [
+      'Adaptive Livex Logo & Luminous Atmosphere: Implemented high-contrast dark Livex mark styling (`brightness(0)` at `0.90` opacity) with preserved specular sheen sweep in Light mode; calibrated subtle ambient bloom across all appearance states.',
+    ],
+  },
+  {
     heading: 'Fixed',
     items: [
-      'Canonical Android Launcher Identity & Architecture: Restored standard, single-activity launcher architecture on \\`com.chordex.app.MainActivity\\` with direct \\`MAIN\\`/\\`LAUNCHER\\` intent filters, completely eliminating the experimental \\`MainActivityLivex\\` activity alias and runtime component toggles.',
-      'Automated Launcher Icon Synchronization Pipeline: Built and integrated \\`scripts/sync-launcher-icons.mjs\\` (\\`pnpm sync:icons\\` / \\`pnpm check:icons\\`) to automatically derive all 15 Android density mipmaps and public Web/PWA assets with 66dp centered safe zones inside a 108dp adaptive canvas directly from canonical master assets.',
+      'Startup Background Flash Elimination: Removed hardcoded `#000000` canvas background from launch animation; synchronized frame-0 early boot CSS tokens (`html.dark`, `html.amoled`, `html.light`) and Android Day theme `styles.xml` to eliminate pre-mount visual flashes.',
     ],
   },
 ];
@@ -111,6 +122,15 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.5.82',
+    date: '2026-09-09',
+    highlights: [
+      'Three-State Startup Animation Engine: Engineered an appearance-aware launch sequence in `LaunchAnimationEngine.tsx` that dynamically adapts canvas background and branding elements across Light (`#ffffff`), Dark (`#141418`), and AMOLED (`#000000`) appearance modes.',
+      'Adaptive Livex Logo & Luminous Atmosphere: Implemented high-contrast dark Livex mark styling (`brightness(0)` at `0.90` opacity) with preserved specular sheen sweep in Light mode; calibrated subtle ambient bloom across all appearance states.',
+      'Startup Background Flash Elimination: Removed hardcoded `#000000` canvas background from launch animation; synchronized frame-0 early boot CSS tokens (`html.dark`, `html.amoled`, `html.light`) and Android Day theme `styles.xml` to eliminate pre-mount visual flashes.',
+    ],
+  },
   {
     version: '4.5.81',
     date: '2026-09-09',
@@ -193,17 +213,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'Vocalex Take Project Management & Re-recording: Added in-project re-recording support and inline project title renaming with automatic persistence to vocalexRepository.',
       'Vocalex Take List Ready Badge: Empty takes in the takes list render a dedicated microphone icon and "READY TO RECORD" badge, guiding users directly into recording without zero-duration errors.',
       'Standalone Vocalex Recorder Section Removed: Streamlined Vocalex top-level navigation to three focused, canonical sections: Coach, Takes, and Preferences. Deprecated and removed all standalone recorder references across navigation registries, search index, session state stores, app dock, and preferences panel.',
-    ],
-  },
-  {
-    version: '4.5.72',
-    date: '2026-09-06',
-    highlights: [
-      'Drumex 3-State Exclusive Audio Volume Mode: Introduced a 3-state volume controller (Normal -> Exclusive -> Mute -> Normal) accessible via a compact morphing dock in the bottom navigation area, supporting hardware volume key interception and background audio management.',
-      'Direct BPM Input with Viewport Stability: Native Android soft keyboard integration with clamped [40, 280] range, enterKeyHint="done", and zero layout reflow via adjustNothing window mode.',
-      'Chordex Library Android Vertical Touch Scrolling: Resolved vertical scrolling lockout across the entire Chordex Library page on Android. Enclosed LibraryMainView in a canonical flex container and configured its scroll container with hardware-accelerated momentum touch scrolling, overscroll containment, and explicit pan-y touch action.',
-      'Android Motion Transition Containment: Enforced strict flex column layout on StudioPageTransition wrappers in LibraryPanel, preventing block-flow height expansion and ancestor viewport clipping.',
-      'Touch Action Alignment Across Views: Standardized min-h-0, touch-action pan-y, and overscroll-behavior-y contain across CategoryScreenView and LibraryChordDetail, while assigning pan-x pan-y to horizontal carousels to eliminate gesture conflicts.',
     ],
   },
 ];
