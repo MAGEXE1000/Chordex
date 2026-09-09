@@ -250,15 +250,28 @@ const PatternCard = memo(function PatternCard({
       {/* Header Row: Title + Metadata on left, Audition Preview on right */}
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <h2
-            className="font-headline font-bold text-sm tracking-wide uppercase truncate"
-            style={{ color: 'var(--c-text-primary, #111827)' }}
+          <h3
+            className="font-headline font-bold uppercase truncate"
+            style={{
+              fontFamily: 'var(--studio-font-display, var(--font-headline))',
+              fontSize: 'var(--type-button-size, 13.5px)',
+              lineHeight: '17px',
+              fontWeight: 800,
+              letterSpacing: '0.04em',
+              color: 'var(--c-text-primary, #111827)',
+              margin: 0,
+            }}
           >
             {lp.name}
-          </h2>
+          </h3>
           <p
-            className="text-[11px] font-semibold tracking-wider uppercase mt-0.5 truncate"
-            style={{ color: 'var(--c-text-muted, #94A3B8)' }}
+            className="text-[11px] font-semibold tracking-wider uppercase truncate"
+            style={{
+              fontFamily: 'var(--studio-font-body, var(--font-body))',
+              color: 'var(--c-text-muted, #94A3B8)',
+              marginTop: '2px',
+              marginBottom: 0,
+            }}
           >
             {lp.category} · {lp.genre} · {lp.bpm} BPM · 4/4
           </p>
@@ -370,12 +383,20 @@ const MyGrooveCard = memo(function MyGrooveCard({
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <h2
-              className="font-headline font-bold text-sm tracking-wide uppercase truncate"
-              style={{ color: 'var(--c-text-primary, #111827)' }}
+            <h3
+              className="font-headline font-bold uppercase truncate"
+              style={{
+                fontFamily: 'var(--studio-font-display, var(--font-headline))',
+                fontSize: 'var(--type-button-size, 13.5px)',
+                lineHeight: '17px',
+                fontWeight: 800,
+                letterSpacing: '0.04em',
+                color: 'var(--c-text-primary, #111827)',
+                margin: 0,
+              }}
             >
               {groove.name}
-            </h2>
+            </h3>
             {groove.tag && (
               <span
                 className="px-2 py-0.5 rounded-full text-[9.5px] font-black uppercase tracking-wider"
@@ -389,8 +410,13 @@ const MyGrooveCard = memo(function MyGrooveCard({
             )}
           </div>
           <p
-            className="text-[11px] font-semibold tracking-wider uppercase mt-0.5 truncate"
-            style={{ color: 'var(--c-text-muted, #94A3B8)' }}
+            className="text-[11px] font-semibold tracking-wider uppercase truncate"
+            style={{
+              fontFamily: 'var(--studio-font-body, var(--font-body))',
+              color: 'var(--c-text-muted, #94A3B8)',
+              marginTop: '2px',
+              marginBottom: 0,
+            }}
           >
             Custom Groove · {groove.bpm} BPM · 4/4
           </p>
@@ -859,13 +885,24 @@ export function DrumPatternsPanel({
                 <div className="flex flex-col gap-1">
                   <h3
                     className="font-headline font-bold text-sm tracking-wide"
-                    style={{ color: 'var(--c-text-primary, #111827)' }}
+                    style={{
+                      fontFamily: 'var(--studio-font-display, var(--font-headline))',
+                      fontSize: 'var(--type-body-size, 14.5px)',
+                      lineHeight: '20px',
+                      fontWeight: 700,
+                      color: 'var(--c-text-primary, #111827)',
+                      margin: 0,
+                    }}
                   >
                     No patterns found
                   </h3>
                   <p
                     className="text-xs font-normal"
-                    style={{ color: 'var(--c-text-secondary, #6B7280)' }}
+                    style={{
+                      color: 'var(--c-text-secondary, #6B7280)',
+                      margin: 0,
+                      marginTop: '2px',
+                    }}
                   >
                     Try adjusting your search terms or genre filter.
                   </p>
@@ -909,7 +946,14 @@ export function DrumPatternsPanel({
               <div className="flex flex-col gap-1">
                 <h3
                   className="font-headline font-bold text-sm tracking-wide"
-                  style={{ color: 'var(--c-text-primary, #111827)' }}
+                  style={{
+                    fontFamily: 'var(--studio-font-display, var(--font-headline))',
+                    fontSize: 'var(--type-body-size, 14.5px)',
+                    lineHeight: '20px',
+                    fontWeight: 700,
+                    color: 'var(--c-text-primary, #111827)',
+                    margin: 0,
+                  }}
                 >
                   No grooves saved yet
                 </h3>
