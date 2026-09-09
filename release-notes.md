@@ -1,12 +1,12 @@
-# Version 4.5.77
+# Version 4.5.78
 
 Release Date: 2026-09-08
 
 ### Added
 
-- Livex Brand Reveal Launch Animation: Engineered a genuine brand-building intro sequence where the Livex mark is physically constructed from its two organic geometric shapes (ascending stem petal and converging wing petal) with staggered cubic-bezier interpolation ([0.16, 1, 0.3, 1]), luminous ambient white bloom, authoritative settle hold, and seamless dissolve into the pre-mounted Hub DOM.
+- Complex Motion Brand Reveal Animation: Overhauled LaunchAnimationEngine into a fluid 6-phase brand reveal sequence featuring 65° diagonal anticipation glow, non-linear petal trajectories (Form 1 ascending stem and Form 2 curved wing swoop), seam union lock-in micro-settle impulse, specular sheen ribbon sweep masked strictly to the emblem, and a serene breathing hold before dissolving into the pre-mounted Hub.
 
 ### Fixed
 
-- Android Adaptive Launcher Icon Safe-Zone Compliance: Replaced all launcher icon density mipmaps (mdpi, hdpi, xhdpi, xxhdpi, xxxhdpi) ensuring the mark is strictly contained within the 66dp safe zone on a 108dp canvas with pure AMOLED black (#000000) background. Completely eliminated the legacy double-squircle clipping defect in round icons and added transparent corner margins to legacy squircle badges.
-- AndroidManifest Activity Icon Bindings: Explicitly bound android:icon and android:roundIcon attributes to MainActivity in AndroidManifest.xml to prevent OEM launcher caching fallbacks to stale application icons.
+- High-Contrast Launcher Icon Mipmaps: Completely regenerated Android launcher density assets (mdpi through xxxhdpi) using an optimized tone curve that lifts deep petal shadows from RGB 21 to ~75 RGB and midtones to 215 RGB, eliminating the dark silhouette/murky appearance against pure AMOLED black backgrounds and resolving perceived launcher icon caching issues.
+- Round Icon Squircle Elimination: Replaced round launcher mipmap assets with seamless AMOLED black circles with anti-aliased perimeter, eliminating the legacy nested squircle boundary defect.

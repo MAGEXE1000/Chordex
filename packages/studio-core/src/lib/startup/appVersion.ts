@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.5.77';
-export const NATIVE_VERSION_CODE = 40577;
-export const WEB_VERSION = '4.5.77';
+export const NATIVE_VERSION = '4.5.78';
+export const NATIVE_VERSION_CODE = 40578;
+export const WEB_VERSION = '4.5.78';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -73,13 +73,13 @@ export const APP_VERSION_DATE = '8/12/2026';
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = 'cdf00746';
+export const APP_COMMIT_SHA = '1122eaa1';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '9/8/2026, 9:15:21 PM CST';
+export const APP_BUILD_TIMESTAMP = '9/8/2026, 9:57:10 PM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -98,14 +98,14 @@ export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
     heading: 'Added',
     items: [
-      'Livex Brand Reveal Launch Animation: Engineered a genuine brand-building intro sequence where the Livex mark is physically constructed from its two organic geometric shapes (ascending stem petal and converging wing petal) with staggered cubic-bezier interpolation ([0.16, 1, 0.3, 1]), luminous ambient white bloom, authoritative settle hold, and seamless dissolve into the pre-mounted Hub DOM.',
+      'Complex Motion Brand Reveal Animation: Overhauled LaunchAnimationEngine into a fluid 6-phase brand reveal sequence featuring 65° diagonal anticipation glow, non-linear petal trajectories (Form 1 ascending stem and Form 2 curved wing swoop), seam union lock-in micro-settle impulse, specular sheen ribbon sweep masked strictly to the emblem, and a serene breathing hold before dissolving into the pre-mounted Hub.',
     ],
   },
   {
     heading: 'Fixed',
     items: [
-      'Android Adaptive Launcher Icon Safe-Zone Compliance: Replaced all launcher icon density mipmaps (mdpi, hdpi, xhdpi, xxhdpi, xxxhdpi) ensuring the mark is strictly contained within the 66dp safe zone on a 108dp canvas with pure AMOLED black (#000000) background. Completely eliminated the legacy double-squircle clipping defect in round icons and added transparent corner margins to legacy squircle badges.',
-      'AndroidManifest Activity Icon Bindings: Explicitly bound android:icon and android:roundIcon attributes to MainActivity in AndroidManifest.xml to prevent OEM launcher caching fallbacks to stale application icons.',
+      'High-Contrast Launcher Icon Mipmaps: Completely regenerated Android launcher density assets (mdpi through xxxhdpi) using an optimized tone curve that lifts deep petal shadows from RGB 21 to ~75 RGB and midtones to 215 RGB, eliminating the dark silhouette/murky appearance against pure AMOLED black backgrounds and resolving perceived launcher icon caching issues.',
+      'Round Icon Squircle Elimination: Replaced round launcher mipmap assets with seamless AMOLED black circles with anti-aliased perimeter, eliminating the legacy nested squircle boundary defect.',
     ],
   },
 ];
@@ -117,6 +117,15 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.5.78',
+    date: '2026-09-08',
+    highlights: [
+      'Complex Motion Brand Reveal Animation: Overhauled LaunchAnimationEngine into a fluid 6-phase brand reveal sequence featuring 65° diagonal anticipation glow, non-linear petal trajectories (Form 1 ascending stem and Form 2 curved wing swoop), seam union lock-in micro-settle impulse, specular sheen ribbon sweep masked strictly to the emblem, and a serene breathing hold before dissolving into the pre-mounted Hub.',
+      'High-Contrast Launcher Icon Mipmaps: Completely regenerated Android launcher density assets (mdpi through xxxhdpi) using an optimized tone curve that lifts deep petal shadows from RGB 21 to ~75 RGB and midtones to 215 RGB, eliminating the dark silhouette/murky appearance against pure AMOLED black backgrounds and resolving perceived launcher icon caching issues.',
+      'Round Icon Squircle Elimination: Replaced round launcher mipmap assets with seamless AMOLED black circles with anti-aliased perimeter, eliminating the legacy nested squircle boundary defect.',
+    ],
+  },
   {
     version: '4.5.77',
     date: '2026-09-08',
@@ -208,17 +217,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'Dual-Mode Incremental Tempo Progression: Implemented deterministic tempo progression engine supporting both By Bars (evaluated strictly at bar boundaries) and By Time (on the monotonic Web Audio clock) with live summary cards.',
       'Synchronized Visual Count-In Countdown: Added floating 4-3-2-1 countdown overlay locked to Web Audio beat schedule events, unmounting cleanly at the exact instant performance begins.',
       'Transposition & Stem Synchronization Preservation: All stem buffer sources remain locked to an invariant 1.0000x playback rate, guaranteeing 100% time and tempo preservation across -12 to +12 semitones with zero cumulative drift and bit-exact drum alignment.',
-    ],
-  },
-  {
-    version: '4.5.68',
-    date: '2026-09-06',
-    highlights: [
-      'Studio/Livex Android System Updater Redesign: Implemented the new flagship Android updater dialog matching the approved design system specifications with 400px width constraint, rounded-28 perimeter, micro scrollbar, and hardware-accelerated CSS state morphing transitions.',
-      'Tactile Interaction & Visual Indicators: Added tactile button feedback (.livex-tap-press scale down on active touch), continuous scanning beam animations for package verification, and real-time download metrics (transferred MB, speed, ETA).',
-      'Full Theme Parity: Engineered pixel-perfect support for Light (#ffffff / #f8fafc), Dark (#0c0d10 / #16171b), and AMOLED (true #000000 / #08080a) themes with canonical surface blur tokens.',
-      'Categorized Release Notes Engine: Release changelogs are dynamically classified into distinct, color-coded badges (NEW in emerald, AUDIO ENGINE in blue, FIXED & IMPROVED in amber) with automatic fallback for single-version manifests.',
-      'End-to-End Pipeline Wiring: Connected real-time download progress events, graceful download cancellation, cryptographic SHA-256 verification, and native Android PackageInstaller handoff.',
     ],
   },
 ];
