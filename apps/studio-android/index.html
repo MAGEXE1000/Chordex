@@ -17,7 +17,7 @@
               else if (theme === 'system') {
                 isLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
               }
-              isAmoled = !!settings.amoledMode;
+              isAmoled = !isLight && (!!settings.amoledMode || !!(settings.perApp && settings.perApp.hub && settings.perApp.hub.amoledMode));
             }
           } else {
             isLight = true;
@@ -27,6 +27,7 @@
             doc.classList.add('light');
             doc.classList.remove('dark');
             doc.classList.remove('amoled');
+            doc.style.setProperty('--intro-bg', '#ffffff');
             doc.style.setProperty('--c-background', '#f4f4f5');
             doc.style.setProperty('--app-bg', '#f4f4f5');
             doc.style.setProperty('--c-surface-lowest', '#e4e4e7');
@@ -43,6 +44,7 @@
             doc.classList.remove('light');
             if (isAmoled) {
               doc.classList.add('amoled');
+              doc.style.setProperty('--intro-bg', '#000000');
               doc.style.setProperty('--c-background', '#000000');
               doc.style.setProperty('--app-bg', '#000000');
               doc.style.setProperty('--c-surface-lowest', '#000000');
@@ -56,6 +58,7 @@
               doc.style.setProperty('--c-border', 'rgba(255, 255, 255, 0.12)');
             } else {
               doc.classList.remove('amoled');
+              doc.style.setProperty('--intro-bg', '#141418');
               doc.style.setProperty('--c-background', '#141418');
               doc.style.setProperty('--app-bg', '#141418');
               doc.style.setProperty('--c-surface-lowest', '#101014');
@@ -210,47 +213,38 @@
             } catch (e) {}
           }
 
-          var raw = localStorage.getItem('chord-explorer-storage-v3');
-          if (raw) {
-            var parsed = JSON.parse(raw);
-            if (parsed && parsed.state && parsed.state.settings) {
-              var settings = parsed.state.settings;
-              var appMode = settings.appMode || 'hub';
-              var perApp = settings.perApp || {};
-              var activeVis = perApp[appMode] || {};
-              var theme = activeVis.theme || settings.theme || 'dark';
-
-              var isLight = false;
-              if (theme === 'light') {
-                isLight = true;
-              } else if (theme === 'system') {
-                isLight = window.matchMedia('(prefers-color-scheme: light)').matches;
-              } else if (theme === 'dynamic') {
-                var hr = new Date().getHours();
-                var start = settings.dynamicLightStart || 7;
-                var end = settings.dynamicLightEnd || 20;
-                isLight = hr >= start && hr < end;
-              }
-
-              if (isLight) {
-                document.documentElement.classList.add('light');
-                document.documentElement.classList.remove('dark');
-              }
-            }
-          }
         } catch (e) {
           console.warn('Theme prep error:', e);
         }
       })();
     </script>
     <style>
-      :root {
+      :root,
+      html.dark {
+        --intro-bg: #141418;
+        --intro-color: #ffffff;
+        --intro-sub-color: rgba(255, 255, 255, 0.5);
+        --intro-glow-gradient: radial-gradient(
+          circle,
+          rgba(255, 255, 255, 0.06) 0%,
+          rgba(255, 255, 255, 0.02) 40%,
+          transparent 70%
+        );
+        --intro-star-opacity: 0.5;
+        --intro-star-color: rgba(255, 255, 255, 0.55);
+        --intro-star-color-weak: rgba(255, 255, 255, 0.3);
+        --intro-star-color-mid: rgba(255, 255, 255, 0.45);
+        --intro-shadow: drop-shadow(0 0 24px rgba(255, 255, 255, 0.18));
+        --intro-orb-shadow: drop-shadow(0 0 6px rgba(255, 255, 255, 0.25));
+      }
+
+      html.amoled {
         --intro-bg: #000000;
         --intro-color: #ffffff;
         --intro-sub-color: rgba(255, 255, 255, 0.5);
         --intro-glow-gradient: radial-gradient(
           circle,
-          rgba(255, 255, 255, 0.05) 0%,
+          rgba(255, 255, 255, 0.08) 0%,
           rgba(255, 255, 255, 0.02) 40%,
           transparent 70%
         );
@@ -263,21 +257,21 @@
       }
 
       html.light {
-        --intro-bg: #f8f9fa;
-        --intro-color: #0f172a;
-        --intro-sub-color: rgba(15, 23, 42, 0.6);
+        --intro-bg: #ffffff;
+        --intro-color: #18181b;
+        --intro-sub-color: rgba(24, 24, 27, 0.6);
         --intro-glow-gradient: radial-gradient(
           circle,
-          rgba(15, 23, 42, 0.04) 0%,
-          rgba(15, 23, 42, 0.01) 40%,
+          rgba(0, 0, 0, 0.05) 0%,
+          rgba(0, 0, 0, 0.015) 40%,
           transparent 70%
         );
         --intro-star-opacity: 0.25;
-        --intro-star-color: rgba(15, 23, 42, 0.25);
-        --intro-star-color-weak: rgba(15, 23, 42, 0.12);
-        --intro-star-color-mid: rgba(15, 23, 42, 0.18);
-        --intro-shadow: drop-shadow(0 0 24px rgba(15, 23, 42, 0.08));
-        --intro-orb-shadow: drop-shadow(0 0 6px rgba(15, 23, 42, 0.12));
+        --intro-star-color: rgba(24, 24, 27, 0.25);
+        --intro-star-color-weak: rgba(24, 24, 27, 0.12);
+        --intro-star-color-mid: rgba(24, 24, 27, 0.18);
+        --intro-shadow: drop-shadow(0 0 24px rgba(0, 0, 0, 0.08));
+        --intro-orb-shadow: drop-shadow(0 0 6px rgba(0, 0, 0, 0.12));
       }
 
       html,

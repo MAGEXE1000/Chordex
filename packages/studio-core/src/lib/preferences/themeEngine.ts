@@ -324,3 +324,93 @@ export function applyThemeTokens(settings: any) {
     void syncStatusBar(effectiveTheme, effectiveAmoled);
   }
 }
+
+export type VisualThemeState = 'light' | 'dark' | 'amoled';
+
+export function getEffectiveThemeState(settings: any, appMode = 'hub'): VisualThemeState {
+  const globalTheme = settings?.theme ?? 'light';
+  const globalAmoled = settings?.amoledMode ?? false;
+  const perAppVis = settings?.perApp?.[appMode];
+
+  const activeVis = {
+    theme: perAppVis?.theme ?? globalTheme,
+    amoledMode:
+      perAppVis?.amoledMode !== undefined ? Boolean(perAppVis.amoledMode) : Boolean(globalAmoled),
+  };
+
+  const systemIsLight =
+    typeof window !== 'undefined' &&
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(prefers-color-scheme: light)').matches;
+
+  let isLightMode = false;
+  const theme = activeVis.theme;
+  if (theme === 'light') {
+    isLightMode = true;
+  } else if (theme === 'system') {
+    isLightMode = systemIsLight;
+  } else if (theme === 'dynamic') {
+    const h = new Date().getHours();
+    const start = settings?.dynamicLightStart ?? 7;
+    const end = settings?.dynamicLightEnd ?? 20;
+    isLightMode = h >= start && h < end;
+  }
+
+  if (isLightMode) return 'light';
+  if (activeVis.amoledMode) return 'amoled';
+  return 'dark';
+}
+
+export interface StartupAnimationThemeSpec {
+  themeState: VisualThemeState;
+  bgColor: string;
+  glowGradient: string;
+  logoFilter: string;
+  logoOpacity: number;
+  sheenGradient: string;
+  sheenBlendMode: 'screen' | 'normal';
+}
+
+export function getStartupAnimationThemeSpec(
+  themeState: VisualThemeState
+): StartupAnimationThemeSpec {
+  if (themeState === 'light') {
+    return {
+      themeState: 'light',
+      bgColor: '#ffffff',
+      glowGradient:
+        'radial-gradient(circle, rgba(0, 0, 0, 0.06) 0%, rgba(0, 0, 0, 0.018) 45%, transparent 70%)',
+      logoFilter: 'brightness(0)',
+      logoOpacity: 0.9,
+      sheenGradient:
+        'linear-gradient(115deg, transparent 32%, rgba(255, 255, 255, 0.5) 46%, rgba(255, 255, 255, 1.0) 50%, rgba(255, 255, 255, 0.5) 54%, transparent 68%)',
+      sheenBlendMode: 'screen',
+    };
+  }
+
+  if (themeState === 'amoled') {
+    return {
+      themeState: 'amoled',
+      bgColor: '#000000',
+      glowGradient:
+        'radial-gradient(circle, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.03) 45%, transparent 70%)',
+      logoFilter: 'none',
+      logoOpacity: 1.0,
+      sheenGradient:
+        'linear-gradient(115deg, transparent 32%, rgba(255, 255, 255, 0.45) 46%, rgba(255, 255, 255, 1.0) 50%, rgba(255, 255, 255, 0.45) 54%, transparent 68%)',
+      sheenBlendMode: 'screen',
+    };
+  }
+
+  return {
+    themeState: 'dark',
+    bgColor: '#141418',
+    glowGradient:
+      'radial-gradient(circle, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.02) 45%, transparent 70%)',
+    logoFilter: 'none',
+    logoOpacity: 1.0,
+    sheenGradient:
+      'linear-gradient(115deg, transparent 32%, rgba(255, 255, 255, 0.45) 46%, rgba(255, 255, 255, 1.0) 50%, rgba(255, 255, 255, 0.45) 54%, transparent 68%)',
+    sheenBlendMode: 'screen',
+  };
+}

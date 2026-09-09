@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { motion } from 'motion/react';
-import { StartupCoordinator } from '@workspace/studio-core';
+import { StartupCoordinator, getStartupAnimationThemeSpec } from '@workspace/studio-core';
 import { triggerIntroReveal } from '../typography/StudioTitleReveal';
 import livexForm1Url from '../../assets/livex-form1.png';
 import livexForm2Url from '../../assets/livex-form2.png';
@@ -20,6 +20,50 @@ interface LaunchAnimationEngineProps {
   loopMode?: boolean;
   scaleFactor?: number;
   skipIntro?: boolean;
+}
+
+export interface LaunchAnimationThemeConfig {
+  themeMode: 'light' | 'dark' | 'amoled';
+  bgColor: string;
+  glowGradient: string;
+  logoFilter: string;
+  logoOpacity: number;
+  sheenGradient: string;
+  sheenBlendMode: 'screen' | 'normal';
+}
+
+export function resolveLaunchAnimationThemeConfig(
+  isLight?: boolean,
+  isAmoled?: boolean
+): LaunchAnimationThemeConfig {
+  let themeMode: 'light' | 'dark' | 'amoled';
+  if (isLight) {
+    themeMode = 'light';
+  } else if (isAmoled) {
+    themeMode = 'amoled';
+  } else if (typeof document !== 'undefined' && document.documentElement) {
+    const cl = document.documentElement.classList;
+    if (cl.contains('light')) {
+      themeMode = 'light';
+    } else if (cl.contains('amoled')) {
+      themeMode = 'amoled';
+    } else {
+      themeMode = 'dark';
+    }
+  } else {
+    themeMode = 'dark';
+  }
+
+  const spec = getStartupAnimationThemeSpec(themeMode);
+  return {
+    themeMode,
+    bgColor: spec.bgColor,
+    glowGradient: spec.glowGradient,
+    logoFilter: spec.logoFilter,
+    logoOpacity: spec.logoOpacity,
+    sheenGradient: spec.sheenGradient,
+    sheenBlendMode: spec.sheenBlendMode,
+  };
 }
 
 export function LaunchAnimationEngine({
@@ -155,8 +199,8 @@ export function LaunchAnimationEngine({
     };
   }, [stage, loopMode]);
 
-  // Strict AMOLED pure black (#000000)
-  const bgColor = '#000000';
+  const { bgColor, glowGradient, logoFilter, logoOpacity, sheenGradient, sheenBlendMode } =
+    resolveLaunchAnimationThemeConfig(isLight, isAmoled);
 
   // Sizing calibrated for mobile viewports (~196px standard, clamped between 160px and 220px)
   const symbolSize = Math.max(160, Math.min(220, Math.round(196 * scaleFactor)));
@@ -236,8 +280,7 @@ export function LaunchAnimationEngine({
             width: glowSize,
             height: glowSize,
             borderRadius: '50%',
-            background:
-              'radial-gradient(circle, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.03) 45%, transparent 70%)',
+            background: glowGradient,
             filter: 'blur(28px)',
             pointerEvents: 'none',
             willChange: 'transform, opacity',
@@ -316,6 +359,8 @@ export function LaunchAnimationEngine({
                 userSelect: 'none',
                 WebkitUserSelect: 'none',
                 pointerEvents: 'none',
+                filter: logoFilter,
+                opacity: logoOpacity,
                 transform: 'translateZ(0)',
               }}
             />
@@ -360,6 +405,8 @@ export function LaunchAnimationEngine({
                 userSelect: 'none',
                 WebkitUserSelect: 'none',
                 pointerEvents: 'none',
+                filter: logoFilter,
+                opacity: logoOpacity,
                 transform: 'translateZ(0)',
               }}
             />
@@ -380,7 +427,7 @@ export function LaunchAnimationEngine({
               WebkitMaskRepeat: 'no-repeat',
               maskRepeat: 'no-repeat',
               overflow: 'hidden',
-              mixBlendMode: 'screen',
+              mixBlendMode: sheenBlendMode,
               transform: 'translateZ(0)',
             }}
           >
@@ -404,8 +451,7 @@ export function LaunchAnimationEngine({
               style={{
                 position: 'absolute',
                 inset: '-60%',
-                background:
-                  'linear-gradient(115deg, transparent 32%, rgba(255, 255, 255, 0.45) 46%, rgba(255, 255, 255, 1.0) 50%, rgba(255, 255, 255, 0.45) 54%, transparent 68%)',
+                background: sheenGradient,
                 willChange: 'transform, opacity',
                 transform: 'translateZ(0)',
               }}

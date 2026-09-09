@@ -41,7 +41,14 @@ if (typeof window !== 'undefined') {
 
 export default function App() {
   const theme = useSettingsStore((s) => s.settings.theme);
+  const globalAmoled = useSettingsStore((s) => s.settings.amoledMode);
   const hubAmoled = useSettingsStore((s) => s.settings.perApp?.hub?.amoledMode);
+  const isLight =
+    theme === 'light' ||
+    (theme === 'system' &&
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-color-scheme: light)').matches);
+  const isAmoled = !isLight && Boolean(hubAmoled !== undefined ? hubAmoled : globalAmoled);
   const isDev = import.meta.env.DEV || !Capacitor.isNativePlatform();
   const [showLaunchOverlay, setShowLaunchOverlay] = useState(!isDev);
   const initialPresetRef = useRef<any>(
@@ -95,13 +102,8 @@ export default function App() {
                 preset={initialPresetRef.current}
                 skipIntro={false}
                 onComplete={() => setShowLaunchOverlay(false)}
-                isLight={
-                  theme === 'light' ||
-                  (theme === 'system' &&
-                    typeof window !== 'undefined' &&
-                    window.matchMedia('(prefers-color-scheme: light)').matches)
-                }
-                isAmoled={hubAmoled}
+                isLight={isLight}
+                isAmoled={isAmoled}
               />
             )
           : undefined
