@@ -41,10 +41,9 @@ export function LaunchAnimationEngine({
   };
 
   const initialDelay = useRef<number>(getInitialDelay());
-  const [stage, setStage] = useState<'delay' | 'forming' | 'settle' | 'reveal' | 'complete'>(
-    skipIntro ? 'reveal' : initialDelay.current > 0 ? 'delay' : 'forming'
+  const [stage, setStage] = useState<'delay' | 'brand_reveal' | 'exit_dissolve' | 'complete'>(
+    skipIntro ? 'complete' : initialDelay.current > 0 ? 'delay' : 'brand_reveal'
   );
-  const [canStartReveal, setCanStartReveal] = useState(skipIntro || loopMode);
   const [key, setKey] = useState(0);
 
   // Telemetry frame tracking
@@ -58,12 +57,16 @@ export function LaunchAnimationEngine({
     if (intro) {
       intro.style.display = 'none';
       if (intro.parentNode) intro.parentNode.removeChild(intro);
-      triggerIntroReveal();
       console.log(
-        `[STARTUP-TRACE] LaunchAnimationEngine: removed #intro, triggered intro reveal at ${performance.now().toFixed(0)}ms`
+        `[STARTUP-TRACE] LaunchAnimationEngine: removed #intro at ${performance.now().toFixed(0)}ms`
       );
     }
-  }, []);
+
+    if (skipIntro) {
+      triggerIntroReveal();
+      onComplete?.();
+    }
+  }, [skipIntro]);
 
   // Frame telemetry tracking
   useEffect(() => {
@@ -86,72 +89,69 @@ export function LaunchAnimationEngine({
     };
   }, [key]);
 
-  // Stage transition orchestration: Delay -> Forming -> Settle -> Reveal -> Complete
+  // Stage transition orchestration:
+  // 1. delay: 0.65s initial launch pause
+  // 2. brand_reveal: 1.18s 6-phase mark assembly, sheen sweep, and breathing hold
+  // 3. exit_dissolve: 0.30s graceful fade-out into pre-mounted Hub DOM (Total motion: ~1.48s)
   useEffect(() => {
     let t: ReturnType<typeof setTimeout>;
+    let unsub: (() => void) | undefined;
+    let watchdogTimer: ReturnType<typeof setTimeout> | undefined;
 
     if (stage === 'delay') {
       const waitMs = initialDelay.current;
       console.log(`[STARTUP-TRACE] LaunchAnimationEngine: waiting ${waitMs}ms start delay`);
       t = setTimeout(() => {
         console.log(
-          `[STARTUP-TRACE] LaunchAnimationEngine: delay->forming transition at ${performance.now().toFixed(0)}ms`
+          `[STARTUP-TRACE] LaunchAnimationEngine: delay -> brand_reveal transition at ${performance.now().toFixed(0)}ms`
         );
-        setStage('forming');
+        setStage('brand_reveal');
       }, waitMs);
-    } else if (stage === 'forming') {
-      // Formation duration: 580ms
+    } else if (stage === 'brand_reveal') {
+      // Phase 1 through 5 run over 1180ms before initiating Hub exit dissolve
       t = setTimeout(() => {
         console.log(
-          `[STARTUP-TRACE] LaunchAnimationEngine: forming->settle transition at ${performance.now().toFixed(0)}ms`
+          `[STARTUP-TRACE] LaunchAnimationEngine: brand_reveal complete -> checking Hub readiness at ${performance.now().toFixed(0)}ms`
         );
-        setStage('settle');
-      }, 580);
-    } else if (stage === 'settle') {
-      // Settle hold duration: 220ms
-      t = setTimeout(() => {
-        console.log(
-          `[STARTUP-TRACE] LaunchAnimationEngine: settle->reveal transition at ${performance.now().toFixed(0)}ms`
-        );
-        setStage('reveal');
-      }, 220);
-    } else if (stage === 'reveal') {
-      // Wait for Hub to mount and paint before dissolving overlay
-      const isComplete =
-        loopMode ||
-        (typeof window !== 'undefined' &&
-          ((window as any).__studioStartupComplete ||
-            !!document.querySelector('[data-livex-hub-root="true"]') ||
-            !!document.getElementById('hub-root')));
 
-      if (isComplete) {
-        console.log(`[STARTUP-TRACE] LaunchAnimationEngine: Hub ready, dissolving overlay`);
-        setCanStartReveal(true);
-      } else {
-        const unsub = StartupCoordinator.subscribeStartupComplete(() => {
+        const isHubReady =
+          loopMode ||
+          (typeof window !== 'undefined' &&
+            ((window as any).__studioStartupComplete ||
+              !!document.querySelector('[data-livex-hub-root="true"]') ||
+              !!document.getElementById('hub-root')));
+
+        if (isHubReady) {
           console.log(
-            `[STARTUP-TRACE] LaunchAnimationEngine: received startup complete, dissolving overlay`
+            `[STARTUP-TRACE] LaunchAnimationEngine: Hub already ready, starting exit_dissolve`
           );
-          setCanStartReveal(true);
-        });
-
-        // Fail-safe watchdog fallback to guarantee transition out even if event is missed
-        const fallbackTimer = setTimeout(() => {
+          setStage('exit_dissolve');
+        } else {
           console.log(
-            `[STARTUP-TRACE] LaunchAnimationEngine: watchdog triggered, dissolving overlay`
+            `[STARTUP-TRACE] LaunchAnimationEngine: Hub not yet ready, subscribing to startup complete`
           );
-          setCanStartReveal(true);
-        }, 2000);
+          unsub = StartupCoordinator.subscribeStartupComplete(() => {
+            console.log(
+              `[STARTUP-TRACE] LaunchAnimationEngine: received startup complete event, starting exit_dissolve`
+            );
+            setStage('exit_dissolve');
+          });
 
-        return () => {
-          unsub();
-          clearTimeout(fallbackTimer);
-        };
-      }
+          // Fail-safe watchdog fallback to guarantee transition out even if event is delayed
+          watchdogTimer = setTimeout(() => {
+            console.log(
+              `[STARTUP-TRACE] LaunchAnimationEngine: watchdog triggered, starting exit_dissolve`
+            );
+            setStage('exit_dissolve');
+          }, 2000);
+        }
+      }, 1180);
     }
 
     return () => {
       clearTimeout(t);
+      if (unsub) unsub();
+      if (watchdogTimer) clearTimeout(watchdogTimer);
     };
   }, [stage, loopMode]);
 
@@ -160,27 +160,32 @@ export function LaunchAnimationEngine({
 
   // Sizing calibrated for mobile viewports (~196px standard, clamped between 160px and 220px)
   const symbolSize = Math.max(160, Math.min(220, Math.round(196 * scaleFactor)));
-  const glowSize = Math.round(symbolSize * 1.5);
+  const glowSize = Math.round(symbolSize * 1.55);
 
-  // Motion states
-  const isFormed =
-    stage === 'forming' || stage === 'settle' || stage === 'reveal' || stage === 'complete';
-  const containerAnimate = !canStartReveal ? { opacity: 1 } : { opacity: 0 };
+  const isBrandReveal = stage === 'brand_reveal';
+  const isExit = stage === 'exit_dissolve';
+  const isComplete = stage === 'complete';
+
+  if (isComplete && !loopMode) {
+    return null;
+  }
 
   return (
     <motion.div
       key={key}
       initial={{ opacity: 1 }}
-      animate={containerAnimate}
-      transition={{ duration: 0.32, ease: [0.4, 0, 0.2, 1] }}
+      animate={{ opacity: isExit ? 0 : 1 }}
+      transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
       onAnimationComplete={() => {
-        if (canStartReveal && (stage === 'reveal' || stage === 'complete')) {
+        if (isExit) {
           if (loopMode) {
-            setKey((prev) => prev + 1);
-            setStage('forming');
-            setCanStartReveal(false);
+            setTimeout(() => {
+              setKey((prev) => prev + 1);
+              setStage('brand_reveal');
+            }, 300);
           } else {
             setStage('complete');
+            triggerIntroReveal();
             console.log(
               `[STARTUP-TRACE] LaunchAnimationEngine: onComplete at ${performance.now().toFixed(0)}ms`
             );
@@ -194,7 +199,7 @@ export function LaunchAnimationEngine({
         zIndex: 9999,
         overflow: 'hidden',
         backgroundColor: bgColor,
-        pointerEvents: stage === 'complete' ? 'none' : 'auto',
+        pointerEvents: isExit || isComplete ? 'none' : 'auto',
         willChange: 'transform, opacity',
         backfaceVisibility: 'hidden',
         WebkitBackfaceVisibility: 'hidden',
@@ -211,20 +216,20 @@ export function LaunchAnimationEngine({
           justifyContent: 'center',
         }}
       >
-        {/* Soft luminous ambient white glow behind mark */}
+        {/* Phase 1 (0.00-0.22s): Ambient Inception Glow expanding along 65° diagonal trajectory */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.82 }}
+          initial={{ opacity: 0, scale: 0.65 }}
           animate={
-            canStartReveal
-              ? { opacity: 0, scale: 1.05 }
-              : isFormed
-                ? { opacity: 0.8, scale: 1.0 }
-                : { opacity: 0, scale: 0.82 }
+            isExit
+              ? { opacity: 0, scale: 1.1 }
+              : isBrandReveal
+                ? { opacity: 0.85, scale: 1.0 }
+                : { opacity: 0, scale: 0.65 }
           }
           transition={
-            canStartReveal
-              ? { duration: 0.32, ease: [0.4, 0, 0.2, 1] }
-              : { duration: 0.58, ease: [0.16, 1, 0.3, 1] }
+            isExit
+              ? { duration: 0.3, ease: [0.4, 0, 0.2, 1] }
+              : { duration: 0.25, ease: [0.16, 1, 0.3, 1] }
           }
           style={{
             position: 'absolute',
@@ -232,16 +237,34 @@ export function LaunchAnimationEngine({
             height: glowSize,
             borderRadius: '50%',
             background:
-              'radial-gradient(circle, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.03) 45%, transparent 70%)',
-            filter: 'blur(24px)',
+              'radial-gradient(circle, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.03) 45%, transparent 70%)',
+            filter: 'blur(28px)',
             pointerEvents: 'none',
             willChange: 'transform, opacity',
             transform: 'translateZ(0)',
           }}
         />
 
-        {/* The Livex Logo Stage: Constructed from Form 1 and Form 2 */}
-        <div
+        {/* The Livex Logo Stage: Form 1 + Form 2 + Specular Seam Sheen */}
+        {/* Phase 4 (0.70-0.80s) Union impulse + Phase 5 (0.80-1.18s) Breathing hold + Phase 6 Exit scale */}
+        <motion.div
+          initial={{ scale: 1 }}
+          animate={
+            isExit
+              ? { scale: 1.032 }
+              : isBrandReveal
+                ? { scale: [1, 1, 1.014, 1.0, 1.014] }
+                : { scale: 1 }
+          }
+          transition={
+            isExit
+              ? { duration: 0.3, ease: [0.4, 0, 0.2, 1] }
+              : {
+                  duration: 1.18,
+                  times: [0, 0.58, 0.63, 0.7, 1.0],
+                  ease: 'easeInOut',
+                }
+          }
           style={{
             position: 'relative',
             zIndex: 2,
@@ -250,20 +273,21 @@ export function LaunchAnimationEngine({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            willChange: 'transform, opacity',
+            willChange: 'transform',
             transform: 'translateZ(0)',
           }}
         >
-          {/* Form 1: Ascending Stem / Left Petal */}
+          {/* Phase 2 (0.15-0.52s): Form 1 Ascending Stem / Left Petal Path Reveal */}
           <motion.div
-            initial={{ opacity: 0, x: -22, y: 32, scale: 0.94 }}
+            initial={{ opacity: 0, x: -28, y: 38, rotate: -4.5, scale: 0.92 }}
             animate={
-              isFormed
-                ? { opacity: 1, x: 0, y: 0, scale: 1 }
-                : { opacity: 0, x: -22, y: 32, scale: 0.94 }
+              isBrandReveal || isExit
+                ? { opacity: 1, x: 0, y: 0, rotate: 0, scale: 1 }
+                : { opacity: 0, x: -28, y: 38, rotate: -4.5, scale: 0.92 }
             }
             transition={{
-              duration: 0.56,
+              delay: 0.15,
+              duration: 0.37,
               ease: [0.16, 1, 0.3, 1],
             }}
             style={{
@@ -297,17 +321,17 @@ export function LaunchAnimationEngine({
             />
           </motion.div>
 
-          {/* Form 2: Lower Right Wing / Leaf Petal (converges with 50ms organic stagger) */}
+          {/* Phase 3 (0.32-0.72s): Form 2 Curved Wing Swoop & Convergence */}
           <motion.div
-            initial={{ opacity: 0, x: 32, y: 16, scale: 0.92 }}
+            initial={{ opacity: 0, x: 34, y: 20, rotate: 9.5, scale: 0.88 }}
             animate={
-              isFormed
-                ? { opacity: 1, x: 0, y: 0, scale: 1 }
-                : { opacity: 0, x: 32, y: 16, scale: 0.92 }
+              isBrandReveal || isExit
+                ? { opacity: 1, x: 0, y: 0, rotate: 0, scale: 1 }
+                : { opacity: 0, x: 34, y: 20, rotate: 9.5, scale: 0.88 }
             }
             transition={{
-              duration: 0.52,
-              delay: 0.05,
+              delay: 0.32,
+              duration: 0.4,
               ease: [0.16, 1, 0.3, 1],
             }}
             style={{
@@ -340,7 +364,54 @@ export function LaunchAnimationEngine({
               }}
             />
           </motion.div>
-        </div>
+
+          {/* Phase 4 (0.70-1.05s): Luminous Specular Sheen Ribbon sweeping across seam */}
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              pointerEvents: 'none',
+              WebkitMaskImage: `url(${livexSymbolUrl})`,
+              maskImage: `url(${livexSymbolUrl})`,
+              WebkitMaskSize: 'contain',
+              maskSize: 'contain',
+              WebkitMaskPosition: 'center',
+              maskPosition: 'center',
+              WebkitMaskRepeat: 'no-repeat',
+              maskRepeat: 'no-repeat',
+              overflow: 'hidden',
+              mixBlendMode: 'screen',
+              transform: 'translateZ(0)',
+            }}
+          >
+            <motion.div
+              initial={{ x: '-110%', y: '110%', opacity: 0 }}
+              animate={
+                isBrandReveal || isExit
+                  ? {
+                      x: ['-110%', '0%', '110%'],
+                      y: ['110%', '0%', '-110%'],
+                      opacity: [0, 0.95, 0],
+                    }
+                  : { opacity: 0 }
+              }
+              transition={{
+                delay: 0.7,
+                duration: 0.35,
+                times: [0, 0.45, 1],
+                ease: [0.16, 1, 0.3, 1],
+              }}
+              style={{
+                position: 'absolute',
+                inset: '-60%',
+                background:
+                  'linear-gradient(115deg, transparent 32%, rgba(255, 255, 255, 0.45) 46%, rgba(255, 255, 255, 1.0) 50%, rgba(255, 255, 255, 0.45) 54%, transparent 68%)',
+                willChange: 'transform, opacity',
+                transform: 'translateZ(0)',
+              }}
+            />
+          </div>
+        </motion.div>
       </div>
     </motion.div>
   );
