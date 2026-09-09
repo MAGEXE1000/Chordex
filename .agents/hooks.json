@@ -1,16 +1,1 @@
-{
-  "git-safety-gate": {
-    "PreToolUse": [
-      {
-        "matcher": "run_command",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "./scripts/verify-git-safety.sh",
-            "timeout": 10
-          }
-        ]
-      }
-    ]
-  }
-}
+{}

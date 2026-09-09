@@ -1,6 +1,6 @@
 {
   "name": "@workspace/studio-core",
-  "version": "4.5.82",
+  "version": "4.5.83",
   "private": true,
   "scripts": {
     "test": "vitest run",
@@ -46,6 +46,7 @@
     "zustand": "^5.0.14"
   },
   "devDependencies": {
+    "@esbuild/win32-x64": "0.27.3",
     "@types/node": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
