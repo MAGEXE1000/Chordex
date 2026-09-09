@@ -2,8 +2,9 @@ import React, { useEffect, useState, useRef } from 'react';
 import { motion } from 'motion/react';
 import { StartupCoordinator } from '@workspace/studio-core';
 import { triggerIntroReveal } from '../typography/StudioTitleReveal';
+import livexSymbolUrl from '../../assets/livex-symbol.png';
 
-// Studio Sine Wave Logo SVG path
+// Studio Sine Wave Logo SVG path (retained for backward-compatibility)
 export const StudioSinePath = 'M 72 256 C 128 60 192 60 256 256 S 384 452 440 256';
 
 export type LaunchPreset =
@@ -81,13 +82,13 @@ export function LaunchAnimationEngine({
     );
 
     if (stage === 'logo') {
-      // Step 1: Materialize logo path drawing (700ms)
+      // Step 1: Emerge & settle brand reveal (550ms reveal + 250ms hold = 800ms total)
       t1 = setTimeout(() => {
         console.log(
           `[STARTUP-TRACE] LaunchAnimationEngine: logo->reveal transition at ${performance.now().toFixed(0)}ms`
         );
         setStage('reveal');
-      }, 700);
+      }, 800);
     } else if (stage === 'reveal') {
       // Step 2: Wait for Hub to mount and paint 2 requestAnimationFrames to prevent flashes
       const isComplete =
@@ -123,25 +124,22 @@ export function LaunchAnimationEngine({
     };
   }, [stage, loopMode]);
 
-  // Color variables based on theme - Livex logo background is true AMOLED black (#000000)
+  // Strict AMOLED pure black (#000000) for uncompromised contrast
   const bgColor = '#000000';
 
-  const logoColor = isLight ? '#0f172a' : '#ffffff';
+  // Responsive sizing calibrated for mobile viewports (~196px standard, clamped between 160px and 220px)
+  const symbolSize = Math.max(160, Math.min(220, Math.round(196 * scaleFactor)));
+  const glowSize = Math.round(symbolSize * 1.45);
 
-  // Spring and zoom timing configurations
-  const logoSpring = { type: 'spring' as const, stiffness: 380, damping: 26 };
-
-  // Smoothly dissolve the background overlay when revealing the Hub
-  const containerAnimate = !canStartReveal
-    ? { backgroundColor: bgColor, opacity: 1 }
-    : { backgroundColor: 'rgba(0,0,0,0)', opacity: [1, 1, 0] };
+  // Smoothly dissolve the entire launch overlay when transitioning into the Hub
+  const containerAnimate = !canStartReveal ? { opacity: 1 } : { opacity: 0 };
 
   return (
     <motion.div
       key={key}
-      initial={{ opacity: 1, backgroundColor: bgColor }}
+      initial={{ opacity: 1 }}
       animate={containerAnimate}
-      transition={{ duration: 0.95, ease: [0.6, 0.01, 0.05, 0.95] }}
+      transition={{ duration: 0.38, ease: [0.4, 0, 0.2, 1] }}
       onAnimationComplete={() => {
         console.log(
           `[STARTUP-TRACE] LaunchAnimationEngine: onAnimationComplete, canStartReveal=${canStartReveal}, stage=${stage}`
@@ -159,13 +157,13 @@ export function LaunchAnimationEngine({
         }
       }}
       style={{
-        position: 'absolute',
+        position: 'fixed',
         inset: 0,
         zIndex: 9999,
         overflow: 'hidden',
         backgroundColor: bgColor,
         pointerEvents: stage === 'complete' ? 'none' : 'auto',
-        // GPU Promotion styles for native screen refresh rate (90Hz / 120Hz)
+        // GPU Promotion styles for native 90Hz / 120Hz refresh rates
         willChange: 'transform, opacity',
         backfaceVisibility: 'hidden',
         WebkitBackfaceVisibility: 'hidden',
@@ -181,40 +179,71 @@ export function LaunchAnimationEngine({
           justifyContent: 'center',
         }}
       >
+        {/* Soft luminous ambient glow behind mark */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.7 }}
-          animate={!canStartReveal ? { opacity: 1, scale: 1 } : { scale: 120, opacity: [1, 1, 0] }}
+          initial={{ opacity: 0, scale: 0.82 }}
+          animate={!canStartReveal ? { opacity: 0.85, scale: 1 } : { opacity: 0, scale: 1.06 }}
           transition={
-            !canStartReveal ? logoSpring : { duration: 0.95, ease: [0.6, 0.01, 0.05, 0.95] }
+            !canStartReveal
+              ? { duration: 0.65, ease: [0.16, 1, 0.3, 1] }
+              : { duration: 0.35, ease: [0.4, 0, 0.2, 1] }
           }
           style={{
-            zIndex: 3,
+            position: 'absolute',
+            width: glowSize,
+            height: glowSize,
+            borderRadius: '50%',
+            background:
+              'radial-gradient(circle, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.04) 45%, transparent 70%)',
+            filter: 'blur(24px)',
+            pointerEvents: 'none',
+            willChange: 'transform, opacity',
+            transform: 'translateZ(0)',
+          }}
+        />
+
+        {/* Sculpted monochrome Livex symbol */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.88 }}
+          animate={!canStartReveal ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 1.03 }}
+          transition={
+            !canStartReveal
+              ? { duration: 0.55, ease: [0.16, 1, 0.3, 1] }
+              : { duration: 0.38, ease: [0.4, 0, 0.2, 1] }
+          }
+          style={{
+            position: 'relative',
+            zIndex: 2,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: symbolSize,
+            height: symbolSize,
             willChange: 'transform, opacity',
             backfaceVisibility: 'hidden',
             WebkitBackfaceVisibility: 'hidden',
             transformStyle: 'preserve-3d',
+            transform: 'translateZ(0)',
           }}
         >
-          <svg width={96 * scaleFactor} height={96 * scaleFactor} viewBox="0 0 512 512" fill="none">
-            <motion.path
-              d={StudioSinePath}
-              stroke={logoColor}
-              strokeWidth={44}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              initial={{ pathLength: skipIntro ? 1 : 0 }}
-              animate={
-                !canStartReveal
-                  ? { pathLength: 1, strokeWidth: 44 }
-                  : { pathLength: 1, strokeWidth: 10 }
-              }
-              transition={
-                !canStartReveal
-                  ? { duration: skipIntro ? 0 : 0.6, ease: 'easeOut' }
-                  : { duration: 0.95, ease: [0.6, 0.01, 0.05, 0.95] }
-              }
-            />
-          </svg>
+          <img
+            src={livexSymbolUrl}
+            alt="Livex"
+            width={symbolSize}
+            height={symbolSize}
+            draggable={false}
+            style={{
+              display: 'block',
+              width: symbolSize,
+              height: symbolSize,
+              objectFit: 'contain',
+              userSelect: 'none',
+              WebkitUserSelect: 'none',
+              pointerEvents: 'none',
+              filter: 'none',
+              transform: 'translateZ(0)',
+            }}
+          />
         </motion.div>
       </div>
     </motion.div>
