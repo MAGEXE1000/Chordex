@@ -1,9 +1,8 @@
-# Version 4.5.80
+# Version 4.5.81
 
 Release Date: 2026-09-09
 
 ### Fixed
 
-- Android Launcher Icon Cache Invalidation via Activity-Alias: Implemented MainActivityLivex activity alias with component rotation to bypass persistent OEM launcher icon caching (Samsung One UI, Pixel Launcher, etc.), forcing Android launchers to invalidate cached legacy icons and load the new metallic Livex logo fresh from the APK.
-- Adaptive Icon Monochrome Material You Theming: Added monochrome drawable bindings to ic_launcher.xml and ic_launcher_round.xml in mipmap-anydpi-v26 for Android 13+ themed icon support.
-- Runtime Component Assurance: Added ensureLauncherAliasActive() in MainActivity.kt to programmatically confirm that the new launcher alias component is in an enabled state.
+- Canonical Android Launcher Identity & Architecture: Restored standard, single-activity launcher architecture on \`com.chordex.app.MainActivity\` with direct \`MAIN\`/\`LAUNCHER\` intent filters, completely eliminating the experimental \`MainActivityLivex\` activity alias and runtime component toggles.
+- Automated Launcher Icon Synchronization Pipeline: Built and integrated \`scripts/sync-launcher-icons.mjs\` (\`pnpm sync:icons\` / \`pnpm check:icons\`) to automatically derive all 15 Android density mipmaps and public Web/PWA assets with 66dp centered safe zones inside a 108dp adaptive canvas directly from canonical master assets.
