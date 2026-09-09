@@ -285,6 +285,15 @@ export const settingsController = {
   updatePerApp: (apps: AppKey[], patch: Partial<PerAppVisuals>) => {
     useSettingsStore.getState().updatePerApp(apps, patch);
   },
+  setThemeMode: (mode: 'light' | 'dark' | 'amoled') => {
+    if (mode === 'light') {
+      useSettingsStore.getState().updateSettings({ theme: 'light', amoledMode: false });
+    } else if (mode === 'dark') {
+      useSettingsStore.getState().updateSettings({ theme: 'dark', amoledMode: false });
+    } else if (mode === 'amoled') {
+      useSettingsStore.getState().updateSettings({ theme: 'dark', amoledMode: true });
+    }
+  },
   cycleNextTheme: () => {
     const current = useSettingsStore.getState().settings;
     const currentTheme = current.theme ?? 'light';

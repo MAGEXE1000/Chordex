@@ -46,7 +46,33 @@ export default function StudioHubSettingsPanel() {
             label={t.settings.rows.themeMode || 'Theme Mode'}
             desc={t.settings.rows.themeModeDesc || 'Switch between Light, Dark, and AMOLED themes'}
           >
-            <ThemeToggle variant="circle-blur" start="bottom-up" />
+            <div className="flex items-center gap-2">
+              <SegmentedControl
+                value={
+                  settings.theme === 'light' ? 'light' : settings.amoledMode ? 'amoled' : 'dark'
+                }
+                options={[
+                  {
+                    value: 'light',
+                    label: (t.settings.rows as any).themeLight || 'Light',
+                    testId: 'theme-option-light',
+                  },
+                  {
+                    value: 'dark',
+                    label: (t.settings.rows as any).themeDark || 'Dark',
+                    testId: 'theme-option-dark',
+                  },
+                  {
+                    value: 'amoled',
+                    label: (t.settings.rows as any).themeAmoled || 'AMOLED',
+                    testId: 'theme-option-amoled',
+                  },
+                ]}
+                onChange={(v) => settingsController.setThemeMode(v as 'light' | 'dark' | 'amoled')}
+                layoutId="theme-mode-control"
+              />
+              <ThemeToggle variant="circle-blur" start="bottom-up" />
+            </div>
           </SettingRow>
         </SettingSection>
 

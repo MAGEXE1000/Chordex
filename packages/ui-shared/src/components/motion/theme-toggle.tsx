@@ -2,7 +2,7 @@
 // beui.dev/components/motion/theme-toggle
 
 import { Moon, Sun, Eclipse } from 'lucide-react';
-import { useSettingsStore } from '@workspace/studio-core';
+import { useSettingsStore, settingsController } from '@workspace/studio-core';
 import { useReducedMotion } from 'motion/react';
 import { useEffect, useState, type ComponentPropsWithoutRef } from 'react';
 import { ActionSwapIcon } from './action-swap';
@@ -30,37 +30,21 @@ export function useThemeToggle({
 }: { variant?: ThemeVariant; start?: RectStart } = {}) {
   const theme = useSettingsStore((s) => s.settings.theme);
   const amoledMode = useSettingsStore((s) => s.settings.amoledMode);
-  const updateSettings = useSettingsStore((s) => s.updateSettings);
   const reduce = useReducedMotion() ?? false;
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
   // Canonical three-state mode — source of truth for icon + aria label.
-  // amoledMode takes precedence over theme, matching themeEngine.ts behaviour.
   const themeMode: 'light' | 'dark' | 'amoled' = !mounted
     ? 'dark'
-    : amoledMode
-      ? 'amoled'
-      : theme === 'light'
-        ? 'light'
+    : theme === 'light'
+      ? 'light'
+      : amoledMode
+        ? 'amoled'
         : 'dark';
 
   const cycleTheme = () => {
-    let nextTheme: 'light' | 'dark' = 'light';
-    let nextAmoled = false;
-
-    if (theme === 'light') {
-      nextTheme = 'dark';
-      nextAmoled = false;
-    } else if (theme === 'dark' && !amoledMode) {
-      nextTheme = 'dark';
-      nextAmoled = true;
-    } else {
-      nextTheme = 'light';
-      nextAmoled = false;
-    }
-
-    updateSettings({ theme: nextTheme, amoledMode: nextAmoled });
+    settingsController.cycleNextTheme();
   };
 
   const toggle = () => {

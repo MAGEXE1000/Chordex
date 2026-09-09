@@ -8,12 +8,9 @@ function getThemeColors(theme: string, amoledMode: boolean) {
     typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: light)').matches;
   const isLight = theme === 'light' || (theme === 'system' && systemIsLight);
 
-  if (amoledMode)
-    return isLight
-      ? { bg: '#ffffff', style: 'LIGHT' as const }
-      : { bg: '#000000', style: 'DARK' as const };
   if (isLight) return { bg: '#f2f1ef', style: 'LIGHT' as const };
-  return { bg: '#0e0e0e', style: 'DARK' as const };
+  if (amoledMode) return { bg: '#000000', style: 'DARK' as const };
+  return { bg: '#141418', style: 'DARK' as const };
 }
 
 export async function syncStatusBar(theme: string, amoledMode: boolean) {
@@ -27,8 +24,7 @@ export async function syncStatusBar(theme: string, amoledMode: boolean) {
     await StatusBar.setOverlaysWebView({ overlay: false });
     await StatusBar.setBackgroundColor({ color: bg });
     await StatusBar.setStyle({ style: style === 'DARK' ? Style.Dark : Style.Light });
-  } catch (err) {
-  }
+  } catch (err) {}
 }
 
 export function useStatusBar(theme: string, amoledMode: boolean) {

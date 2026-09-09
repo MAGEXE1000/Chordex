@@ -32,45 +32,47 @@ export function applyThemeTokens(settings: any) {
 
   const activeVis = {
     theme: perAppVis?.theme ?? globalTheme,
-    amoledMode: Boolean(perAppVis?.amoledMode || globalAmoled),
+    amoledMode:
+      perAppVis?.amoledMode !== undefined ? Boolean(perAppVis.amoledMode) : Boolean(globalAmoled),
   };
 
   const root = document.documentElement;
 
   // 1. Resolve Light/Dark Mode
-  const themeClassKey = `${activeVis.theme}|${activeVis.amoledMode}|${settings?.dynamicLightStart ?? 7}|${settings?.dynamicLightEnd ?? 20}`;
+  const systemIsLight =
+    typeof window !== 'undefined' &&
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(prefers-color-scheme: light)').matches;
+  let isLightMode = false;
+  const theme = activeVis.theme;
+  if (theme === 'light') {
+    isLightMode = true;
+  } else if (theme === 'system') {
+    isLightMode = systemIsLight;
+  } else if (theme === 'dynamic') {
+    const h = new Date().getHours();
+    const start = settings?.dynamicLightStart ?? 7;
+    const end = settings?.dynamicLightEnd ?? 20;
+    isLightMode = h >= start && h < end;
+  }
+
+  const themeClassKey = `${activeVis.theme}|${activeVis.amoledMode}|${isLightMode}`;
   if (themeClassKey !== _lastThemeClassKey) {
     _lastThemeClassKey = themeClassKey;
-    const systemIsLight =
-      typeof window !== 'undefined' &&
-      typeof window.matchMedia === 'function' &&
-      window.matchMedia('(prefers-color-scheme: light)').matches;
-    let isLightMode = false;
-    const theme = activeVis.theme;
-    if (theme === 'light') {
-      isLightMode = true;
-    } else if (theme === 'system') {
-      isLightMode = systemIsLight;
-    } else if (theme === 'dynamic') {
-      const h = new Date().getHours();
-      const start = settings?.dynamicLightStart ?? 7;
-      const end = settings?.dynamicLightEnd ?? 20;
-      isLightMode = h >= start && h < end;
-    }
 
     // Update HTML theme classes
     if (isLightMode) {
       root.classList.add('light');
       root.classList.remove('dark');
+      root.classList.remove('amoled');
     } else {
       root.classList.add('dark');
       root.classList.remove('light');
-    }
-
-    if (activeVis.amoledMode) {
-      root.classList.add('amoled');
-    } else {
-      root.classList.remove('amoled');
+      if (activeVis.amoledMode) {
+        root.classList.add('amoled');
+      } else {
+        root.classList.remove('amoled');
+      }
     }
 
     // Flush any early-boot inline style properties so tokens.css class rules have full precedence
@@ -314,9 +316,11 @@ export function applyThemeTokens(settings: any) {
   }
 
   // StatusBar Sync
-  const statusBarKey = `${activeVis.theme}|${activeVis.amoledMode}`;
+  const effectiveTheme = isLightMode ? 'light' : 'dark';
+  const effectiveAmoled = !isLightMode && Boolean(activeVis.amoledMode);
+  const statusBarKey = `${effectiveTheme}|${effectiveAmoled}`;
   if (statusBarKey !== _lastStatusBarKey) {
     _lastStatusBarKey = statusBarKey;
-    void syncStatusBar(activeVis.theme, activeVis.amoledMode);
+    void syncStatusBar(effectiveTheme, effectiveAmoled);
   }
 }

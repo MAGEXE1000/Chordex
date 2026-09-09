@@ -205,32 +205,32 @@
 @property --app-bg {
   syntax: '<color>';
   inherits: true;
-  initial-value: #09090b;
+  initial-value: #141418;
 }
 @property --app-surface-lowest {
   syntax: '<color>';
   inherits: true;
-  initial-value: #0c0c0f;
+  initial-value: #101014;
 }
 @property --app-surface-low {
   syntax: '<color>';
   inherits: true;
-  initial-value: #0f0f12;
+  initial-value: #16161c;
 }
 @property --app-surface {
   syntax: '<color>';
   inherits: true;
-  initial-value: #111115;
+  initial-value: #1e1e24;
 }
 @property --app-surface-high {
   syntax: '<color>';
   inherits: true;
-  initial-value: #151518;
+  initial-value: #262630;
 }
 @property --app-surface-highest {
   syntax: '<color>';
   inherits: true;
-  initial-value: #1a1a1f;
+  initial-value: #2e2e3a;
 }
 
 /* ===== AMOLED-aware CSS Custom Properties ===== */
@@ -271,31 +271,31 @@
   --studio-accent-glow: 0 4px 20px color-mix(in srgb, var(--studio-accent-to) 25%, transparent);
   --studio-accent-border: color-mix(in srgb, var(--studio-accent-to) 30%, transparent);
 
-  --app-bg: var(--c-background, #09090b);
-  --app-surface-lowest: var(--c-surface-lowest, #0c0c0f);
-  --app-surface-low: var(--c-surface-low, #0f0f12);
-  --app-surface: var(--c-surface-mid, #111115);
-  --app-surface-high: var(--c-surface-high, #151518);
-  --app-surface-highest: var(--c-surface-highest, #1a1a1f);
+  --app-bg: var(--c-background, #141418);
+  --app-surface-lowest: var(--c-surface-lowest, #101014);
+  --app-surface-low: var(--c-surface-low, #16161c);
+  --app-surface: var(--c-surface-mid, #1e1e24);
+  --app-surface-high: var(--c-surface-high, #262630);
+  --app-surface-highest: var(--c-surface-highest, #2e2e3a);
   --app-surface-scrim: rgba(0, 0, 0, 0.65);
   --app-surface-scrim-opaque: rgba(0, 0, 0, 0.85);
   --app-surface-scrim-solid: #000000;
-  --c-bg-card: var(--app-surface, #111115);
+  --c-bg-card: var(--app-surface, #1e1e24);
 
-  --c-background: #09090b;
-  --c-surface-lowest: #0c0c0f;
-  --c-surface-low: #0f0f12;
-  --c-surface-mid: #111115;
-  --c-surface-high: #151518;
-  --c-surface-highest: #1a1a1f;
+  --c-background: #141418;
+  --c-surface-lowest: #101014;
+  --c-surface-low: #16161c;
+  --c-surface-mid: #1e1e24;
+  --c-surface-high: #262630;
+  --c-surface-highest: #2e2e3a;
 
-  --c-text-primary: #fafafa;
+  --c-text-primary: #f4f4f6;
   --c-text-secondary: #a1a1aa;
   --c-text-muted: #71717a;
   --c-text-tertiary: var(--c-text-muted);
 
-  --c-border: rgba(255, 255, 255, 0.12);
-  --c-border-dashed: 1px dashed rgba(255, 255, 255, 0.16);
+  --c-border: rgba(255, 255, 255, 0.08);
+  --c-border-dashed: 1px dashed rgba(255, 255, 255, 0.14);
   --c-surface-glass-bg: rgba(20, 20, 25, 0.65);
   --c-surface-glass-blur: blur(16px);
 
@@ -560,32 +560,32 @@ h4,
   --app-bg: #000000;
   --app-surface-lowest: #000000;
   --app-surface-low: #08080a;
-  --app-surface: #101014;
-  --app-surface-high: #16161c;
-  --app-surface-highest: #1f1f26;
+  --app-surface: #0f0f13;
+  --app-surface-high: #17171d;
+  --app-surface-highest: #202028;
   --app-surface-scrim: rgba(0, 0, 0, 0.85);
   --app-surface-scrim-opaque: rgba(0, 0, 0, 0.95);
   --app-surface-scrim-solid: #000000;
-  --c-bg-card: #101014;
+  --c-bg-card: #0f0f13;
 
   --c-background: #000000;
   --c-surface-lowest: #000000;
   --c-surface-low: #08080a;
-  --c-surface-mid: #101014;
-  --c-surface-high: #16161c;
-  --c-surface-highest: #1f1f26;
+  --c-surface-mid: #0f0f13;
+  --c-surface-high: #17171d;
+  --c-surface-highest: #202028;
 
-  --c-text-primary: #fafafa;
-  --c-text-secondary: #a8a8b3;
+  --c-text-primary: #ffffff;
+  --c-text-secondary: #a1a1aa;
   --c-text-muted: #71717a;
   --c-text-tertiary: var(--c-text-muted);
 
   --c-border: rgba(255, 255, 255, 0.12);
 
-  --c-surface-glass-bg: rgba(16, 16, 20, 0.88);
+  --c-surface-glass-bg: rgba(15, 15, 19, 0.88);
   --sidebar-bg: rgba(0, 0, 0, 0.7);
   --sidebar-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
-  --popover-bg: rgba(16, 16, 20, 0.85);
+  --popover-bg: rgba(15, 15, 19, 0.85);
   --popover-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
   --profile-avatar-bg: rgba(255, 255, 255, 0.08);
   --profile-avatar-color: #ffffff;
@@ -609,7 +609,7 @@ h4,
   --shadow-pill: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 2px 8px rgba(0, 0, 0, 0.5);
   --shadow-inset-soft: inset 0 1px 3px rgba(0, 0, 0, 0.8);
 
-  --surface-card-bg: #101014;
+  --surface-card-bg: #0f0f13;
   --surface-card-shadow: var(--shadow-surface-soft);
   --surface-card-inset: inset 0 1px 0 rgba(255, 255, 255, 0.06);
   --surface-card-highlight: 0 0 0 1px rgba(255, 255, 255, 0.06);
@@ -618,39 +618,9 @@ h4,
   --surface-deep-shadow: var(--shadow-surface-raised);
   --surface-deep-inset: inset 0 1px 0 rgba(255, 255, 255, 0.08);
 
-  --btn-surface-bg: #16161c;
+  --btn-surface-bg: #17171d;
   --btn-surface-shadow: var(--shadow-control-raised);
   --btn-surface-inset: inset 0 1px 1px rgba(255, 255, 255, 0.14);
-}
-
-:root.light.amoled {
-  --app-bg: #ffffff;
-  --app-surface-lowest: #f0f0f0;
-  --app-surface-low: #f4f4f4;
-  --app-surface: #f7f7f7;
-  --app-surface-high: #fafafa;
-  --app-surface-highest: #ffffff;
-
-  --c-background: #ffffff;
-  --c-surface-lowest: #f0f0f0;
-  --c-surface-low: #f4f4f4;
-  --c-surface-mid: #f7f7f7;
-  --c-surface-high: #fafafa;
-  --c-surface-highest: #ffffff;
-
-  --c-surface-glass-bg: rgba(255, 255, 255, 0.92);
-  --sidebar-bg: rgba(255, 255, 255, 0.75);
-  --sidebar-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-  --popover-bg: rgba(255, 255, 255, 0.8);
-  --popover-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-  --profile-avatar-bg: rgba(0, 0, 0, 0.06);
-  --profile-avatar-color: var(--c-text-primary);
-  --profile-avatar-border: 0 0 0 1px rgba(0, 0, 0, 0.08);
-  --hub-card-bg: rgba(0, 0, 0, 0.01);
-  --hub-card-pressed-bg: rgba(0, 0, 0, 0.04);
-  --hub-card-border: rgba(0, 0, 0, 0.08);
-  --hub-card-icon-bg: rgba(0, 0, 0, 0.03);
-  --hub-card-icon-border: rgba(0, 0, 0, 0.06);
 }
 
 /* ===== Light Theme ===== */
@@ -1865,43 +1835,8 @@ html[data-perf-mode='on'] *::after {
   --surface-glass-lens-shadow:
     0 4px 14px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.14);
   --surface-modal-bg: rgba(0, 0, 0, 0.75);
-  --surface-dialog-bg: var(--app-surface-high, #16161c);
-  --surface-modal-surface: var(--app-surface-high, #16161c);
-}
-
-/* Light + AMOLED (pure-white) — inherits from :root.light */
-:root.light.amoled {
-  --surface-float-bg: rgba(255, 255, 255, 0.78);
-  --surface-topbar-bg: rgba(255, 255, 255, 0.78);
-  --surface-topbar-border: 1px solid rgba(0, 0, 0, 0.07);
-  --surface-topbar-shadow:
-    0 8px 24px -4px rgba(0, 0, 0, 0.06), 0 2px 6px -2px rgba(0, 0, 0, 0.04),
-    inset 0 1px 0 rgba(255, 255, 255, 0.8);
-  --surface-topbar-blur: blur(20px) saturate(180%);
-  --surface-float-blur: blur(20px) saturate(180%);
-  --surface-topbar-fallback: rgba(255, 255, 255, 0.96);
-  --surface-glass-rim: linear-gradient(
-    90deg,
-    rgba(255, 255, 255, 0.2) 0%,
-    rgba(255, 255, 255, 0.5) 50%,
-    rgba(255, 255, 255, 0.2) 100%
-  );
-  --surface-glass-bottom-rim: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(0, 0, 0, 0.03) 50%,
-    transparent 100%
-  );
-  --surface-glass-lens-bg: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.95) 0%,
-    rgba(240, 244, 252, 0.75) 100%
-  );
-  --surface-glass-lens-border: 1px solid rgba(0, 0, 0, 0.06);
-  --surface-glass-lens-shadow: 0 2px 8px rgba(0, 0, 0, 0.04), inset 0 1px 0 rgba(255, 255, 255, 1);
-  --surface-modal-bg: rgba(0, 0, 0, 0.35);
-  --surface-dialog-bg: var(--app-surface-highest, #ffffff);
-  --surface-modal-surface: var(--app-surface-highest, #ffffff);
+  --surface-dialog-bg: var(--app-surface-high, #17171d);
+  --surface-modal-surface: var(--app-surface-high, #17171d);
 }
 
 /* ===== Groovex design tokens ===== */
@@ -2722,13 +2657,13 @@ html.web-desktop {
 html.web-desktop.amoled {
   --app-bg: #000000 !important;
   --app-surface-lowest: #000000 !important;
-  --app-surface-low: #030303 !important;
-  --app-surface: #080808 !important;
-  --app-surface-high: #121212 !important;
-  --app-surface-highest: #1a1a1a !important;
-  --c-text-primary: #f4f4f5 !important;
+  --app-surface-low: #08080a !important;
+  --app-surface: #0f0f13 !important;
+  --app-surface-high: #17171d !important;
+  --app-surface-highest: #202028 !important;
+  --c-text-primary: #ffffff !important;
   --c-text-secondary: #a1a1aa !important;
-  --c-text-muted: #52525b !important;
+  --c-text-muted: #71717a !important;
 }
 
 /* Light Theme */
@@ -2742,19 +2677,6 @@ html.web-desktop.light {
   --c-text-primary: #1d1d1f !important;
   --c-text-secondary: #86868b !important;
   --c-text-muted: #c7c7cc !important;
-}
-
-/* Light AMOLED (Pure White) Theme */
-html.web-desktop.light.amoled {
-  --app-bg: #ffffff !important;
-  --app-surface-lowest: #f0f0f0 !important;
-  --app-surface-low: #f4f4f4 !important;
-  --app-surface: #ffffff !important;
-  --app-surface-high: #fafafa !important;
-  --app-surface-highest: #ffffff !important;
-  --c-text-primary: #000000 !important;
-  --c-text-secondary: #555555 !important;
-  --c-text-muted: #999999 !important;
 }
 
 /* System Light Theme Override */
@@ -2832,7 +2754,7 @@ html.web-desktop.light .card-hover:hover {
 }
 
 html.web-desktop .app-sub-app-container {
-  background: #050505 !important;
+  background: #141418 !important;
   transition: background 300ms cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
@@ -2842,10 +2764,6 @@ html.web-desktop.amoled .app-sub-app-container {
 
 html.web-desktop.light .app-sub-app-container {
   background: #f5f5f7 !important;
-}
-
-html.web-desktop.light.amoled .app-sub-app-container {
-  background: #ffffff !important;
 }
 
 @media (prefers-color-scheme: light) {
