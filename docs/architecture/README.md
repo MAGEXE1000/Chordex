@@ -33,14 +33,15 @@ This directory contains the complete engineering architecture knowledge base for
 
 ### Platform & Infrastructure
 
-| Document                                         | Description                                                   |
-| ------------------------------------------------ | ------------------------------------------------------------- |
-| [android.md](android.md)                         | Capacitor integration, native plugins, permissions, lifecycle |
-| [firebase.md](firebase.md)                       | Authentication, Firestore, Storage, Hosting, security rules   |
-| [updater.md](updater.md)                         | OTA update pipeline, state machine, APK installation flow     |
-| [release-pipeline.md](release-pipeline.md)       | CI/CD, GitHub Actions, versioning, deployment                 |
-| [platform-separation.md](platform-separation.md) | Web vs Android file ownership, build boundaries               |
-| [dependency-graph.md](dependency-graph.md)       | Package relationships, service dependencies                   |
+| Document                                               | Description                                                   |
+| ------------------------------------------------------ | ------------------------------------------------------------- |
+| [android.md](android.md)                               | Capacitor integration, native plugins, permissions, lifecycle |
+| [android-launcher-icons.md](android-launcher-icons.md) | Canonical launcher icon pipeline, safe zones, OEM caching     |
+| [firebase.md](firebase.md)                             | Authentication, Firestore, Storage, Hosting, security rules   |
+| [updater.md](updater.md)                               | OTA update pipeline, state machine, APK installation flow     |
+| [release-pipeline.md](release-pipeline.md)             | CI/CD, GitHub Actions, versioning, deployment                 |
+| [platform-separation.md](platform-separation.md)       | Web vs Android file ownership, build boundaries               |
+| [dependency-graph.md](dependency-graph.md)             | Package relationships, service dependencies                   |
 
 ### Sub-Application Modules
 
