@@ -43,6 +43,19 @@ export interface StudioUpdateScreenProps {
   bottomSection?: React.ReactNode;
 }
 
+interface SubtleValueProps {
+  value: React.ReactNode;
+  className?: string;
+}
+
+const SubtleValue = memo(function SubtleValue({ value, className }: SubtleValueProps) {
+  return (
+    <span key={String(value)} className={`livex-subtle-value inline-block ${className || ''}`}>
+      {value}
+    </span>
+  );
+});
+
 export default memo(function StudioUpdateScreen({
   state,
   progress = 0,
@@ -354,20 +367,101 @@ export default memo(function StudioUpdateScreen({
     return items;
   }, [releaseNotes]);
 
-  // CSS Styles faithfully matching the new design
+  // CSS Styles faithfully matching the new design and animation guidelines
   const themeStyles = `
-    .state-pane {
-      transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    /* Dialog & Backdrop Entrance Animations (220ms, ease-out decelerate) */
+    @keyframes livex-backdrop-enter {
+      0% {
+        opacity: 0;
+      }
+      100% {
+        opacity: 1;
+      }
     }
+
+    @keyframes livex-dialog-enter {
+      0% {
+        opacity: 0;
+        transform: scale(0.96) translateY(10px);
+      }
+      100% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
+    }
+
+    .livex-backdrop-animate {
+      animation: livex-backdrop-enter 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    .livex-dialog-animate {
+      animation: livex-dialog-enter 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    /* State Panes (200ms coherent state switch) */
+    @keyframes livex-pane-enter {
+      0% {
+        opacity: 0;
+        transform: translateY(6px) scale(0.99);
+      }
+      100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
     .state-pane.hidden-pane {
       display: none;
-      opacity: 0;
-      transform: translateY(6px);
     }
+
     .state-pane.active-pane {
       display: flex;
-      opacity: 1;
-      transform: translateY(0);
+      animation: livex-pane-enter 200ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    /* Success State Micro-Interactions (240ms subtle scale/opacity) */
+    @keyframes livex-success-badge-enter {
+      0% {
+        opacity: 0;
+        transform: scale(0.85);
+      }
+      100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    @keyframes livex-success-icon-enter {
+      0% {
+        opacity: 0;
+        transform: scale(0.8);
+      }
+      100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    .livex-success-badge {
+      animation: livex-success-badge-enter 240ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    .livex-success-icon {
+      animation: livex-success-icon-enter 220ms cubic-bezier(0.16, 1, 0.3, 1) 40ms both;
+    }
+
+    /* Subtle Value Opacity Transition (150ms gentle breath) */
+    @keyframes livex-subtle-fade {
+      0% {
+        opacity: 0.65;
+      }
+      100% {
+        opacity: 1;
+      }
+    }
+
+    .livex-subtle-value {
+      animation: livex-subtle-fade 150ms cubic-bezier(0.16, 1, 0.3, 1) both;
     }
 
     /* Refined scrollbar */
@@ -389,6 +483,20 @@ export default memo(function StudioUpdateScreen({
     }
     .livex-animate-scan {
       animation: livex-scan-track 1.6s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+    }
+
+    /* Reduced Motion Overrides */
+    @media (prefers-reduced-motion: reduce) {
+      .livex-backdrop-animate,
+      .livex-dialog-animate,
+      .state-pane.active-pane,
+      .livex-success-badge,
+      .livex-success-icon,
+      .livex-subtle-value {
+        animation: none !important;
+        transform: none !important;
+        opacity: 1 !important;
+      }
     }
   `;
 
@@ -436,9 +544,15 @@ export default memo(function StudioUpdateScreen({
     ? 'bg-black/[0.04] text-slate-400 border border-black/[0.04]'
     : 'bg-white/[0.04] text-neutral-400 border border-white/[0.04]';
 
+  // Dynamic accent bindings honoring user theme selection
+  const activeAccent = accentTo || 'var(--accent-to, #007aff)';
+  const activeAccentFrom = accentFrom || 'var(--accent-from, #679cff)';
+
   return (
     <div
-      className="fixed inset-0 z-[99999] flex items-center justify-center p-4 selection:bg-[#007aff]/30"
+      className={`fixed inset-0 z-[99999] flex items-center justify-center p-4 selection:bg-[#007aff]/30 ${
+        isDismissing ? '' : 'livex-backdrop-animate'
+      }`}
       style={{
         background: isLight
           ? 'rgba(0, 0, 0, 0.35)'
@@ -447,6 +561,8 @@ export default memo(function StudioUpdateScreen({
             : 'rgba(8, 8, 10, 0.75)',
         backdropFilter: 'var(--surface-float-blur, blur(8px))',
         WebkitBackdropFilter: 'var(--surface-float-blur, blur(8px))',
+        opacity: isDismissing ? 0 : undefined,
+        transition: isDismissing ? 'opacity 200ms cubic-bezier(0.32, 0, 0.67, 0)' : undefined,
       }}
       onClick={(e) => {
         if (e.target === e.currentTarget && canClose) {
@@ -462,11 +578,16 @@ export default memo(function StudioUpdateScreen({
       {/* Modal Container: Slim, Tall, Proportional Mobile Width (345px) */}
       <div className="w-full max-w-[345px] relative z-40 mx-auto" id="modal-container">
         <div
-          className={`w-full ${dialogBg} rounded-[32px] border ${dialogBorder} ${dialogShadow} p-6 relative overflow-hidden transition-all duration-200 ease-out`}
+          className={`w-full ${dialogBg} rounded-[32px] border ${dialogBorder} ${dialogShadow} p-6 relative overflow-hidden ${
+            isDismissing ? '' : 'livex-dialog-animate'
+          }`}
           id="updater-dialog"
           style={{
-            opacity: isDismissing ? 0 : 1,
-            transform: isDismissing ? 'scale(0.96) translateY(8px)' : 'scale(1) translateY(0)',
+            opacity: isDismissing ? 0 : undefined,
+            transform: isDismissing ? 'scale(0.96) translateY(8px)' : undefined,
+            transition: isDismissing
+              ? 'opacity 200ms cubic-bezier(0.32, 0, 0.67, 0), transform 200ms cubic-bezier(0.32, 0, 0.67, 0)'
+              : undefined,
           }}
           onClick={(e) => e.stopPropagation()}
         >
@@ -508,9 +629,21 @@ export default memo(function StudioUpdateScreen({
               <span className={`material-symbols-outlined text-[14px] ${textTertiary}`}>
                 arrow_forward
               </span>
-              <div className="flex items-center gap-1.5 bg-[#007aff]/15 border border-[#007aff]/30 px-2.5 py-0.5 rounded-full">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#007aff] animate-pulse"></span>
-                <span className="text-[12px] font-mono font-semibold text-[#adc6ff]">
+              <div
+                className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full"
+                style={{
+                  background: `color-mix(in srgb, ${activeAccent} 15%, transparent)`,
+                  border: `1px solid color-mix(in srgb, ${activeAccent} 30%, transparent)`,
+                }}
+              >
+                <span
+                  className="w-1.5 h-1.5 rounded-full animate-pulse"
+                  style={{ background: activeAccent }}
+                ></span>
+                <span
+                  className="text-[12px] font-mono font-semibold"
+                  style={{ color: isLight ? activeAccent : '#adc6ff' }}
+                >
                   v{toVersion || 'latest'}
                 </span>
               </div>
@@ -539,7 +672,10 @@ export default memo(function StudioUpdateScreen({
                   >
                     {changelogItems.map((item, idx) => (
                       <li key={idx} className="flex items-start gap-2.5">
-                        <span className="w-1 h-1 rounded-full bg-[#007aff] mt-2 shrink-0"></span>
+                        <span
+                          className="w-1 h-1 rounded-full mt-2 shrink-0"
+                          style={{ background: activeAccent }}
+                        ></span>
                         <span>{item}</span>
                       </li>
                     ))}
@@ -552,7 +688,11 @@ export default memo(function StudioUpdateScreen({
             <div className="space-y-2">
               <button
                 type="button"
-                className="w-full h-11 bg-[#007aff] hover:bg-[#006ee6] active:scale-[0.98] text-white font-manrope font-semibold text-[13px] rounded-full transition-all flex items-center justify-center gap-2 shadow-sm"
+                className="w-full h-11 active:scale-[0.98] text-white font-manrope font-semibold text-[13px] rounded-full flex items-center justify-center gap-2 shadow-sm"
+                style={{
+                  background: `linear-gradient(135deg, ${activeAccentFrom}, ${activeAccent})`,
+                  transition: 'transform 120ms cubic-bezier(0.16, 1, 0.3, 1), opacity 150ms ease-out',
+                }}
                 onClick={handleUpdate}
               >
                 <span className="material-symbols-outlined text-[18px]">download</span>
@@ -561,7 +701,10 @@ export default memo(function StudioUpdateScreen({
               {!isRequired && (
                 <button
                   type="button"
-                  className={`w-full h-10 ${laterBtn} font-manrope font-medium text-[13px] rounded-full transition-all flex items-center justify-center`}
+                  className={`w-full h-10 ${laterBtn} font-manrope font-medium text-[13px] rounded-full flex items-center justify-center`}
+                  style={{
+                    transition: 'transform 120ms cubic-bezier(0.16, 1, 0.3, 1), background-color 150ms ease-out',
+                  }}
                   onClick={handleDismiss}
                 >
                   {updaterTr?.later || 'Later'}
@@ -581,7 +724,14 @@ export default memo(function StudioUpdateScreen({
           >
             {/* Header */}
             <div className="flex items-center gap-3.5 mb-5">
-              <div className="w-11 h-11 rounded-2xl bg-[#007aff]/10 border border-[#007aff]/20 flex items-center justify-center text-[#007aff] shrink-0">
+              <div
+                className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0"
+                style={{
+                  background: `color-mix(in srgb, ${activeAccent} 10%, transparent)`,
+                  border: `1px solid color-mix(in srgb, ${activeAccent} 20%, transparent)`,
+                  color: activeAccent,
+                }}
+              >
                 <span className="material-symbols-outlined text-[21px] animate-pulse">
                   download
                 </span>
@@ -602,25 +752,42 @@ export default memo(function StudioUpdateScreen({
             <div className={`${cardBg} border ${cardBorder} rounded-2xl p-4 mb-6 space-y-3.5`}>
               <div className="flex items-baseline justify-between text-[12px] font-mono">
                 <span className={`${textPrimary} font-medium`} id="dl-bytes-text">
-                  {downloadedMB} / {formattedSize}
+                  <SubtleValue value={`${downloadedMB} / ${formattedSize}`} />
                 </span>
-                <span className="text-[#adc6ff] font-semibold text-[13px]" id="dl-percent-badge">
-                  {progressPercent}%
+                <span
+                  className="font-semibold text-[13px]"
+                  id="dl-percent-badge"
+                  style={{ color: isLight ? activeAccent : '#adc6ff' }}
+                >
+                  <SubtleValue value={`${progressPercent}%`} />
                 </span>
               </div>
-              {/* Thin sleek progress bar (6px / h-1.5) */}
-              <div className={`w-full h-1.5 ${progressTrack} rounded-full overflow-hidden`}>
+              {/* Thin sleek progress bar (6px / h-1.5) with GPU compositor transform */}
+              <div
+                className={`w-full h-1.5 ${progressTrack} rounded-full overflow-hidden relative`}
+                style={{ transform: 'translateZ(0)' }}
+              >
                 <div
-                  className="h-full bg-[#007aff] rounded-full transition-all duration-150 ease-out"
+                  className="w-full h-full rounded-full"
                   id="dl-progress-bar"
-                  style={{ width: `${progressPercent}%` }}
+                  style={{
+                    background: `linear-gradient(90deg, ${activeAccentFrom}, ${activeAccent})`,
+                    transform: `translateX(-${100 - progressPercent}%)`,
+                    transformOrigin: 'left',
+                    transition: 'transform 220ms cubic-bezier(0.16, 1, 0.3, 1)',
+                    willChange: 'transform',
+                  }}
                 ></div>
               </div>
               <div
                 className={`flex items-center justify-between text-[11px] ${textSecondary} font-mono pt-0.5`}
               >
-                <span id="dl-speed-text">{speedText}</span>
-                <span id="dl-eta-text">{etaText}</span>
+                <span id="dl-speed-text">
+                  <SubtleValue value={speedText} />
+                </span>
+                <span id="dl-eta-text">
+                  <SubtleValue value={etaText} />
+                </span>
               </div>
             </div>
 
@@ -628,7 +795,10 @@ export default memo(function StudioUpdateScreen({
             <div className="pt-1">
               <button
                 type="button"
-                className={`w-full h-11 ${cancelBtn} font-manrope font-medium text-[13px] rounded-full border transition-all flex items-center justify-center gap-1.5`}
+                className={`w-full h-11 ${cancelBtn} font-manrope font-medium text-[13px] rounded-full border flex items-center justify-center gap-1.5`}
+                style={{
+                  transition: 'transform 120ms cubic-bezier(0.16, 1, 0.3, 1), background-color 150ms ease-out',
+                }}
                 onClick={handleCancel}
               >
                 <span className="material-symbols-outlined text-[16px]">close</span>
@@ -648,7 +818,14 @@ export default memo(function StudioUpdateScreen({
           >
             {/* Header */}
             <div className="flex items-center gap-3.5 mb-5">
-              <div className="w-11 h-11 rounded-2xl bg-[#007aff]/10 border border-[#007aff]/20 flex items-center justify-center text-[#007aff] shrink-0">
+              <div
+                className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0"
+                style={{
+                  background: `color-mix(in srgb, ${activeAccent} 10%, transparent)`,
+                  border: `1px solid color-mix(in srgb, ${activeAccent} 20%, transparent)`,
+                  color: activeAccent,
+                }}
+              >
                 <span className="material-symbols-outlined text-[21px]">verified</span>
               </div>
               <div className="min-w-0 text-left">
@@ -667,15 +844,26 @@ export default memo(function StudioUpdateScreen({
             <div className={`${cardBg} border ${cardBorder} rounded-2xl p-4 mb-6 space-y-3.5`}>
               <div className="flex items-center justify-between text-[12px] font-mono">
                 <span className={`${textPrimary} font-medium`}>SHA-256 Checksum</span>
-                <span className="text-[#adc6ff] font-semibold text-[11px] bg-[#007aff]/10 border border-[#007aff]/20 px-2 py-0.5 rounded-full">
+                <span
+                  className="font-semibold text-[11px] px-2 py-0.5 rounded-full"
+                  style={{
+                    color: isLight ? activeAccent : '#adc6ff',
+                    background: `color-mix(in srgb, ${activeAccent} 10%, transparent)`,
+                    border: `1px solid color-mix(in srgb, ${activeAccent} 20%, transparent)`,
+                  }}
+                >
                   V2/V3 SIGN
                 </span>
               </div>
               {/* Scanning beam */}
               <div
                 className={`w-full h-1.5 ${progressTrack} rounded-full overflow-hidden relative`}
+                style={{ transform: 'translateZ(0)' }}
               >
-                <div className="w-1/3 h-full bg-[#007aff] rounded-full livex-animate-scan"></div>
+                <div
+                  className="w-1/3 h-full rounded-full livex-animate-scan"
+                  style={{ background: activeAccent }}
+                ></div>
               </div>
               <div
                 className={`flex items-center justify-between text-[11px] ${textSecondary} font-mono pt-0.5`}
@@ -695,7 +883,10 @@ export default memo(function StudioUpdateScreen({
                 className={`w-full h-11 ${disabledBtn} font-manrope font-medium text-[13px] rounded-full cursor-wait flex items-center justify-center gap-2`}
                 disabled
               >
-                <span className="w-1.5 h-1.5 rounded-full bg-[#007aff] animate-pulse"></span>
+                <span
+                  className="w-1.5 h-1.5 rounded-full animate-pulse"
+                  style={{ background: activeAccent }}
+                ></span>
                 <span>Finalizing APK staging…</span>
               </button>
             </div>
@@ -712,7 +903,14 @@ export default memo(function StudioUpdateScreen({
           >
             {/* Header */}
             <div className="flex items-center gap-3.5 mb-5">
-              <div className="w-11 h-11 rounded-2xl bg-[#007aff]/10 border border-[#007aff]/20 flex items-center justify-center text-[#007aff] shrink-0">
+              <div
+                className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0"
+                style={{
+                  background: `color-mix(in srgb, ${activeAccent} 10%, transparent)`,
+                  border: `1px solid color-mix(in srgb, ${activeAccent} 20%, transparent)`,
+                  color: activeAccent,
+                }}
+              >
                 <span className="material-symbols-outlined text-[21px] animate-spin">sync</span>
               </div>
               <div className="min-w-0 text-left">
@@ -731,15 +929,26 @@ export default memo(function StudioUpdateScreen({
             <div className={`${cardBg} border ${cardBorder} rounded-2xl p-4 mb-6 space-y-3.5`}>
               <div className="flex items-center justify-between text-[12px] font-mono">
                 <span className={`${textPrimary} font-medium`}>PackageInstaller Session</span>
-                <span className="text-[#007aff] font-semibold text-[11px] bg-[#007aff]/10 border border-[#007aff]/20 px-2 py-0.5 rounded-full">
+                <span
+                  className="font-semibold text-[11px] px-2 py-0.5 rounded-full"
+                  style={{
+                    color: activeAccent,
+                    background: `color-mix(in srgb, ${activeAccent} 10%, transparent)`,
+                    border: `1px solid color-mix(in srgb, ${activeAccent} 20%, transparent)`,
+                  }}
+                >
                   ACTIVE
                 </span>
               </div>
               {/* Scanning beam */}
               <div
                 className={`w-full h-1.5 ${progressTrack} rounded-full overflow-hidden relative`}
+                style={{ transform: 'translateZ(0)' }}
               >
-                <div className="w-1/3 h-full bg-[#007aff] rounded-full livex-animate-scan"></div>
+                <div
+                  className="w-1/3 h-full rounded-full livex-animate-scan"
+                  style={{ background: activeAccent }}
+                ></div>
               </div>
               <div
                 className={`flex items-center justify-between text-[11px] ${textSecondary} font-manrope pt-0.5`}
@@ -758,7 +967,10 @@ export default memo(function StudioUpdateScreen({
                 className={`w-full h-11 ${disabledBtn} font-manrope font-medium text-[13px] rounded-full cursor-wait flex items-center justify-center gap-2`}
                 disabled
               >
-                <span className="w-1.5 h-1.5 rounded-full bg-[#007aff] animate-pulse"></span>
+                <span
+                  className="w-1.5 h-1.5 rounded-full animate-pulse"
+                  style={{ background: activeAccent }}
+                ></span>
                 <span>Applying system update…</span>
               </button>
             </div>
@@ -775,8 +987,8 @@ export default memo(function StudioUpdateScreen({
           >
             {/* Header */}
             <div className="flex items-center gap-3.5 mb-5">
-              <div className="w-11 h-11 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0">
-                <span className="material-symbols-outlined text-[21px]">check_circle</span>
+              <div className="w-11 h-11 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0 livex-success-badge">
+                <span className="material-symbols-outlined text-[21px] livex-success-icon">check_circle</span>
               </div>
               <div className="min-w-0 text-left">
                 <h3
@@ -806,7 +1018,11 @@ export default memo(function StudioUpdateScreen({
             <div className="pt-1">
               <button
                 type="button"
-                className="w-full h-11 bg-[#007aff] hover:bg-[#006ee6] active:scale-[0.98] text-white font-manrope font-semibold text-[13px] rounded-full transition-all flex items-center justify-center gap-2 shadow-sm"
+                className="w-full h-11 active:scale-[0.98] text-white font-manrope font-semibold text-[13px] rounded-full flex items-center justify-center gap-2 shadow-sm"
+                style={{
+                  background: `linear-gradient(135deg, ${activeAccentFrom}, ${activeAccent})`,
+                  transition: 'transform 120ms cubic-bezier(0.16, 1, 0.3, 1), opacity 150ms ease-out',
+                }}
                 onClick={handleDone}
               >
                 <span>{updaterTr?.done || 'Done'}</span>
@@ -855,7 +1071,11 @@ export default memo(function StudioUpdateScreen({
             <div className="space-y-2">
               <button
                 type="button"
-                className="w-full h-11 bg-[#007aff] hover:bg-[#006ee6] active:scale-[0.98] text-white font-manrope font-semibold text-[13px] rounded-full transition-all flex items-center justify-center gap-2 shadow-sm"
+                className="w-full h-11 active:scale-[0.98] text-white font-manrope font-semibold text-[13px] rounded-full flex items-center justify-center gap-2 shadow-sm"
+                style={{
+                  background: `linear-gradient(135deg, ${activeAccentFrom}, ${activeAccent})`,
+                  transition: 'transform 120ms cubic-bezier(0.16, 1, 0.3, 1), opacity 150ms ease-out',
+                }}
                 onClick={onRetry || handleUpdate}
               >
                 <span className="material-symbols-outlined text-[18px]">refresh</span>
@@ -863,7 +1083,10 @@ export default memo(function StudioUpdateScreen({
               </button>
               <button
                 type="button"
-                className={`w-full h-10 ${laterBtn} font-manrope font-medium text-[13px] rounded-full transition-all flex items-center justify-center`}
+                className={`w-full h-10 ${laterBtn} font-manrope font-medium text-[13px] rounded-full flex items-center justify-center`}
+                style={{
+                  transition: 'transform 120ms cubic-bezier(0.16, 1, 0.3, 1), background-color 150ms ease-out',
+                }}
                 onClick={handleDismiss}
               >
                 {updaterTr?.cancel || 'Cancel'}
@@ -889,8 +1112,9 @@ export default memo(function StudioUpdateScreen({
               >
                 <span
                   className={`material-symbols-outlined text-[21px] ${
-                    normalizedState === 'checking' ? 'animate-spin text-[#007aff]' : ''
+                    normalizedState === 'checking' ? 'animate-spin' : ''
                   }`}
+                  style={{ color: normalizedState === 'checking' ? activeAccent : undefined }}
                 >
                   {normalizedState === 'checking' ? 'sync' : 'check_circle'}
                 </span>
@@ -915,7 +1139,10 @@ export default memo(function StudioUpdateScreen({
             <div className="pt-2">
               <button
                 type="button"
-                className={`w-full h-11 ${cancelBtn} font-manrope font-medium text-[13px] rounded-full border transition-all flex items-center justify-center`}
+                className={`w-full h-11 ${cancelBtn} font-manrope font-medium text-[13px] rounded-full border flex items-center justify-center`}
+                style={{
+                  transition: 'transform 120ms cubic-bezier(0.16, 1, 0.3, 1), background-color 150ms ease-out',
+                }}
                 onClick={handleDismiss}
               >
                 {updaterTr?.done || 'Close'}
