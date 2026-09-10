@@ -1,22 +1,21 @@
 {
   "platform": "web",
-  "version": "4.5.83",
-  "versionName": "4.5.83",
-  "versionCode": 40583,
-  "version_code": 40583,
-  "commit": "514e1a75",
-  "releasedAt": "9/9/2026, 5:40:23 PM CST",
-  "buildTimestamp": "9/9/2026, 5:40:23 PM CST",
+  "version": "4.5.84",
+  "versionName": "4.5.84",
+  "versionCode": 40584,
+  "version_code": 40584,
+  "commit": "893974aa",
+  "releasedAt": "9/9/2026, 6:59:56 PM CST",
+  "buildTimestamp": "9/9/2026, 6:59:56 PM CST",
   "updateMode": "refresh",
-  "changelog": "• Standard Capacitor Asset Pipeline: Established root and Android resource pipelines (`resources/` and `apps/studio-android/resources/`) fully populated with the approved high-resolution Livex master icon (1024×1024) and all 5 density mipmaps.\n• Purged Legacy Brand Detritus: Completely removed obsolete Chordex screenshots, legacy sine-wave icon caches, and outdated branding references to establish Livex as the sole canonical brand identity.\n• Windows Tooling Execution Stability: Deactivated non-portable Unix shell hook invocation to ensure robust script and command execution across developer environments.",
-  "whatsNew": "• Standard Capacitor Asset Pipeline: Established root and Android resource pipelines (`resources/` and `apps/studio-android/resources/`) fully populated with the approved high-resolution Livex master icon (1024×1024) and all 5 density mipmaps.\n• Purged Legacy Brand Detritus: Completely removed obsolete Chordex screenshots, legacy sine-wave icon caches, and outdated branding references to establish Livex as the sole canonical brand identity.\n• Windows Tooling Execution Stability: Deactivated non-portable Unix shell hook invocation to ensure robust script and command execution across developer environments.",
+  "changelog": "• Android OEM Launcher Icon Cache Invalidation: Implemented non-destructive launcher icon cache refresh in `MainActivity.kt` via `PackageManager.setComponentEnabledSetting` with `DONT_KILL_APP`. Broadcasts `ACTION_PACKAGE_CHANGED` on upgrade to force OEM launchers (Samsung One UI Home, Pixel Launcher) to flush stale SQLite bitmap caches for `com.chordex.app.MainActivity` without breaking user desktop shortcuts or requiring activity aliases.\n• Canonical Launcher Icon Synchronization Pipeline: Extended `scripts/sync-launcher-icons.mjs` to automatically mirror all 15 density mipmaps and master Livex assets directly to secondary Capacitor directories (`resources/` and `apps/studio-android/resources/`), eliminating source drift.\n• CI Preflight Launcher Icon Quality Gate: Integrated `pnpm check:icons` directly into Preflight Job 1 of `.github/workflows/release.yml` to enforce launcher icon dimension and file integrity before initiating release builds.\n• Capacitor Cordova Build Configuration Guard: Safely guarded `cordova.variables.gradle` inclusion in `capacitor.build.gradle` to ensure clean local and CI Gradle builds.",
+  "whatsNew": "• Android OEM Launcher Icon Cache Invalidation: Implemented non-destructive launcher icon cache refresh in `MainActivity.kt` via `PackageManager.setComponentEnabledSetting` with `DONT_KILL_APP`. Broadcasts `ACTION_PACKAGE_CHANGED` on upgrade to force OEM launchers (Samsung One UI Home, Pixel Launcher) to flush stale SQLite bitmap caches for `com.chordex.app.MainActivity` without breaking user desktop shortcuts or requiring activity aliases.\n• Canonical Launcher Icon Synchronization Pipeline: Extended `scripts/sync-launcher-icons.mjs` to automatically mirror all 15 density mipmaps and master Livex assets directly to secondary Capacitor directories (`resources/` and `apps/studio-android/resources/`), eliminating source drift.\n• CI Preflight Launcher Icon Quality Gate: Integrated `pnpm check:icons` directly into Preflight Job 1 of `.github/workflows/release.yml` to enforce launcher icon dimension and file integrity before initiating release builds.\n• Capacitor Cordova Build Configuration Guard: Safely guarded `cordova.variables.gradle` inclusion in `capacitor.build.gradle` to ensure clean local and CI Gradle builds.",
   "releaseNotes": {
-    "added": [
-      "Standard Capacitor Asset Pipeline: Established root and Android resource pipelines (`resources/` and `apps/studio-android/resources/`) fully populated with the approved high-resolution Livex master icon (1024×1024) and all 5 density mipmaps."
-    ],
     "fixed": [
-      "Purged Legacy Brand Detritus: Completely removed obsolete Chordex screenshots, legacy sine-wave icon caches, and outdated branding references to establish Livex as the sole canonical brand identity.",
-      "Windows Tooling Execution Stability: Deactivated non-portable Unix shell hook invocation to ensure robust script and command execution across developer environments."
+      "Android OEM Launcher Icon Cache Invalidation: Implemented non-destructive launcher icon cache refresh in `MainActivity.kt` via `PackageManager.setComponentEnabledSetting` with `DONT_KILL_APP`. Broadcasts `ACTION_PACKAGE_CHANGED` on upgrade to force OEM launchers (Samsung One UI Home, Pixel Launcher) to flush stale SQLite bitmap caches for `com.chordex.app.MainActivity` without breaking user desktop shortcuts or requiring activity aliases.",
+      "Canonical Launcher Icon Synchronization Pipeline: Extended `scripts/sync-launcher-icons.mjs` to automatically mirror all 15 density mipmaps and master Livex assets directly to secondary Capacitor directories (`resources/` and `apps/studio-android/resources/`), eliminating source drift.",
+      "CI Preflight Launcher Icon Quality Gate: Integrated `pnpm check:icons` directly into Preflight Job 1 of `.github/workflows/release.yml` to enforce launcher icon dimension and file integrity before initiating release builds.",
+      "Capacitor Cordova Build Configuration Guard: Safely guarded `cordova.variables.gradle` inclusion in `capacitor.build.gradle` to ensure clean local and CI Gradle builds."
     ]
   },
   "mandatory": false

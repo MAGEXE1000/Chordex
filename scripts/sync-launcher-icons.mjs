@@ -332,6 +332,34 @@ if (fs.existsSync(webPublicDir)) {
   fs.copyFileSync(path.join(androidPublicDir, 'icon-512.png'), path.join(webPublicDir, 'icon-512.png'));
 }
 
+// Mirror to secondary Capacitor resources folders to eliminate developer confusion
+const secondaryResDirs = [
+  path.join(repoRoot, 'resources'),
+  path.join(repoRoot, 'apps', 'studio-android', 'resources')
+];
+
+for (const secDir of secondaryResDirs) {
+  if (fs.existsSync(secDir)) {
+    try {
+      fs.copyFileSync(masterBadgePath, path.join(secDir, 'icon.png'));
+      fs.copyFileSync(masterBadgePath, path.join(secDir, 'icon-only.png'));
+      fs.copyFileSync(masterSymbolPath, path.join(secDir, 'icon-foreground.png'));
+      for (const item of densityMatrix) {
+        const srcMipmap = path.join(androidResDir, 'mipmap-' + item.density);
+        const dstMipmap = path.join(secDir, 'mipmap-' + item.density);
+        if (!fs.existsSync(dstMipmap)) fs.mkdirSync(dstMipmap, { recursive: true });
+        for (const file of ['ic_launcher.png', 'ic_launcher_round.png', 'ic_launcher_foreground.png']) {
+          const s = path.join(srcMipmap, file);
+          const d = path.join(dstMipmap, file);
+          if (fs.existsSync(s)) fs.copyFileSync(s, d);
+        }
+      }
+    } catch (e) {
+      console.warn('Notice: Could not mirror to ' + secDir + ': ' + e.message);
+    }
+  }
+}
+
 console.log('\n✓ Generated and synchronized all ' + targets.length + ' targets.');
 
 // Final sanity check

@@ -48,9 +48,9 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { logVersionTransformation } from '../updater/versionLogger';
 
-export const NATIVE_VERSION = '4.5.83';
-export const NATIVE_VERSION_CODE = 40583;
-export const WEB_VERSION = '4.5.83';
+export const NATIVE_VERSION = '4.5.84';
+export const NATIVE_VERSION_CODE = 40584;
+export const WEB_VERSION = '4.5.84';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -73,13 +73,13 @@ export const APP_VERSION_DATE = '8/12/2026';
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = '514e1a75';
+export const APP_COMMIT_SHA = '893974aa';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '9/9/2026, 5:40:23 PM CST';
+export const APP_BUILD_TIMESTAMP = '9/9/2026, 6:59:56 PM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -96,16 +96,12 @@ export interface ChangelogSection {
 
 export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
-    heading: 'Added',
-    items: [
-      'Standard Capacitor Asset Pipeline: Established root and Android resource pipelines (`resources/` and `apps/studio-android/resources/`) fully populated with the approved high-resolution Livex master icon (1024×1024) and all 5 density mipmaps.',
-    ],
-  },
-  {
     heading: 'Fixed',
     items: [
-      'Purged Legacy Brand Detritus: Completely removed obsolete Chordex screenshots, legacy sine-wave icon caches, and outdated branding references to establish Livex as the sole canonical brand identity.',
-      'Windows Tooling Execution Stability: Deactivated non-portable Unix shell hook invocation to ensure robust script and command execution across developer environments.',
+      'Android OEM Launcher Icon Cache Invalidation: Implemented non-destructive launcher icon cache refresh in `MainActivity.kt` via `PackageManager.setComponentEnabledSetting` with `DONT_KILL_APP`. Broadcasts `ACTION_PACKAGE_CHANGED` on upgrade to force OEM launchers (Samsung One UI Home, Pixel Launcher) to flush stale SQLite bitmap caches for `com.chordex.app.MainActivity` without breaking user desktop shortcuts or requiring activity aliases.',
+      'Canonical Launcher Icon Synchronization Pipeline: Extended `scripts/sync-launcher-icons.mjs` to automatically mirror all 15 density mipmaps and master Livex assets directly to secondary Capacitor directories (`resources/` and `apps/studio-android/resources/`), eliminating source drift.',
+      'CI Preflight Launcher Icon Quality Gate: Integrated `pnpm check:icons` directly into Preflight Job 1 of `.github/workflows/release.yml` to enforce launcher icon dimension and file integrity before initiating release builds.',
+      'Capacitor Cordova Build Configuration Guard: Safely guarded `cordova.variables.gradle` inclusion in `capacitor.build.gradle` to ensure clean local and CI Gradle builds.',
     ],
   },
 ];
@@ -117,6 +113,16 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.5.84',
+    date: '2026-09-09',
+    highlights: [
+      'Android OEM Launcher Icon Cache Invalidation: Implemented non-destructive launcher icon cache refresh in `MainActivity.kt` via `PackageManager.setComponentEnabledSetting` with `DONT_KILL_APP`. Broadcasts `ACTION_PACKAGE_CHANGED` on upgrade to force OEM launchers (Samsung One UI Home, Pixel Launcher) to flush stale SQLite bitmap caches for `com.chordex.app.MainActivity` without breaking user desktop shortcuts or requiring activity aliases.',
+      'Canonical Launcher Icon Synchronization Pipeline: Extended `scripts/sync-launcher-icons.mjs` to automatically mirror all 15 density mipmaps and master Livex assets directly to secondary Capacitor directories (`resources/` and `apps/studio-android/resources/`), eliminating source drift.',
+      'CI Preflight Launcher Icon Quality Gate: Integrated `pnpm check:icons` directly into Preflight Job 1 of `.github/workflows/release.yml` to enforce launcher icon dimension and file integrity before initiating release builds.',
+      'Capacitor Cordova Build Configuration Guard: Safely guarded `cordova.variables.gradle` inclusion in `capacitor.build.gradle` to ensure clean local and CI Gradle builds.',
+    ],
+  },
   {
     version: '4.5.83',
     date: '2026-09-09',
@@ -199,14 +205,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'Livex Visual Identity & AMOLED Logo Replacement: Upgraded app branding across all surfaces to the approved 2026 Livex logo treatment. Features pure AMOLED #000000 background integration, authentic 3D petal depth with luminous ambient white emission, and Android adaptive launcher icons with safe-zone compliance (66dp within 108dp canvas) across all density buckets (mdpi to xxxhdpi) to prevent double-squircle clipping on OEM launchers.',
       'Universal Soft-Pill Design System: Standardized soft-pill visual system and ambient elevations across all Livex apps (Chordex, Drumex, Stagex, Groovex, and Vocalex).',
       'Vocalex Vertical Rhythm & Centered Composition: Refined Vocal Monitor layout composition to match Stitch reference, balancing upper metadata, central pitch monitor, and primary action controls within the active viewport without dead-space voids.',
-    ],
-  },
-  {
-    version: '4.5.74',
-    date: '2026-09-07',
-    highlights: [
-      'Global Heading & Header Typography Hierarchy: Restored canonical typography hierarchy across all Studio/Livex applications (Studio Hub, Chordex, Drumex, Stagex, Groovex, Vocalex, and Preferences) ensuring consistent weight, tracking, and line-height scaling across mobile viewports.',
-      'Vocalex Vertical Rhythm, Viewport Elevation & Header Composition: Eliminated stacked bottom clearance voids (saving >100px of dead space) and competing nested scroll containers. Reordered CoachPanel with compact top pill switcher, followed by context-aware StudioHeader with zero collision or title duplication. Elevated main pitch monitor card and action controls, guaranteeing full viewport visibility without scrolling.',
     ],
   },
 ];
